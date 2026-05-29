@@ -1,0 +1,23 @@
+# ABD raw data (474 GB)
+Data/
+
+# Binary/temp files
+*.docx
+*.pdf
+_tmp_*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
