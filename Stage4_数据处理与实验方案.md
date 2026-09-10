@@ -3,9 +3,19 @@
 > 依据 `Stage3_方法与系统设计_PICASO.md` 的 5 层架构与 Layer 1 统一 Schema
 > 基于 C-NCAP 2024 Appendix L (ADAS) + Appendix O (VRU) 规程深度阅读
 > 基于 ABD 场景类型数据深度抽查 (CCRs, CPLA, CSFAO, CBNAO, SCP, SCPO, CCFT, BSD)
-> FalseReaction 场景数据已按用户决策整体剔除
+> FalseReaction 场景：生成/统一评估侧剔除（无统一 T0 定义）；作为"不应制动"负样本保留给 VUT surrogate 边界建模（2026-09-01 修订）
 > 基于 ABD Robot Controller Software Manual (RM-S-01 Issue 23) + Path Following User Manual (RM-S-02 Issue 17) 完整阅读
 > 编写日期：2026-05-28
+
+---
+
+## 2026-09-01 方案评审修订（执行优先级最高）
+
+1. **ABD 数据第一定位**：真实车辆响应 ground truth，用于训练/校准 VUT 响应 surrogate 与实车验证闭环；不再作为"开放道路→封闭场地 UDA"的目标域。
+2. **FalseReaction 分流**：生成/统一评估侧剔除（无统一 T0），但作为"不应制动"负样本进入 surrogate 负样本池（替代原"整体剔除"决策）。
+3. **实验切分**：主实验 leave-one-brand-out（surrogate 跨品牌泛化）+ S9 工程验证支线不变；新增 **Stage D 实车补测集**（M4 起，含规程内复现点 + 规程外新点两组，协议见附录 F）。
+4. **指标**：TDPD 统一定义为 `(CR_target − CR_source)/CR_source` 并降级为诊断指标；新增实车一致性指标族（碰撞判定一致率 / minTTC MAE / AEB 触发时刻 MAE / 实车验证命中率）为核心指标。
+5. **基线**：新增必做对照 B6（纯 Waymo/INTERACTION 训练、无 ABD 校准）。
 
 ---
 
@@ -86,7 +96,7 @@
 | 穿车假目标 AEB | CCFT | L.6.1.9 | 9r/6v | 4r/2v | 3r/3v |
 | 盲区监测 | BSD | L.6.5.4 | 12r/4v | — | — |
 
-> **已排除**: FalseReaction 误作用场景 (L.6.2) 按用户决策整体剔除 — 10 种子场景无统一 T0 定义, 不适合 PICASO 统一评估框架。
+> **分流处理（2026-09-01 修订）**: FalseReaction 误作用场景 (L.6.2) 从生成/统一评估框架剔除（10 种子场景无统一 T0 定义）；但作为"系统不应制动"的负样本保留，供 VUT surrogate 边界建模使用。
 
 #### 关键覆盖缺口
 
@@ -333,7 +343,7 @@ Full Synchro 将 Subject 和 Tracker 像"齿轮啮合"一样耦合在一起:
 | BSD 变道 | GVT 开始变道时刻 | L.6.5.4.3 |
 | FCW | TTC = 最晚警告点 (由制造商申报) | L.1.56 |
 
-> **已排除**: FalseReaction 场景数据按用户决策整体剔除 (10 种子场景无统一 T0 定义)。
+> **分流处理（2026-09-01 修订）**: FalseReaction 场景从生成/统一评估侧剔除（10 种子场景无统一 T0 定义）；作为"不应制动"负样本保留给 surrogate 边界建模。
 
 #### B. ABD 数据中的 T0 定位 (多策略分级)
 
@@ -759,7 +769,7 @@ T0 = argmin(|TTC_est - 3.0|)
     ScenarioType   ∈ {CPLA, CPNCO, CPFAO, CPTA, CBNAO, CBLA,
                       CSFAO, CSTA, CCRs, CCRH, SCP, SCPO, CCFT,
                       BSD}
-      注: FalseReaction 已整体剔除
+      注: FalseReaction 生成侧剔除, 但作为负样本保留给 surrogate (2026-09-01 修订)
     VariantLabel   ← 从目录名 + .spec 速度段解析
     SpeedCondition ← 从 VariantLabel 解析 VUT/Target 速度
 
@@ -922,22 +932,20 @@ for each run in VALID ∪ PARTIAL:
 ┌──────────────────────────────────────────────────────────────────┐
 │                       全量数据池                                   │
 ├────────────────┬──────────────────────┬───────────────────────────┤
-│  Waymo +       │  CNCAP GAC S9        │  CNCAP E8 + P7+ + A66     │
-│  INTERACTION   │  (Target, VRU+ADAS)  │  (Holdout)                │
-│  (Source 0,1)  │                      │                           │
+│  Waymo +       │  CNCAP ABD 多品牌     │  ABD 实车补测批次          │
+│  INTERACTION   │  (响应建模, LOBO)     │  (M4 起, 附录 F 协议)      │
 ├────────────────┴──────────────────────┴───────────────────────────┤
 │                                                                   │
 │  ┌─────────────────┐  ┌───────────────┐  ┌────────────────────┐  │
-│  │ Pretrain Set    │  │ DA Adapt Set  │  │  Holdout Set       │  │
-│  │ (Source only)   │  │ (S + T_train) │  │  (T_test)          │  │
+│  │ Pretrain Set    │  │ Surrogate Set │  │ Real-Validation Set│  │
+│  │ (Source only)   │  │ (LOBO splits) │  │ (Stage D 实车闭环) │  │
 │  │                 │  │               │  │                    │  │
 │  │ 用途: Stage A   │  │ 用途: Stage B │  │ 用途: Stage D      │  │
-│  │ 预训练          │  │ 域自适应训练  │  │ 最终评估           │  │
-│  │                 │  │               │  │                    │  │
-│  │ Waymo: 训练集   │  │ Waymo: 训练集 │  │ GAC E8 (全量)      │  │
-│  │ INTERACTION:    │  │ + GAC S9      │  │ P7+ (全量)         │  │
-│  │   训练+验证     │  │   COMPLETE    │  │ GAC A66 (全量)     │  │
-│  │                 │  │   场景 (80%)  │  │                    │  │
+│  │ 生成器预训练     │  │ surrogate训练 │  │ 实车验证闭环       │  │
+│  │                 │  │ + 跨品牌校准  │  │                    │  │
+│  │ Waymo: 训练集   │  │ 4→9-10 品牌   │  │ 规程内复现点        │  │
+│  │ INTERACTION:    │  │ 留一品牌外推  │  │ + 规程外新点       │  │
+│  │   训练+验证     │  │ (LOBO)        │  │ (surrogate 高危)   │  │
 │  └─────────────────┘  └───────────────┘  └────────────────────┘  │
 │                                                                   │
 └──────────────────────────────────────────────────────────────────┘
@@ -947,7 +955,7 @@ for each run in VALID ∪ PARTIAL:
 - **主实验优先**: 采用 leave-one-brand-out / leave-one-family-out，按实际有效样本覆盖选择 holdout 品牌；不要默认只让 S9 参与适配训练。
 - **工程验证保留**: 可保留“GAC S9 适配，GAC E8 + XPeng P7+ + GAC A66 CNCAP holdout”的设置作为工业验证实验，但需明确它不是唯一切分。
 - **按 ScenarioType 分层**: 确保 train 和 holdout 在 CCRs, SCP, CPLA, CPTA 等主要规程类型上尽量同类对比；缺失场景只做案例分析，不做统计显著性。
-- **Source/Target 严格隔离**: 预训练仅 Waymo + INTERACTION；CNCAP 数据只在 DA/DG 微调、反事实评估和最终 holdout 阶段出现。
+- **Source/Target 严格隔离**: 生成器预训练仅 Waymo + INTERACTION；CNCAP ABD 数据只用于 surrogate 训练/校准、反事实评估、实车验证闭环与最终 holdout。
 - **数据泄漏检查**: 同一物理测试序列、同一 `.CRUN/.spec` 派生出的片段不能同时进入训练和 holdout。
 
 ### 4.2 数据量估算
@@ -956,10 +964,10 @@ for each run in VALID ∪ PARTIAL:
 |------|------|---------------|-------------|------|
 | Pretrain (Waymo) | — | ~487K 场景片段 | ~135,000 小时 | 9s 片段 @ 10Hz |
 | Pretrain (INTERACTION) | — | ~55K 轨迹 | ~150 小时 | 11 个路口/匝道 |
-| DA/DG Target | 按主实验 split 决定 | 待 inventory 确认 | 待 inventory 确认 | 不提前锁死为 S9 |
+| Surrogate 训练/校准 | 按 LOBO split 决定 | 待 inventory 确认 | 待 inventory 确认 | 不提前锁死品牌 |
 | Holdout | leave-one-brand-out 品牌 | 待 inventory 确认 | 待 inventory 确认 | 用于跨品牌泛化 |
 | 工程验证 Adapt | GAC S9（候选） | 待 inventory 确认 | 待 inventory 确认 | 若 S9 有最完整 VRU+ADAS，可作为工业适配实验 |
-| 工程验证 Holdout | GAC E8 / XPeng P7+ / GAC A66 CNCAP（候选） | 待 inventory 确认 | 待 inventory 确认 | 缺失规程不做统计显著性 |
+| 实车补测集 (Stage D) | 具备补测条件的品牌 | M4 起按 surrogate 选点 | ≥20 场景/首批 | 规程内复现 + 规程外新点两组（附录 F） |
 
 ### 4.3 对比基线
 
@@ -970,10 +978,11 @@ for each run in VALID ∪ PARTIAL:
 | B3: STRIVE / TrafficGen | 数据驱动或对抗生成 | 取可复现代码中最稳定者 | 有开源且能跑通才列入主表 |
 | B4: AdvSim | 对抗生成 | LiDAR/仿真依赖较强 | 若复现成本过高，作为文献对比或附录 |
 | B5: CounterScene-style | 因果反事实 | 单变量 do(·) 反事实基线 | 可实现轻量版，不冒充原论文完整复现 |
+| B6: No-ABD-Calibration | 无校准对照 | 纯 Waymo/INTERACTION 训练，生成器与 surrogate 均不做 ABD 校准 | 必做对照（2026-09-01 新增） |
 | **PICASO (Ours)** | — | 完整 5 层架构 | — |
 | PICASO w/o C1 | 消融 | 无 PHNN 物理约束 | 去掉 L_PH |
 | PICASO w/o C2 | 消融 | 无 MACC 级联干预 | 去掉因果图 + do(·) |
-| PICASO w/o C3 | 消融 | 无 GRL-DANN | 去掉 GRL + D_φ |
+| PICASO w/o C3 | 消融 | 无跨品牌校准 | surrogate 退化为 brand-agnostic |
 
 ### 4.4 评估指标 (Layer 5 四维矩阵)
 
@@ -985,7 +994,11 @@ for each run in VALID ∪ PARTIAL:
 | **物理可行性** | KFR | 全程满足 a ≤ a_max, |κ| ≤ κ_max, F_fric ≤ μF_N | 高于无物理约束基线；目标值待实验确认 |
 | | Jerk Violation Rate | 加加速度超限次数/场景 | 低于无物理约束/无投影消融版，报告 CI |
 | **保真度** | MMD | 生成 vs 真实场景轨迹分布距离 | 低于 TrafficGen |
-| | TDPD | CR_target / CR_source − 1 | 显著低于无 DA 消融版 |
+| **跨品牌诊断** | TDPD | (CR_target − CR_source) / CR_source | 2026-09-01 统一定义；仅诊断用，不作核心指标 |
+| **实车一致性（核心）** | 碰撞判定一致率 | surrogate 预测 vs ABD 实测一致比例 | 实验后填报（规程内/规程外分组报告） |
+| | minTTC MAE | \|minTTC_pred − minTTC_ABD\| 均值 | 实验后填报 |
+| | AEB 触发时刻 MAE | \|t_pred − t_ABD\| 均值 | 实验后填报 |
+| | 实车验证命中率 | 实车确认高危 / 送测高危场景数 | 高于随机选点对照（A9） |
 | **因果可解释性** | Root-Cause Score | Shapley/归因结果与规程逻辑或人工复核一致性 | 作为新指标报告，不提前承诺阈值 |
 | | IC | do(x)→do(y) 风险变化方向一致性 | 报告均值、CI 与失败案例 |
 
@@ -1107,7 +1120,7 @@ def find_channel(available_channels: list[str], canonical_name: str) -> str | No
 | D2 | 不完整 Run (通道 < 400 列) | **直接剔除**, 不做运动学反推 | 简化处理流程, 移除 CCFT_RELATIVE_ONLY 模式 |
 | D3 | 无 .spec 文件 = 不完整测试 | **已确认**: 完整 Run 100% 有对应 .spec (GAC S9 208/208, E8 195/195, P7+ 235/235) | 无 .spec → 阶段 A 直接排除 |
 | D4 | C2C 场景数据源优先级 | **Object 1** (GVT 机器人直接测量, 语义准确) | C2C → Object 1; VRU → Head tracker |
-| D5 | FalseReaction 场景 | **整体剔除** (10 种子场景, 无统一 T0 定义) | 从所有数据表和实验设计中移除 |
+| D5 | FalseReaction 场景 | **分流处理（2026-09-01 修订）**：生成/统一评估侧剔除（无统一 T0）；作为"不应制动"负样本保留给 surrogate 边界建模 | 从生成侧数据表移除；surrogate 负样本池保留 |
 | D6 | SCP vs SCPO | **两个独立场景** (SCPO ≠ 含于 SCP) | 场景类型清单增加 SCPO 独立条目 |
 | D7 | Mass 参数 | **重要** — 用户将提供每辆实际车辆整备质量 | Layer 5 KFR 摩擦圆约束需要真实质量 |
 | D8 | SteerRatio 参数 | **不重要** — PICASO 使用 GPS/IMU 轨迹, 不依赖转向比 | 不纳入处理流程 |
@@ -1225,7 +1238,7 @@ def find_channel(available_channels: list[str], canonical_name: str) -> str | No
 | 12 | Mass 为默认值 1300 kg (未实际填写) | .spec 实测 | Layer 5 摩擦圆约束需要真实质量 | 用户已提供全部: E8=2410, S9=2600, A66=2535, P7+=2395 kg |
 | 13 | SteerRatio 为默认值 15.4 (未实际填写) | .spec 实测 | PICASO 使用 GPS/IMU 轨迹, 不依赖转向比 | 不纳入处理流程 |
 | 14 | 完整测试 100% 有对应 .spec 文件 (GAC S9 208/208, E8 195/195, P7+ 235/235) | 实测 | 无 .spec = 不完整测试 | 阶段 A 直接排除 |
-| 15 | FalseReaction 整体剔除 | 用户决策 | 10 种子场景, 无统一 T0 定义 | 从所有处理中移除 |
+| 15 | FalseReaction 分流（2026-09-01 修订） | 用户决策 + 方案评审 | 生成侧剔除（无统一 T0）；surrogate 负样本池保留 | 生成侧移除，surrogate 侧保留 |
 | 16 | SCPO 与 SCP 是两个独立场景 | 用户纠正 + 实测目录结构 | 不能将 SCPO 含于 SCP | 场景类型清单独立列出 |
 
 ---
@@ -1305,3 +1318,41 @@ class SpecReader:
         从目录路径 + .spec Description 字段推断
     """
 ```
+
+---
+
+## 附录 F: ABD 实车补测协议 (2026-09-01 新增, Stage D 依据)
+
+### F.1 目的
+
+对 surrogate 判定为高危险且 C-NCAP 标准矩阵未覆盖的生成场景，执行真实车辆 ABD 机器人场地补测，量化 sim-to-real 一致性（碰撞判定一致率 / minTTC MAE / AEB 触发时刻 MAE），并将结果反哺 surrogate（主动学习闭环）。
+
+### F.2 批次设计（首批 ≥20 场景，分两组）
+
+| 组别 | 规模 | 选点方式 | 目的 |
+|------|------|---------|------|
+| G1 规程内复现组 | ≥8 场景 | 从已有标准矩阵工况中抽样（surrogate 应高置信复现已知结果） | 校准：验证 surrogate 在已知域的一致性 |
+| G2 规程外新点组 | ≥12 场景 | surrogate 判定高危险 + 规程矩阵未覆盖 + 外推幅度 ≤20% 参数空间 + 不确定度低于阈值 | 探索：验证 surrogate 外推与生成场景的真实有效性 |
+
+### F.3 执行前置条件
+
+- **车辆准备**：与历史测试同配置（整备质量、轮胎、制动系统磨合按 C-NCAP L.5.3/L.5.4 Conditioning 流程执行）
+- **传感器/同步**：Motion Pack + 相对运动链路 + Time-tolerance 触发通道与历史数据同链路；Synchro 校准先行（参照既有 Turning/Synchro Calibration 流程）
+- **参数化转换**：生成场景参数 → ABD .spec（速度/路径/触发容差），转换脚本需经 1 个规程内场景试跑验证
+- **安全中止条件**：按场地安全规程（试验驾驶员接管条件、设备急停、目标载体保护）
+
+### F.4 记录与判定
+
+- 每场景 ≥2 次有效重复；记录通道与历史 .txt 同 schema（100 Hz）
+- 结果判定：碰撞 / AEB 触发时刻 / FCW 触发时刻 / minTTC / 最小间距；与 surrogate 预测逐一配对
+- 一致性报告：G1/G2 分组报告碰撞判定一致率与各项 MAE + 95% CI
+
+### F.5 反哺与迭代
+
+- 新实测点并入 surrogate 训练池（标注采集批次），重训并比较前后 LOBO 与外推误差
+- 每轮补测后更新不确定度模型；G2 组中 surrogate 失配点优先进入下一轮送测
+
+### F.6 风险与降级
+
+- 若场地/车辆窗口不足：首批缩减至 G1+部分 G2，并在论文中明确标注验证规模限制
+- 兜底方案：以 holdout ABD 历史数据做"准实车验证"，论文中改述为"基于实测数据的外部验证"，不声称新补测闭环

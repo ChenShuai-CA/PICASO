@@ -1,8 +1,19 @@
-# Stage 3：方法与系统设计 — PI-Causal Domain-Adaptive Scenario Generation (PICASO)
+# Stage 3：方法与系统设计 — Physics-Informed Causal Adversarial Scenario generation with real-wOrld validation (PICASO)
 
 > 依据 `自动驾驶安全关键场景生成方向：工程科研流程与 T-ITS 投稿指南.docx` Stage 3 框架编写
 > 基于 `Stage2_综合差距分析与Related_Work.md` 的差距分析矩阵
 > 编写日期：2026-05-21
+
+---
+
+## 2026-09-01 方案评审修订：叙事重心调整（执行优先级高于以下所有版本）
+
+1. **C3 重定位**：GRL-DANN"开放道路→封闭场地 UDA"不再是核心贡献——C-NCAP 目标域是离散规程网格、条件内方差近零，经典 UDA 没有可适配的分布。新 C3 = **跨品牌 VUT 响应 surrogate + 实车校准**（LOBO 泛化评估；GRL-DANN/CORAL-MMD/DG 仅作可选对照）。本文 Layer 2 技术内容保留为可选模块文档。
+2. **新增 Stage D 实车验证闭环**（见 §2.2）：surrogate 判定高危险且规程矩阵未覆盖的生成场景 → ABD 实车补测 → sim-to-real 一致性（新增 §7.1 D6 指标族）→ 结果反哺 surrogate。已确认具备完整实车补测条件，车型将扩至 9–10 款。
+3. **Layer 3 物理约束口径**：架构图与正文统一为"解码后投影 + 物理损失 + KFR 审计"为 MVP 主线；多体 PHNN 硬嵌入仅为增强路线，未验证前不得出现"硬保证"表述。
+4. **指标卫生**：§7.1 全部预承诺数值（KFR>95%、CR 25–35%、NMR>30%、minSTTC<1.2s、PET<1.5s、各违反率阈值）改为"实验后填报"；TDPD 定义统一为 `(CR_target − CR_source)/CR_source` 并降级为诊断指标。
+5. **命名**：PICASO 展开改为 *Physics-Informed Causal Adversarial Scenario generation with real-wOrld validation*。
+6. 详细论证见 `Stage1_研究问题凝练.md` 2026-09-01 修订块。
 
 ---
 
@@ -22,7 +33,7 @@ PICASO 应被定义为**自动驾驶安全验证框架**，而不是单纯“PI-
 | MVP-1 生成基线 | Mamba 或 Transformer 轨迹生成基线 + 随机/规则/扰动基线 | 建立可比较结果 | 不声称 SOTA |
 | MVP-2 物理可执行性 | 解码后可微投影、速度/加速度/曲率/jerk/摩擦圆约束、KFR 与违反类型统计 | 解决“危险但不可执行”问题 | PHNN 内嵌主张降级 |
 | MVP-3 反事实干预 | 关键 Agent/时间窗归因 + 有界反事实扰动 + 风险变化一致性 | 支撑因果解释叙事 | 只写反事实敏感性分析 |
-| MVP-4 跨域评估 | no-DA、CORAL/MMD、GRL-DANN 或 DG 对比；按品牌/规程 holdout | 支撑开放道路到封闭场地迁移 | 若数据不足，只写跨域诊断 |
+| MVP-4 跨品牌校准 | no-DA、CORAL/MMD、GRL-DANN 或 DG 对比；按品牌/规程 holdout（LOBO） | 支撑跨品牌 VUT 响应 surrogate 泛化 | 若数据不足，只写跨品牌诊断 |
 | Enhanced 多体 PH/MACC | 多体 PHNN/PHDAE、级联干预、Shapley-in-the-loop | 冲刺高创新 | 作为消融/附录/第二篇论文 |
 
 ### 关键技术修订
@@ -65,24 +76,25 @@ PICASO 应被定义为**自动驾驶安全验证框架**，而不是单纯“PI-
 | SafeAlign-VLA (2026.05) | 反事实安全配对+GRPO对齐 | 非场景生成，仅策略对齐 | 反事实场景生成 |
 | CausalVAD (CVPR 2026) | 后门调整去混淆 | Ego中心，非场景生成 | 场景级因果干预 |
 
-### C3: GRL-DANN 多源域自适应 — 开放道路→封闭场地
+### C3: 跨品牌 VUT 响应 surrogate 与实车校准（2026-09-01 起由"GRL-DANN 多源域自适应"重定位）
 
-**核心主张（修订）**：系统研究"开放道路自然驾驶数据（Waymo/INTERACTION）→ 封闭场地测试规程（C-NCAP/E-NCAP/企标）"的跨域迁移问题。GRL-DANN 是候选方法之一，必须与 no-DA、CORAL/MMD、域泛化或规程条件化校准对比，避免把小样本目标域上的不稳定对抗训练写成唯一贡献。
+**核心主张（2026-09-01 修订）**：C-NCAP 目标域是离散规程网格、条件内方差近零，经典"开放道路→封闭场地"UDA 没有可适配的分布，不再作为核心贡献。本创新点改为：利用多品牌 ABD 实测数据训练 VUT 响应 surrogate（场景参数 → 碰撞 / minTTC / AEB 触发时刻，含 ensemble/conformal 不确定度），以 leave-one-brand-out 评估跨品牌泛化；GRL-DANN / CORAL-MMD / 域泛化仅作为可选校准对照。surrogate 判定高危险且规程矩阵未覆盖的生成场景经 ABD 实车补测验证，构成"生成→预测→实车验证→反哺"闭环。
 
 **差异化证据链**：
 
 | 比较对象 | 该方法做了 | 该方法没做 | → 我们的突破 |
 |---------|-----------|-----------|------------|
-| **当前检索范围内** | Sim-to-Real（仿真→真实）、Cross-Dataset（Waymo→nuScenes） | 尚未发现直接做"开放道路→封闭场地场景生成"的工作 | 先做系统验证，投稿前复核优先权 |
-| NeuroNCAP (CVPR 2024) | Euro NCAP 规程对齐 | 仅nuScenes→Euro NCAP重建，非域自适应 | GRL-DANN系统迁移 |
-| AdapTraj (ICDE 2024) | 轨迹预测多源DG | 非场景生成；非NCAP规程 | 场景生成 + 规程对齐 |
+| **当前检索范围内** | Sim-to-Real（仿真→真实）、Cross-Dataset（Waymo→nuScenes） | 尚未发现用多品牌真实车辆响应闭环验证生成场景的工作 | 先做系统验证，投稿前复核优先权 |
+| NeuroNCAP (CVPR 2024) | Euro NCAP 规程对齐 | 仅nuScenes→Euro NCAP重建，无真实车辆响应闭环 | 实车响应 surrogate + 实车补测验证 |
+| AdapTraj (ICDE 2024) | 轨迹预测多源DG | 非场景生成；非NCAP规程；无实车响应 | 跨品牌响应校准（LOBO） |
 
-### 评估创新：四维评估矩阵 + 三项新指标
+### 评估创新：四维评估矩阵 + 实车一致性指标族
 
 - **KFR (Kinematic Feasibility Rate)**：场景轨迹全程满足物理约束的比例
 - **Root-Cause Attribution Score**：基于 Shapley 值的失效归因分
 - **Intervention Consistency (IC)**：反事实干预的风险变化一致性
-- **Target Domain Performance Drop (TDPD)**：源域→目标域的性能衰减率
+- **实车一致性指标族（2026-09-01 新增，核心）**：surrogate 预测 vs ABD 实测的碰撞判定一致率、minTTC MAE、AEB 触发时刻 MAE
+- **Target Domain Performance Drop (TDPD)**（降级为诊断指标）：统一定义为 `(CR_target − CR_source) / CR_source`
 
 ---
 
@@ -109,7 +121,7 @@ PICASO 应被定义为**自动驾驶安全验证框架**，而不是单纯“PI-
 │               Layer 3: PI-Causal Mamba 核心生成器                     │
 │   ┌───────────────────────┐   ┌──────────────────────────────┐      │
 │   │  Port-Hamiltonian 约束  │   │   因果图发现 (CRiTIC 风格 CDN)    │      │
-│   │  (状态空间硬嵌入)       │   │   (变长自适应 DAG 学习)           │      │
+│   │(解码投影为主,硬嵌入为增强)│   │   (变长自适应 DAG 学习)           │      │
 │   └───────────┬───────────┘   └──────────────┬───────────────┘      │
 │               └───────────┬──────────────────┘                      │
 │                           ▼                                         │
@@ -120,18 +132,19 @@ PICASO 应被定义为**自动驾驶安全验证框架**，而不是单纯“PI-
 └───────────────────────────────┬─────────────────────────────────────┘
                                 │ (domain-invariant features)
 ┌───────────────────────────────┴─────────────────────────────────────┐
-│                Layer 2: GRL-DANN 多源域自适应桥接层                    │
+│         Layer 2: 跨品牌响应校准层（可选: GRL-DANN / CORAL-MMD / DG）    │
 │   ┌───────────────────┐  ┌──────────────────┐  ┌────────────────┐   │
 │   │ 共享特征提取器 F_θ  │  │  域判别器 D_φ      │  │  梯度反转层 GRL │   │
-│   │ (交互图 + 轨迹编码) │  │  (Source vs Target)│  │  (∂L_D/∂θ → -λ) │   │
+│   │ (交互图 + 轨迹编码) │  │ (品牌A vs 品牌B…)  │  │  (∂L_D/∂θ → -λ) │   │
 │   └───────────────────┘  └──────────────────┘  └────────────────┘   │
+│   注：仅作跨品牌 VUT surrogate 校准对照；不承担开放道路→封闭场地迁移     │
 └───────────────────────────────┬─────────────────────────────────────┘
                                 │ (unified data schema)
 ┌───────────────────────────────┴─────────────────────────────────────┐
 │                      Layer 1: 统一数据表示层                           │
 │   ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────┐   │
 │   │ Waymo Open Motion│  │   INTERACTION    │  │ CNCAP ABD (匿名化)│   │
-│   │ (~487K 场景, 10Hz)│  │ (11 场景, ~55K 轨)│  │ (3+品牌, 60+信号) │   │
+│   │ (~487K 场景, 10Hz)│  │ (11 场景, ~55K 轨)│  │(4→9-10品牌,60+信号)│   │
 │   └─────────────────┘  └──────────────────┘  └──────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -143,18 +156,25 @@ Stage A: 预训练 (Waymo + INTERACTION, 无 CNCAP)
   Input → Unified Schema → PI-Causal Mamba → L_recon + L_PH + L_causal
   Output: 预训练模型参数 θ_pre
 
-Stage B: 域自适应 (加入 CNCAP, GRL-DANN 激活)
-  Input (Source: Waymo/INTERACTION, Target: CNCAP) → F_θ + D_φ → 
-  L_recon + L_PH + L_causal + L_DA
-  Output: 域不变模型参数 θ_da
+Stage B: VUT 响应建模与跨品牌校准 (CNCAP ABD 实测响应, 2026-09-01 重定位)
+  Input (场景参数 + 实测 VUT 响应: 碰撞/minTTC/AEB触发时刻; 含 FalseReaction 负样本)
+    → surrogate 训练 (GBM/GP/小型MLP + ensemble/conformal 不确定度)
+    → 可选跨品牌校准 (GRL-DANN / CORAL-MMD / DG), LOBO 评估
+  Output: VUT 响应 surrogate θ_surr
 
-Stage C: 反事实搜索 (冻结 θ_da, MACC 激活)
+Stage C: 反事实搜索 (冻结 θ_pre 与 θ_surr, MACC 激活)
   Factual Scenario → Shapley Attribution → Causal Graph → 
-  do(·) Cascade Intervention → Counterfactual Scenarios → KFR Filter
+  do(·) Cascade Intervention → Counterfactual Scenarios → KFR Filter + surrogate 危险度排序
   Output: 安全关键场景库
 
-Stage D: 评估验证
-  生成场景库 → CARLA/nuPlan 闭环 → 四维指标矩阵 → 消融 + 显著性检验
+Stage D: 实车验证闭环 (2026-09-01 新增)
+  surrogate 判定高危且规程矩阵未覆盖的场景 → ABD 实车补测 →
+  sim-to-real 一致性 (碰撞判定一致率 / minTTC MAE / AEB触发 MAE) →
+  结果反哺 surrogate (主动学习)
+  Output: 实车验证报告 + 更新后 θ_surr
+
+Stage E: 评估验证
+  生成场景库 → CARLA/nuPlan 闭环 → 四维指标矩阵 + 实车一致性 → 消融 + 显著性检验
 ```
 
 ---
@@ -217,7 +237,9 @@ Joint Polyline Encoding (JPE):
 
 ---
 
-## 四、Layer 2：GRL-DANN 多源域自适应桥接层
+## 四、Layer 2：跨品牌响应校准层（可选模块：GRL-DANN / CORAL-MMD / DG）
+
+> **2026-09-01 重定位**：本层从"核心桥接层"降级为**可选的跨品牌校准模块**。C-NCAP 目标域是离散规程网格、条件内方差近零，经典 UDA 没有可适配的分布；本节技术内容保留，仅用于跨品牌 VUT 响应 surrogate 的校准对照实验（LOBO 协议），不再承担"开放道路→封闭场地迁移"的核心叙事。
 
 ### 4.1 问题形式化
 
@@ -767,7 +789,7 @@ Level 3 — 领域知识先验注入:
   用于: 约束 Level 1 和 Level 2 的搜索空间
 ```
 
-**注**：CounterScene 的 CIG 是规则驱动的（基于 TTC、相对速度、最小间距等启发式指标计算危险贡献分数），不涉及数据驱动的因果结构学习。本方案是首个在场景生成中引入**端到端可微因果发现**的工作。
+**注**：CounterScene 的 CIG 是规则驱动的（基于 TTC、相对速度、最小间距等启发式指标计算危险贡献分数），不涉及数据驱动的因果结构学习。据当前检索，本方案较早将**端到端可微因果发现**引入场景生成；最终优先权表述以投稿前系统检索为准，论文中统一使用 "to the best of our knowledge" 口径。
 
 ### 5.4 PI-Causal Mamba 完整模块
 
@@ -843,6 +865,8 @@ Output: {traj_{i,k}^phys, π_{i,k}}_{i=1..N, k=1..K}
 ---
 
 ## 六、Layer 4：MACC 多智能体级联反事实干预
+
+> **2026-09-01 补充**：MACC 的归因与干预结论不再仅凭 World Model 自评成立——最终结论需经 VUT 响应 surrogate 预测 + ABD 实车补测共同支撑（见 §2.2 Stage D 与 §7.1 D6 实车一致性指标）。
 
 ### 6.1 从 CounterScene 的单变量干预到 MACC 的级联干预
 
@@ -1021,22 +1045,22 @@ WorldModel.rollout(scene, intervention_mask):
 
 #### D2: 安全关键性 (Safety-Criticality)
 
-| 指标 | 公式 | Q1 目标值 |
+| 指标 | 公式 | 备注 |
 |------|------|----------|
-| CR (Collision Rate) | N_collision / N_scenarios | 25-35% at low JSD |
-| NMR (Near-Miss Rate) | N_TTC<3s_no_collision / N_scenarios | >30% |
-| median minSTTC | median(per-scenario min TTC) | <1.2s |
-| PET minimum | min(PET) per intersection scenario | <1.5s |
+| CR (Collision Rate) | N_collision / N_scenarios | 实验后填报（均值±std + 95% CI，不预承诺数值） |
+| NMR (Near-Miss Rate) | N_TTC<3s_no_collision / N_scenarios | 实验后填报 |
+| median minSTTC | median(per-scenario min TTC) | 实验后填报 |
+| PET minimum | min(PET) per intersection scenario | 实验后填报 |
 
 #### D3: 物理可行性 (Physical Feasibility) — **[PROPOSED NEW]**
 
-| 指标 | 公式 | Q1 目标值 |
+| 指标 | 公式 | 备注 |
 |------|------|----------|
-| **KFR** | (∑_t I(所有物理约束满足)_t) / T_total | >95% |
-| a_violation_rate | (∑_t I(|a|>μg)_t) / T_total | <1% |
-| κ_violation_rate | (∑_t I(|κ|>κ_max)_t) / T_total | <1% |
-| jerk_violation_rate | (∑_t I(|jerk|>j_max)_t) / T_total | <1% |
-| friction_circle_violation | (∑_t I(a_x²+a_y²>(μg)²)_t) / T_total | <0.5% |
+| **KFR** | (∑_t I(所有物理约束满足)_t) / T_total | 实验后填报（与无物理约束基线对照，不预承诺数值） |
+| a_violation_rate | (∑_t I(|a|>μg)_t) / T_total | 实验后填报 |
+| κ_violation_rate | (∑_t I(|κ|>κ_max)_t) / T_total | 实验后填报 |
+| jerk_violation_rate | (∑_t I(|jerk|>j_max)_t) / T_total | 实验后填报 |
+| friction_circle_violation | (∑_t I(a_x²+a_y²>(μg)²)_t) / T_total | 实验后填报 |
 
 #### D4: 因果可解释性 (Causal Interpretability) — **[PROPOSED NEW]**
 
@@ -1046,26 +1070,36 @@ WorldModel.rollout(scene, intervention_mask):
 | **Intervention Consistency (IC)** | 1 - Var(ΔRisk)/E(ΔRisk)² | 干预效果的可预测性 |
 | Causal Graph Sparsity | ‖A‖₀ / N² | 因果图的简洁性 |
 
-#### D5: 域迁移与泛化 (Domain Generalization)
+#### D5: 跨品牌校准诊断 (Cross-Brand Calibration)
 
 | 指标 | 公式 | 用途 |
 |------|------|------|
-| **TDPD (Target Domain Performance Drop)** | CR_target - CR_source | 量化域鸿沟 |
+| **TDPD (Target Domain Performance Drop)** | (CR_target − CR_source) / CR_source | 2026-09-01 统一定义（与 Stage4 §4.4 对齐）；降级为跨品牌校准诊断指标，不作核心贡献 |
 | Wasserstein Distance | W(P_gen, P_real) | 生成分布与真实分布的差异 |
 | MMD | MMD²(P_gen, P_real) | 核方法分布差异 |
+
+#### D6: 实车一致性 (Real-Vehicle Agreement) — **[2026-09-01 新增核心维度]**
+
+| 指标 | 公式 | 用途 |
+|------|------|------|
+| **碰撞判定一致率** | (1/N) Σ I(ŷ_collision = y_collision^ABD) | surrogate 预测 vs ABD 实车实测（规程内复现组与规程外新点组分别报告） |
+| **minTTC MAE** | (1/N) Σ \|minTTC_pred − minTTC_ABD\| | 实车一致性（回归） |
+| **AEB 触发时刻 MAE** | (1/N) Σ \|t_AEB_pred − t_AEB_ABD\| | 实车一致性（事件时序） |
+| **实车验证命中率** | 实车确认高危场景数 / surrogate 判定高危且送测场景数 | 闭环选点效率（对照：随机选点） |
 
 ### 7.2 消融实验设计
 
 | 消融编号 | 移除组件 | 预期影响 | 验证创新点 |
 |---------|---------|---------|-----------|
-| A1 | 移除 PH 约束 (L_PH=0) | KFR 下降 >10%, CR 上升但不可执行场景增多 | C1 物理约束 |
+| A1 | 移除 PH 约束 (L_PH=0) | 预期 KFR 显著下降、不可执行场景增多（幅度实验后填报） | C1 物理约束 |
 | A2 | 移除因果发现 (A = I, 全连接) | Root-Cause Score 无法计算, 场景退化 | C1 因果结构 |
-| A3 | 移除 GRL-DANN (仅 Source 训练) | TDPD >10%, 目标域 CR 暴跌 | C3 域自适应 |
+| A3 | 移除跨品牌校准 (brand-agnostic surrogate) | 预期 LOBO holdout 品牌上响应预测退化（幅度实验后填报） | C3 跨品牌校准 |
 | A4 | 单变量干预 (仅 top-1 agent, 非级联) | 无法生成级联场景, NMR 下降 | C2 级联因果 |
-| A5 | 移除 PH 投影层 (仅软约束) | KFR 下降 5-8%, 边界场景物理违反增多 | C1 硬约束 |
-| A6 | 仅 Source 伪标签 (无对抗 DA) | TDPD >8%, 源域过拟合 | C3 对抗DA |
+| A5 | 移除 PH 投影层 (仅软约束) | 预期 KFR 下降、边界场景物理违反增多（幅度实验后填报） | C1 硬约束 |
+| A6 | 仅单品牌 surrogate (无跨品牌校准) | 预期校准收益消失、外品牌误差上升（幅度实验后填报） | C3 校准对照 |
 | A7 | 随机归因 (替代 Shapley) | Key Agent 定位不准, IC 下降 | C2 归因 |
 | A8 | GRU 替代 Mamba | 推理速度下降, 长序列 minFDE 恶化 | C1 架构 |
+| A9 | 移除 surrogate 排序（随机选点送实车验证） | 预期实车验证命中率下降（幅度实验后填报） | C3 实车闭环效率 |
 
 ### 7.3 统计显著性检验
 
@@ -1117,16 +1151,15 @@ Phase 1: 预训练 (Waymo + INTERACTION，先 subset 后 full)
   Time: subset 24-48h；full 48-72h 仅作为可选扩展
   Output: θ_pre
 
-Phase 2: 域自适应微调 (Source + Target)
-  目标: 学习域不变的交互语义
-  Data: Waymo (Source, with labels) + CNCAP (Target, partial labels)
-  Loss: L_recon + L_PH + L_causal + L_DA
-  GRL λ: schedule 0→1.0 over first 20 epochs
-  Pseudo-labeling: activate at epoch 30, update every 5 epochs
-  Epochs: 50
-  GPU: A100-80G or A100-40G
-  Time: ~12-24 hours
-  Output: θ_da
+Phase 2: VUT 响应 surrogate 训练 + 跨品牌校准 (2026-09-01 重定位)
+  目标: 学习"场景参数 → 真实车辆响应"映射（碰撞 / minTTC / AEB 触发时刻），含不确定度
+  Data: CNCAP ABD 多品牌实测（含 FalseReaction 负样本；调参/标定类仅用于执行包络标定）
+  Model: 规程参数 + 物理特征 → GBM/GP/小型 MLP + ensemble/conformal 不确定度
+  校准对照（可选）: brand-agnostic vs CORAL-MMD vs GRL-DANN 跨品牌特征校准
+  评估: leave-one-brand-out；报告效应量 + CI，不预设固定阈值
+  Output: θ_surr (+ 可选校准参数)
+  备注: 原"开放道路→封闭场地 GRL-DANN 微调"降级为可选对照；CNCAP 目标域为离散规程网格、
+        条件内方差近零，不作为生成器的 UDA 目标域
 
 Phase 3: MACC 反事实场景生成 (推理)
   目标: 定向生成安全关键场景
@@ -1277,7 +1310,7 @@ causal-scenario-generation/
 
 **执行工具**: Gemini Deep Research (Google Scholar, 2022-2026)
 **关键发现**:
-- **零突破**: 目前尚无任何工作成功将完全耦合的多体 PHNN/PHDAE 嵌入生成模型 —— PICASO 的 Blue Ocean 定位再次确认
+- **检索状态**: 据该次检索，尚未发现将完全耦合的多体 PHNN/PHDAE 嵌入生成模型的工作 —— 投稿前需按修订检索协议复核，论文中不得表述为"零突破/Blue Ocean"
 - **四大数学障碍**: SDAE 冲突、拓扑非平稳性、随机消散障碍、非局域注意力 vs PH 连续性（详见 §5.2.1）
 - **三种扩展路线**: Graph-Attention IDA-PBC (路线A)、Compositional N-PHDAE Projection (路线B)、Latent Shadow Regularization (路线C)（详见 §5.2.2）
 - **关键文献**: N-PHDAE (Neary et al., CDC 2025)、PH-Dreamer (Luan & Shi, 2026)、Stochastic PH Diffusion (2026)、PIPHEN (2026)、LEMURS/pH-MARL (2025)
@@ -1321,8 +1354,8 @@ causal-scenario-generation/
 
 > **文件版本**: v2.0 (基于 Stage 3 三份调研报告更新)
 > **前置依赖**: Stage1 (研究问题凝练 v2.0) + Stage2 (综合差距分析 v1.0)
-> **创新点确认**: C1 PI-Causal Mamba, C2 MACC 级联反事实, C3 GRL-DANN 多源DA
-> **评估创新**: KFR, Root-Cause Attribution Score, Intervention Consistency, TDPD
+> **创新点确认**: C1 PI-Causal Mamba, C2 MACC 级联反事实, C3 跨品牌 VUT 响应 surrogate 与实车校准（2026-09-01 由 GRL-DANN 多源 DA 重定位）
+> **评估创新**: KFR, Root-Cause Attribution Score, Intervention Consistency, 实车一致性指标族（碰撞判定一致率 / minTTC MAE / AEB 触发 MAE）, TDPD（诊断用）
 > **v2.0 更新内容**:
 >   - §4.5-§4.8: 新增 MA-AT 多分支判别器、训练稳定性最佳实践、失败模式与缓解、内容保留技术
 >   - §5.2.1-§5.2.4: 新增四大数学障碍、三种多体 PH 扩展路线 (A/B/C)、关键参考文献

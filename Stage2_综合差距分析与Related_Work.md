@@ -6,6 +6,17 @@
 
 ---
 
+## 2026-09-01 方案评审修订（执行优先级最高）
+
+叙事重心从"开放道路→封闭场地域自适应"调整为"**物理可执行的安全关键场景生成 + 多品牌真实车辆响应闭环验证**"：
+
+1. ABD 数据第一定位为**真实车辆响应 ground truth**；GRL-DANN 降级为跨品牌 VUT 响应 surrogate 的可选校准工具（leave-one-brand-out 评估）。
+2. 本文件所有"空白/零发现/Blue Ocean/首发"类表述均为**检索状态记录**，写入论文时须统一为 "to the best of our knowledge after systematic search" 口径。
+3. 所有定量"目标值"为内部设计目标，不得写入论文；论文结果以实测值 + 95% 置信区间为准。
+4. 与本文冲突处以 `Stage1_研究问题凝练.md` 的 2026-09-01 修订块为准。
+
+---
+
 ## 2026-05-28 专家审查修订：差距结论与 Related Work 使用边界
 
 本文件的总体框架可用，但不能以当前形态直接写入 SCI/T-ITS 论文。核心问题是：部分“零论文、首次、SOTA 数值、会议归属”来自研究助手整合，尚未完成出版商/官方页面/DOI/arXiv 的逐条核验。后续执行按以下修订：
@@ -31,9 +42,9 @@
 | 知识与LLM驱动 | ChatScene (CVPR 2024), LLM-attacker (TITS 2025), SERA (2025) | 离散控制/轨迹粗糙/多车动力学不一致 |
 | 标准对齐与HIL验证 | NeuroNCAP (CVPR 2024), RiskMV-DPO (2026) | 传感器级高时延/黑盒动力学 |
 
-**PICASO框架定位**：该报告基于我们的研究计划，正式提出了 **PICASO (Physics-Informed Causal Domain-Adaptive Scenario Generation)** 五层架构：混合数据输入层 → 域自适应过渡层(GRL-DANN) → PI-Causal Mamba核心层 → 场景优化与干预层(双层博弈) → 工业级物理验证层(HIL)。该框架是对我们3个创新点(物理+因果+DA)统一架构的系统表达。
+**PICASO框架定位**：该报告基于我们的研究计划，正式提出了 **PICASO (Physics-Informed Causal Adversarial Scenario generation with real-wOrld validation)** 五层架构：混合数据输入层 → 跨品牌响应校准层（可选 GRL-DANN/CORAL-MMD） → PI-Causal Mamba核心层 → 场景优化与干预层（反事实边界搜索） → 真实车辆响应验证层（surrogate + ABD 实车补测闭环）。该框架是对我们3个创新点(物理+因果+实车验证)统一架构的系统表达。
 
-**关键判断**：当前学术界的场景生成方法在"物理约束+因果引导+域自适应"三元交叉地带存在系统性空白。
+**关键判断**：据当前检索，场景生成方法在"物理约束+因果引导+实车验证"三元交叉地带尚未发现直接覆盖的工作（投稿前需按修订检索协议复核）。
 
 ### 1.2 因果推断 × 自动驾驶（Gemini Task 2）
 
@@ -66,10 +77,10 @@
 
 **关键判断（修订）**：
 - Pi-DiMT (Physics-informed Diffusion Mamba Transformer, arXiv 2602.00808，venue 需投稿前核验) 是重要相邻工作，但其任务边界、数据集和多主体程度需回到原文确认。
-- 当前检索尚未发现同时覆盖"多主体物理可执行性审计 + 反事实因果分析 + 开放道路到封闭场地迁移"的公开场景生成框架。
+- 当前检索尚未发现同时覆盖"多主体物理可执行性审计 + 反事实因果分析 + 真实车辆响应闭环验证"的公开场景生成框架。
 - 与 SaFeR/LFR 类方法对比时，应强调 ABD 执行约束、KFR 违反类型审计和目标域验证，不应预先声称对方在复杂交叉口数值崩溃。
 
-**对比表摘要（修订）**：AdvSim/STRIVE 偏对抗或数据驱动；DiffScene 偏软约束；FREA/SaFeR 采用可行域/可行性控制；CounterScene 强调反事实因果。PICASO 的可防守定位是将物理可执行性审计、反事实因果分析、多主体场景生成和封闭场地跨域验证整合到统一 pipeline，而不是直接宣称“首个”。
+**对比表摘要（修订）**：AdvSim/STRIVE 偏对抗或数据驱动；DiffScene 偏软约束；FREA/SaFeR 采用可行域/可行性控制；CounterScene 强调反事实因果。PICASO 的可防守定位是将物理可执行性审计、反事实因果分析、多主体场景生成和封闭场地**实车响应验证**整合到统一 pipeline，而不是直接宣称“首个”。
 
 ### 1.4 域自适应 × 自动驾驶（Copilot Task 4）
 
@@ -83,7 +94,7 @@
 | 地区/国家差异 | 起步阶段 | 风格迁移+自适应归一化 |
 | 无人机航拍 → 车载视角 | 已有突破 | CROVIA(TGRS 2024), 跨视角3D DA |
 
-**关键确认（修订）**：截至当前检索，尚未发现直接面向**"开放道路自然驾驶数据集 → C-NCAP/E-NCAP封闭场地测试场景生成"**的公开论文。该判断必须在投稿前用 IEEE Xplore、Scopus/WoS、Semantic Scholar、OpenAlex、arXiv 与 Google Scholar 再核验一次；论文中不得写成无条件的“全领域为零”，而应写成“to the best of our knowledge after systematic search”。
+**关键确认（修订）**：截至当前检索，尚未发现直接面向**"开放道路自然驾驶数据集 → C-NCAP/E-NCAP封闭场地测试场景生成"**的公开论文。该判断必须在投稿前用 IEEE Xplore、Scopus/WoS、Semantic Scholar、OpenAlex、arXiv 与 Google Scholar 再核验一次；论文中不得写成无条件的“全领域为零”，而应写成“to the best of our knowledge after systematic search”。**（2026-09-01 补充：该差距从主线降级为背景——C-NCAP 目标域是离散规程网格、条件内方差近零，经典 UDA 没有可适配的分布；论文主线差距改为：尚未发现用多品牌封闭场地真实车辆响应对生成场景做闭环验证的公开工作。）**
 
 ### 1.5 Mamba/SSM 应用全景（Gemini Task 5）
 
@@ -99,7 +110,7 @@
 | 交通流预测 | ST-Mamba, DST-Mamba | GFLOPs线性增长, 较GNN提速61.11% |
 
 **"Mamba + 因果 + 物理 + 场景生成"四合一研判**：
-- **结论：完全未被占据（Blue Ocean）**
+- **结论：据当前检索，四合一组合尚未发现直接占据者**（投稿前需按修订检索协议复核；不得表述为"Blue Ocean/全领域空白"）
 - GEM：Mamba + 场景生成，但无因果图、无物理硬约束
 - Pi-DiMT：Mamba + 物理约束，但仅单车规划器，非场景生成
 - CRAJ (TVT 2025)：Mamba + 因果推断，但仅离线RL决策层
@@ -128,9 +139,9 @@
 
 **安全关键指标基准**：
 
-| 指标 | SOTA范围 | Q1期刊目标值 |
+| 指标 | SOTA范围 | 实验设计目标/期望方向（非承诺值，论文以实测+95% CI 为准） |
 |------|---------|------------|
-| 碰撞率(CR) | STRIVE ~20-30%, Any2Critical ~46% | ~25-35% (保持JSD低) |
+| 碰撞率(CR) | STRIVE ~20-30%, Any2Critical ~46% | 方向：不低于 STRIVE 区间且保持 JSD 低位；具体值实验后填报 |
 | 近距事件率(NMR) | STRIVE ~25%, FlowVAE ~30% | >FlowVAE上限 |
 | 中位数 minSTTC | STRIVE ~1.1s, FlowVAE ~1.7s | <1.2s |
 | 动力学JSD(速度) | FlowVAE 0.083, STRIVE 0.135 | <0.10 |
@@ -154,7 +165,7 @@
 - 物理可行性指标（如KFR）在场景生成论文中几乎不被系统报告
 - 因果可解释性指标（Root-Cause Score, Intervention Consistency）完全未被提出
 - 现有方法存在"四重断裂"：高碰撞/低误差 vs 物理可执行性缺失 vs 因果黑盒 vs 域泛化盲区
-- 我们提出的KFR、Root-Cause Attribution Score、Intervention Consistency填补了系统性空白
+- 我们提出的KFR、Root-Cause Attribution Score、Intervention Consistency 针对上述"极少报告/未报告"维度给出可复核定义
 
 ### 1.8 CNCAP/NCAP/ISO 标准约束（Copilot Task 8）
 
@@ -188,7 +199,7 @@
 下表横轴为6个研究维度，纵轴为评估维度，标注各方法的覆盖状态：
 - ● = 已充分覆盖
 - ◐ = 部分覆盖/有局限
-- ○ = 完全未覆盖/空白
+- ○ = 据当前检索未发现直接覆盖（投稿前需复核，论文中不得表述为绝对空白）
 
 | 方法/维度 | D1:场景生成 | D2:因果推断 | D3:物理约束 | D4:域自适应 | D5:Mamba/SSM | D6:标准评估 |
 |-----------|:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
@@ -213,7 +224,7 @@
 
 | D1 | D2 | D3 | D4 | D5 | D6 |
 |:--:|:--:|:--:|:--:|:--:|:--:|
-| ● | **●多变量级联** | **●PHNN硬约束+多主体** | **●GRL-DANN多源** | **●Mamba+因果+物理** | **●KFR+因果指标+CNCAP嵌入** |
+| ● | **●多变量级联+实车验证** | **●物理投影/KFR审计（多体PHNN为增强）** | **●跨品牌响应校准（LOBO）** | **●Mamba+因果+物理** | **●KFR+因果指标+CNCAP嵌入** |
 
 ### 2.2 交叉空白矩阵（Cross-Gap Matrix）
 
@@ -222,10 +233,10 @@
 | 交叉维度 | D1-场景生成 | D2-因果 | D3-物理 | D4-DA | D5-Mamba |
 |---------|:----------:|:------:|:------:|:----:|:------:|
 | **D2-因果** | CounterScene ◐(单变量) | — | | | |
-| **D3-物理** | SaFeR/DiffScene ◐(单对抗) | ○ **完全空白** | — | | |
-| **D4-DA** | ○ **完全空白** | ○ **完全空白** | ○ **完全空白** | — | |
-| **D5-Mamba** | GEM ◐(无因果/物理) | CRAJ ◐(仅RL) | Pi-DiMT ◐(仅单车) | ○ **完全空白** | — |
-| **D6-标准** | RiskMV-DPO ◐(仅视觉) | ○ **完全空白** | ○ **完全空白** | ○ **完全空白** | ○ **完全空白** |
+| **D3-物理** | SaFeR/DiffScene ◐(单对抗) | ○ **未直接覆盖** | — | | |
+| **D4-DA** | ○ **未直接覆盖** | ○ **未直接覆盖** | ○ **未直接覆盖** | — | |
+| **D5-Mamba** | GEM ◐(无因果/物理) | CRAJ ◐(仅RL) | Pi-DiMT ◐(仅单车) | ○ **未直接覆盖** | — |
+| **D6-标准** | RiskMV-DPO ◐(仅视觉) | ○ **未直接覆盖** | ○ **未直接覆盖** | ○ **未直接覆盖** | ○ **未直接覆盖** |
 
 **关键解读**：
 - **三元差距 (D2+D3+任意)**：因果推断+物理约束在安全关键场景生成中的结合仍不充分
@@ -271,10 +282,10 @@
 - 新增论证维度：MACC级联因果图发现+Joint Spatial-Temporal ODE+Closed-loop Diff-WM
 - 对比基线：CounterScene (单变量反事实基线)、CausalAF (专家先验CVM基线)
 
-**C3: Multi-Source Domain Adaptation (多源域自适应)**
-- 强化证据：Task 4 检索暂未发现直接研究"开放道路→封闭场地场景生成"的论文，投稿前需按修订检索协议复核
-- 新增论证维度：独有的多品牌CNCAP ABD数据资产是此方向不可替代的竞争壁垒
-- 对比基线：无直接可比的跨域场景生成基线（可用No-DA ablation + 单源训练baseline对比）
+**C3: 跨品牌 VUT 响应建模与校准（2026-09-01 起由"多源域自适应"重定位）**
+- 强化证据：独有的多品牌 CNCAP ABD 真实车辆响应数据是此方向不可替代的竞争壁垒；据当前检索，尚未发现用多品牌真实响应闭环验证生成场景的公开工作
+- 新增论证维度：leave-one-brand-out 跨品牌 surrogate 泛化 + ABD 实车补测 sim-to-real 一致性
+- 对比基线：无校准基线（brand-agnostic）、单品牌独立模型、GRL-DANN/CORAL-MMD 校准对照
 
 ---
 
@@ -328,7 +339,7 @@ Domain adaptation (DA) and domain generalization (DG) have been extensively stud
 
 **Cross-view adaptation** from UAV aerial to vehicle-mounted perspective was pioneered by CROVIA [TGRS 2024] using geometric consistency constraints.
 
-**Critical gap**: After the current search across perception, prediction, planning, and scenario generation literature, we have not found a published work that directly addresses the domain shift from open-road naturalistic driving datasets (Waymo, nuScenes) to standardized closed-field test protocols (C-NCAP, Euro NCAP) for scenario generation. This gap is plausible because closed-field test data is proprietary, the domain shift is large, and the problem requires adaptation of both scene geometry and agent behavior distributions. We therefore position our work as a first systematic attempt, while keeping the final priority claim subject to the submission-time literature search.
+**Critical gap**: After the current search across perception, prediction, planning, and scenario generation literature, we have not found a published work that directly addresses the domain shift from open-road naturalistic driving datasets (Waymo, nuScenes) to standardized closed-field test protocols (C-NCAP, Euro NCAP) for scenario generation. This gap is plausible because closed-field test data is proprietary, the domain shift is large, and the problem requires adaptation of both scene geometry and agent behavior distributions. We therefore do not frame classical open-road→closed-field UDA as our core contribution — the closed-field protocol grid is discrete with near-zero within-condition variance, leaving little distribution to adapt to. Instead, we use multi-brand closed-field ABD data as real-vehicle response ground truth for closed-loop validation of generated scenarios — a direction that, to the best of our knowledge after systematic search, has not been directly addressed (final priority subject to submission-time literature search).
 
 ### 4.5 Sequence Modeling Architectures: From Transformer to Mamba
 
@@ -364,10 +375,10 @@ The evolution of sequence modeling architectures has direct implications for tra
 - 差异化：CounterScene单变量、CausalAF专家先验DAG、SafeAlign-VLA仅安全对齐
 - 技术突破：生成并分析"前车避障→中车急转→自车碰撞"等多层级联反事实案例，是否构成普适机制由实验决定
 
-**C3: GRL-DANN Multi-Source Domain Adaptation — 开放道路→封闭场地跨域迁移**
-- 核心主张：利用GRL-DANN将Waymo/INTERACTION域与CNCAP ABD域联合对抗训练
-- 差异化：当前检索暂未发现直接研究"开放道路→封闭场地场景生成"的公开工作；最终优先权以投稿前系统检索为准
-- 竞争壁垒：独有CNCAP多品牌ABD测试数据（60+信号通道）
+**C3: 跨品牌 VUT 响应 surrogate 与实车校准（2026-09-01 起由"GRL-DANN 开放道路→封闭场地 UDA"重定位）**
+- 核心主张：利用多品牌 ABD 实测数据训练"场景参数 → 车辆响应（碰撞 / minTTC / AEB 触发时刻）"的 surrogate，以 leave-one-brand-out 评估跨品牌泛化；GRL-DANN / CORAL-MMD 仅作可选校准对照
+- 差异化：当前检索暂未发现用多品牌真实车辆响应闭环验证生成场景的公开工作；最终优先权以投稿前系统检索为准
+- 竞争壁垒：独有 CNCAP 多品牌 ABD 测试数据（60+ 信号通道）与实车补测条件
 
 ### 5.2 方法设计关键参考
 
@@ -385,12 +396,12 @@ The evolution of sequence modeling architectures has direct implications for tra
 
 ### 5.3 实验设计关键对标
 
-| 数据集 | 核心指标 | 对标方法 | Q1目标 |
+| 数据集 | 核心指标 | 对标方法 | 实验设计目标/期望方向（非承诺值，论文以实测+95% CI 为准） |
 |--------|---------|---------|--------|
-| Waymo Open Motion | minFDE₆, MR, CR | Tamba, MTR v3, QCNet | minFDE₆~1.2m, MR<0.15 |
-| INTERACTION | ADE, FDE, CR | FJMP, DSA, IPP* | ADE<0.8m, CR>25% |
-| CNCAP ABD (目标域) | CR, NMR, KFR, 目标域性能损失 | No-DA基线, Single-source基线 | KFR>95%, CR提升>10% over No-DA |
-| nuPlan (闭环) | SR (求解率), CR, 碰撞率@闭环 | SaFeR, CounterScene | SR>0.85, CR>20% |
+| Waymo Open Motion | minFDE₆, MR, CR | Tamba, MTR v3, QCNet | 实验后填报（方向：接近 Tamba 单模型水平） |
+| INTERACTION | ADE, FDE, CR | FJMP, DSA, IPP* | 实验后填报（方向：CR 明显高于保真基线） |
+| CNCAP ABD (实车响应域) | 碰撞判定一致率, minTTC MAE, AEB触发时刻MAE, KFR | 规则扫掠基线, No-DA基线, Single-source基线 | 实验后填报（方向：surrogate 预测与实车结果一致） |
+| nuPlan (闭环) | SR (求解率), CR, 碰撞率@闭环 | SaFeR, CounterScene | 实验后填报（方向：与 SaFeR 相当或更高） |
 
 ### 5.4 评估体系设计
 
@@ -399,7 +410,8 @@ The evolution of sequence modeling architectures has direct implications for tra
 1. **KFR (Kinematic Feasibility Rate)**：场景轨迹全程满足所有物理约束（加速度/曲率/摩擦圆/ABD执行限制）的时长比例
 2. **Root-Cause Attribution Score**：基于Shapley值的各智能体对碰撞风险贡献的定量分解
 3. **Intervention Consistency (IC)**：反事实干预前后场景危险性变化的一致性
-4. **Target Domain Performance Drop (TDPD)**：源域→目标域的性能衰减率，量化域自适应必要性
+4. **实车一致性指标（2026-09-01 新增，核心指标）**：surrogate 预测 vs ABD 实车实测的碰撞判定一致率、minTTC MAE、AEB 触发时刻 MAE
+5. **Target Domain Performance Drop (TDPD)**（2026-09-01 起降级为诊断指标）：统一定义为 `(CR_target − CR_source) / CR_source`，仅用于跨品牌校准诊断，不作为核心贡献指标
 
 ---
 
@@ -407,4 +419,4 @@ The evolution of sequence modeling architectures has direct implications for tra
 
 > **文件版本**: v1.0
 > **数据来源**: 8份 Gemini/Copilot 研究助手调研报告（Stage 2 文件夹）
-> **下一步**: 进入 **Stage 3（方法与系统设计）**，基于本报告的差距分析确认创新点，设计PI-Causal Mamba详细架构、MACC级联反事实算法流程、GRL-DANN域自适应网络结构
+> **下一步**: 进入 **Stage 3（方法与系统设计）**，基于本报告的差距分析确认创新点，设计PI-Causal Mamba详细架构、MACC级联反事实算法流程、跨品牌响应校准与实车验证闭环结构
