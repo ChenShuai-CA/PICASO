@@ -227,29 +227,34 @@ def main():
         w.writeheader()
         w.writerows(rows)
 
-    # coverage matrix: scenario_acronym x brand（独立工况数 / run 数），仅 protocol + function_test 池
-    cond = defaultdict(set)
-    runs = defaultdict(int)
-    for r in rows:
-        if r["validity_label"] != "pass_parser_v1":
-            continue
-        if r["data_role"] not in ("protocol", "function_test"):
-            continue
-        key = (r["scenario_acronym"] or "(unknown)", r["brand"])
-        cond[key].add(r["condition_id"])
-        runs[key] += 1
-    acros = sorted({k[0] for k in cond})
-    brands = list(BRANDS.values())
-    cov_path = OUT / "coverage_matrix.csv"
-    with cov_path.open("w", newline="", encoding="utf-8-sig") as f:
-        w = csv.writer(f)
-        w.writerow(["scenario_acronym"] + [f"{b}_conditions" for b in brands] + [f"{b}_runs" for b in brands])
-        for a in acros:
-            w.writerow([a]
-                       + [len(cond.get((a, b), set())) for b in brands]
-                       + [runs.get((a, b), 0) for b in brands])
+    # coverage matrix: scenario_acronym x brand（独立工况数 / run 数），按 data_role 分文件输出
+    # coverage_matrix.csv = protocol 池（C-NCAP 规程覆盖，论文口径）
+    # coverage_matrix_function_test.csv = 企标功能项池（不与规程混表；2026-09-10 评审 P5 修订）
+    def write_coverage(role: str, path: Path) -> int:
+        cond = defaultdict(set)
+        runs = defaultdict(int)
+        for r in rows:
+            if r["validity_label"] != "pass_parser_v1" or r["data_role"] != role:
+                continue
+            key = (r["scenario_acronym"] or "(unknown)", r["brand"])
+            cond[key].add(r["condition_id"])
+            runs[key] += 1
+        acros = sorted({k[0] for k in cond})
+        brands = list(BRANDS.values())
+        with path.open("w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f)
+            w.writerow(["scenario_acronym"] + [f"{b}_conditions" for b in brands] + [f"{b}_runs" for b in brands])
+            for a in acros:
+                w.writerow([a]
+                           + [len(cond.get((a, b), set())) for b in brands]
+                           + [runs.get((a, b), 0) for b in brands])
+        return len(acros)
+
+    n_proto_acros = write_coverage("protocol", OUT / "coverage_matrix.csv")
+    write_coverage("function_test", OUT / "coverage_matrix_function_test.csv")
 
     # 汇总 + M1 go/no-go 门
+    brands = list(BRANDS.values())
     print(f"total runs scanned: {len(rows)}")
     by_role = defaultdict(int)
     valid_by_role = defaultdict(int)
@@ -276,7 +281,8 @@ def main():
     print(f"M1 gate: protocol valid runs >= 100 -> {'PASS' if gate_runs else 'FAIL'} ({n_proto_valid})")
     print(f"M1 gate: >=6 protocol classes      -> {'PASS' if gate_cov else 'FAIL'} ({len(proto_classes)})")
     print(f"wrote {inv_path}")
-    print(f"wrote {cov_path}")
+    print(f"wrote {OUT / 'coverage_matrix.csv'} (protocol, {n_proto_acros} classes)")
+    print(f"wrote {OUT / 'coverage_matrix_function_test.csv'} (function_test)")
 
 
 if __name__ == "__main__":

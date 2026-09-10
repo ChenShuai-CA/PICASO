@@ -9,6 +9,19 @@
 
 ---
 
+## 2026-09-10 评审修订（压缩时间线执行口径，优先级高于以下所有版本）
+
+2026-09-10 可行性评审结论：新叙事方向可行、数据底账属实（1,148 run / protocol 497 / 252 工况 / 22 类经独立复算一致），但发现两个前提性缺口，本版修复；同时按用户裁定执行压缩时间线：**2026-09-30 前完成论文初稿 + 约 80% 实验，2026-12-31 前投出**（TIV/T-ITS）。
+
+1. **双池双规则（§3.3 新增）**：原有效性规则 `SR path abort=1 → 整 Run 作废` 会把碰撞样本系统性剔除（碰撞 ⇒ abort，见附录 D Phase 4）——surrogate 池将无正样本可学。现拆分：生成侧沿用原规则；surrogate 侧 abort run 先按**附录 G 碰撞多证据判定**，命中碰撞则保留并打 `collision=1`，未命中（设备/人为安全中止）才剔除。
+2. **新增附录 G：结果标签提取规范**（是否碰撞 / minTTC / AEB 触发时刻的多证据定义 + 20 run 人工校验 + 类别平衡审计）。标签提取是整个新叙事的前提，先于生成器大件执行。
+3. **LOBO 主实验类清单（§4.1 新增）**：跨品牌结论只建立在多品牌覆盖类上（主表 6 类，其余降为案例分析/附录讨论）；surrogate 特征加入**可迁移车辆物理量**（质量/轴距/长宽），不使用品牌 one-hot（LOBO 测试品牌不可见）。
+4. **附录 F 补强**：G1 增加"复测 vs 历史原始 run"**重复性基线**（分离系统时间漂移与 surrogate 误差）；M4 门判定规则预写（点估计 + Wilson 95% CI 下限）；G1 选点偏向历史低 minTTC 边界工况。
+5. **实验优先级（压缩时间线）**：surrogate v0（标签 + 参数 + GBM + LOBO 预览）为关键路径，先于生成器大件；生成器主线 = 规程语法约束合成 + 物理投影 + KFR 审计（B2+），Mamba+Waymo 预训练为限时 stretch（9/20 检查点：KFR/多样性不胜 B2+ 则砍）；**实车补测窗口须本周申请、10–11 月执行**（外部关键路径，AI 无法加速）。
+6. FalseReaction 负样本（77 run）v0 阶段**不并入** surrogate 训练（与规程场景不同族、无 T0、特征映射未定义），主链路验证后再接入。
+
+---
+
 ## 2026-09-01 方案评审修订（执行优先级最高）
 
 1. **ABD 数据第一定位**：真实车辆响应 ground truth，用于训练/校准 VUT 响应 surrogate 与实车验证闭环；不再作为"开放道路→封闭场地 UDA"的目标域。
@@ -758,6 +771,16 @@ T0 = argmin(|TTC_est - 3.0|)
   其他    → 排除, 记录在 rejected_runs.csv
 ```
 
+#### 双池分流规则（2026-09-10 新增，P1 修复）
+
+上表"处理策略"仅适用于**生成侧数据池**（生成器训练与统一评估）。**surrogate 侧（响应建模池）不适用**：
+
+- 附录 D Phase 4 表明：碰撞 ⇒ 目标停止 + `SR path abort = 1`。若 surrogate 池沿用"abort → 整 Run 作废"，将系统性剔除全部碰撞正样本，碰撞分类器无学习信号。
+- **surrogate 池规则**：凡 [B2.1]/[B2.2] 触发 CRITICAL_ABORT 的 run，先按**附录 G 碰撞多证据判定**：
+  - 判定碰撞 → 保留入 surrogate 池，`collision=1`，轨迹使用至碰撞帧（不进生成池）；
+  - 未判定碰撞（设备/人为安全中止）→ 剔除，`exclude_reason=equipment_abort`。
+- 两池在 inventory 中以 `data_role` + `pool` 字段区分，禁止混用。
+
 ### 3.4 阶段 C：场景聚合与覆盖矩阵
 
 ```
@@ -957,6 +980,20 @@ for each run in VALID ∪ PARTIAL:
 - **按 ScenarioType 分层**: 确保 train 和 holdout 在 CCRs, SCP, CPLA, CPTA 等主要规程类型上尽量同类对比；缺失场景只做案例分析，不做统计显著性。
 - **Source/Target 严格隔离**: 生成器预训练仅 Waymo + INTERACTION；CNCAP ABD 数据只用于 surrogate 训练/校准、反事实评估、实车验证闭环与最终 holdout。
 - **数据泄漏检查**: 同一物理测试序列、同一 `.CRUN/.spec` 派生出的片段不能同时进入训练和 holdout。
+
+**LOBO 主实验类清单（2026-09-10 新增，诚实范围声明）**
+
+按 protocol 池实测覆盖（括号内 = 各品牌独立工况数，顺序 A66/E8/S9/P7+；2026-09-10 复算）：
+
+| 层级 | 规程类（品牌覆盖） | 用途 |
+|------|-------------------|------|
+| **主表**（≥3 品牌且每品牌 ≥2 工况） | CCRs(7/7/7/7)、CPTA(8/4/8/8)、CCFT(3/2/6/3)、CSTA(5/–/5/5)、LKA(22/–/16/12)、CPLA(8/2/4/–) | LOBO 主实验，报效应量 + CI |
+| 次要（覆盖广但有品牌仅 1 工况） | CCRH(2/1/2/2)、SCP(4/1/4/4)、CCOv(3/–/1/1) | 附录分层讨论，不做显著性结论 |
+| 案例分析（≤2 品牌或单品牌） | CPFAO(6/–/6/–)、CBNAO、CPNCO、CSFAO（A66+S9）、CBLA(A66)、BSD、LDW、SCPO、DOW/ICA/ISLS/RCTA/TSR（A66 单品牌边缘类） | 案例展示，不计入跨品牌统计 |
+
+注：①E8 规程 run 总量仅 25（17 工况），E8 作 holdout 的结论按类分层报告；②"22 规程类"口径含 5 个 A66 单品牌边缘类，论文表述需加脚注；③覆盖以 `coverage_matrix`（protocol 口径）为准，function_test 不计入。
+
+**surrogate 特征规范（2026-09-10 新增）**：特征 = 规程参数（VUT/目标速度、重叠率、日夜间、触发方式）+ 物理特征（接近速度、触发时 TTC）+ **可迁移车辆物理量**（整备+乘员+设备质量、轴距、车长宽——4 车数值见 §2.2.B）；**不使用品牌 one-hot**（LOBO 测试品牌不可见）。
 
 ### 4.2 数据量估算
 
@@ -1334,6 +1371,8 @@ class SpecReader:
 | G1 规程内复现组 | ≥8 场景 | 从已有标准矩阵工况中抽样（surrogate 应高置信复现已知结果） | 校准：验证 surrogate 在已知域的一致性 |
 | G2 规程外新点组 | ≥12 场景 | surrogate 判定高危险 + 规程矩阵未覆盖 + 外推幅度 ≤20% 参数空间 + 不确定度低于阈值 | 探索：验证 surrogate 外推与生成场景的真实有效性 |
 
+**G1 选点原则（2026-09-10 新增）**：不随机抽标准工况——偏向该车型历史上"险胜"（低 minTTC / 晚 AEB 触发）的边界工况（按 `labels_v0` 排序选点），避免碰撞判定一致率因历史结果几乎全为"未碰撞"而平凡地高。
+
 ### F.3 执行前置条件
 
 - **车辆准备**：与历史测试同配置（整备质量、轮胎、制动系统磨合按 C-NCAP L.5.3/L.5.4 Conditioning 流程执行）
@@ -1346,6 +1385,13 @@ class SpecReader:
 - 每场景 ≥2 次有效重复；记录通道与历史 .txt 同 schema（100 Hz）
 - 结果判定：碰撞 / AEB 触发时刻 / FCW 触发时刻 / minTTC / 最小间距；与 surrogate 预测逐一配对
 - 一致性报告：G1/G2 分组报告碰撞判定一致率与各项 MAE + 95% CI
+- **重复性基线（2026-09-10 新增，G1 组必做）**：G1 复测 run 同时做三向比对——①复测 vs 历史原始 run（= 系统/时间漂移基线：标定、轮胎、环境变化）；②surrogate 预测 vs 复测（= 模型外推误差）；③surrogate 预测 vs 历史（= 可复现预测误差）。报告以 ① 为 ② 的参照系，把 surrogate 误差与系统漂移分离，避免把车辆状态变化算进模型误差。
+
+**M4 门判定规则（2026-09-10 预写，不留事后解释空间）**：
+
+- **PASS**：碰撞判定一致率点估计 ≥80% **且** Wilson 95% CI 下限 ≥60%，且 minTTC MAE ≤0.3s → 维持 TIV/T-ITS 定位；
+- **条件通过**：点估计 ≥80% 但 CI 下限 <60%（首批样本量所限，n≈20 时 80% 的 CI 约 [56%, 93%]）→ 维持定位，论文明确标注验证规模限制，M5 扩批后复核；
+- **FAIL**：点估计 <80% 或 minTTC MAE >0.3s → 启用降级预案（holdout ABD 外部验证口径，期刊目标下调 TR-C/TVT）。
 
 ### F.5 反哺与迭代
 
@@ -1356,3 +1402,45 @@ class SpecReader:
 
 - 若场地/车辆窗口不足：首批缩减至 G1+部分 G2，并在论文中明确标注验证规模限制
 - 兜底方案：以 holdout ABD 历史数据做"准实车验证"，论文中改述为"基于实测数据的外部验证"，不声称新补测闭环
+
+---
+
+## 附录 G: 结果标签提取规范（2026-09-10 新增，surrogate v0 依据）
+
+### G.1 目的与范围
+
+新叙事（VUT 响应 surrogate + 实车闭环验证）全部依赖三个结果标签：**是否碰撞 / minTTC / AEB 触发时刻**。本规范定义其从 ABD `.txt`（100 Hz 原始数据，不降采样）的提取规则；适用于 surrogate 池全部有效 run（含双池分流规则保留的碰撞 abort run）。所有阈值为**处理参数初值**，经 G.5 人工校验后标定固定，不属于论文预承诺数值。
+
+### G.2 碰撞判定（多证据融合）
+
+| 证据 | 定义 | 说明 |
+|------|------|------|
+| E1 几何重叠 | VUT 旋转矩形（.spec `VehicleLength/Width` + Motion Pack 位姿）与目标包络（GVT/VRU 载具尺寸从 .spec/ExpInfo 与 C-NCAP 附录目标规格读取，标定一次后固定）在任一帧重叠 | 最强证据 |
+| E2 接触动力学 | `Forward acceleration` 帧间突变（\|Δa\| ≥ 5 m/s² 初值，且与车速骤降同向）或 `Yaw velocity` 同帧异常扰动 | 排除平滑制动误判 |
+| E3 距离阈值 | `Relative resultant distance` < 接触阈值（目标与车长和的 10% 量级，标定后固定） | 补充证据 |
+| E4 中止旗标 | `SR path abort = 1` 或 `Abort path speed = 1` | 仅作线索，不单独定碰撞（设备安全中止同样置位） |
+
+**判定规则**：`collision = E1 ∨ (E2 ∧ E3)`；仅 E4 而无 E1/E2/E3 → `equipment_abort`（surrogate 池剔除，生成池同样剔除）。碰撞 run 记录 `t_collision`（首个满足证据帧），轨迹供 surrogate 使用至碰撞帧。
+
+### G.3 minTTC
+
+T0（按 §2.6 多策略定位）之后至 run 末（碰撞 run 至碰撞帧）窗口内 `Time to collision (longitudinal)` 通道的最小值，同时记录 `t_minTTC`（argmin 时刻）。VRU 场景沿用同一通道（§2.7.E 交叉校验项）。
+
+### G.4 AEB 触发时刻
+
+`t_AEB` = T0 后首个**制动响应上升沿**：`Brake force (unfiltered)` 或 `BR Position` 超过"T0 前 1 s 中位基线 + 阈值"的首帧；输出相对量 `t_AEB_rel = t_AEB − T0`。
+
+- **前提核对**：AEB 规程中机器人在 T0 松油门、不主动制动——从 .spec 的 AR/BR 控制段确认；若显示机器人制动控制段 → 该 run 标记 `needs_manual_review`。
+- **交叉验证**：触发后 `Forward velocity` 应转入单调下降；若存在 FCW/AEB 事件数字通道则优先采用。
+
+### G.5 人工校验（20 run）
+
+分层抽样（覆盖各品牌 × 各主实验类，含 ≥5 个 abort 类 run），人工读通道曲线比对三个标签；任一标签人工一致率 <90% → 修订本规范后重跑全量。校验表存 `inventory/label_manual_check.csv`。
+
+### G.6 输出 schema（`inventory/labels_v0.csv`）
+
+`run_path, brand, scenario_acronym, condition_id, T0, T0_method, collision, t_collision, min_ttc, t_min_ttc, t_aeb_rel, evidence_flags(E1..E4), needs_manual_review, extractor_version`
+
+### G.7 类别平衡审计
+
+按 brand × scenario 汇总碰撞率。若全池碰撞率过低（<5% 量级）：碰撞分类降为辅助目标（报告逐类一致率），**主目标改为 minTTC / t_AEB_rel 回归**（每个有效 run 均有定义）；M4 门以 minTTC MAE 为主判据（与附录 F 判定规则衔接）。

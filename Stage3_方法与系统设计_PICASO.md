@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-09-10 评审修订（压缩时间线与范围决策，优先级高于以下所有版本）
+
+用户裁定 deadline：**2026-09-30 前完成论文初稿 + 约 80% 实验；2026-12-31 前投出**。2026-09-10 可行性评审结论与依据见 Stage4 同日修订块；本文件按此执行以下范围决策：
+
+1. **生成器降范围**：主线 = **B2+**（规程语法约束采样 + 解码后物理投影 + KFR 审计 + surrogate 排序，输出定义在 §2.3 可执行场景空间 E 上）；PI-Causal Mamba + Waymo/INTERACTION 预训练降为**限时并行 stretch**（租 A100；**9/20 检查点**：在 KFR 与轨迹形状多样性上不胜 B2+ 则移出主线，仅作附录/未来工作）。Waymo 预训练定位为自然性正则（B6 消融检验增益，不进核心主张）。
+2. **新增 §2.3 可执行场景空间 E**：生成器 / surrogate / ABD .spec 三层共享参数化（修复"生成轨迹 vs surrogate 参数 vs .spec 转换"三者不同构的评审问题 P4）。
+3. **域标签统一**：§3.1/§3.3 与 Stage4 §5.2 对齐（2=S9, 3=E8, 4=P7+, 5=A66），删除 AY5T 陈旧残留（当前四车数据中无此车型）。
+4. **MACC 首轮执行参数空间 do-干预版本（MACC-lite）**：在 surrogate 上对 E 的参数做最小有界干预、搜索结果翻转边界点，供附录 F 的 G2 组送测；多智能体级联反事实为 stretch。
+5. §9.4 里程碑时间表由 HANDOFF 2026-09-10 版压缩路线图取代（按周倒排）。
+
+---
+
 ## 2026-09-01 方案评审修订：叙事重心调整（执行优先级高于以下所有版本）
 
 1. **C3 重定位**：GRL-DANN"开放道路→封闭场地 UDA"不再是核心贡献——C-NCAP 目标域是离散规程网格、条件内方差近零，经典 UDA 没有可适配的分布。新 C3 = **跨品牌 VUT 响应 surrogate + 实车校准**（LOBO 泛化评估；GRL-DANN/CORAL-MMD/DG 仅作可选对照）。本文 Layer 2 技术内容保留为可选模块文档。
@@ -177,6 +189,26 @@ Stage E: 评估验证
   生成场景库 → CARLA/nuPlan 闭环 → 四维指标矩阵 + 实车一致性 → 消融 + 显著性检验
 ```
 
+### 2.3 可执行场景空间 E（2026-09-10 新增：生成器 / surrogate / ABD 执行的共享参数空间）
+
+闭环链条"生成 → surrogate 排序 → 实车补测"要求三者共享同一参数化，否则（a）"神经生成器 vs 参数扫掠"对照不同构，（b）生成场景无法转换为 ABD .spec。定义：
+
+```
+E = (c, P, V, τ, O)
+  c ∈ 规程类（CCRs / CPTA / CCFT / ...，含日/夜间）
+  P = 目标路径几何参数（起点、轨迹形状、横向偏移/重叠率、曲率剖面）
+  V = 速度剖面参数（目标初速、加减速度剖面、VUT 巡航速度）
+  τ = 触发参数（触发方式、TTC 阈值 / 位置 / 时间容差）
+  O = 多目标编排参数（目标数量、时序、相对相位；单目标场景退化为空）
+```
+
+**三层映射**：
+1. 生成器输出轨迹 → 规约拟合到 E（**轨迹形状的连续多样性保留在 P/V 参数中——这是生成器区别于规程网格扫掠的全部价值所在**，也是与 B2 对照实验的核心差异量）；
+2. surrogate 输入 = E + 车辆物理特征（质量/轴距/长宽；见 Stage4 §4.1 特征规范）；
+3. E → ABD .spec（速度/路径/触发容差；Stage4 附录 F.3 参数化转换）。执行可行性由 **ABD 执行包络**过滤（包络从 engineering_envelope 392 run 标定）。
+
+**对照实验同构性**：B2 朴素扫掠 = E 的网格/随机采样；B2+ = E 上的规程语法约束 + 物理投影 + KFR 审计；神经生成器（stretch）= E 上的条件分布学习。三者输出同一 E、同一评估口径。
+
 ---
 
 ## 三、Layer 1：统一数据表示层
@@ -193,7 +225,7 @@ Agent_i:
   - history: {x_t, y_t, v_t, a_t, θ_t, κ_t}_{t=1..T_hist}  (10Hz)
   - future:  {x_t, y_t}_{t=1..T_fut}  (ground truth, if available)
   - domain_label ∈ {Waymo_US, INTERACTION_multi, CNCAP_CN}
-  - brand_label ∈ {XPeng_P7+, GAC_A66, GAC_AY5T, null}  (CNCAP only)
+  - brand_label ∈ {GAC_S9, GAC_E8, XPeng_P7+, GAC_A66, null}  (CNCAP only; 2026-09-10 与 Stage4 §5.2 对齐, 删 AY5T 残留)
 
 Lane_j:
   - polyline: {x_k, y_k}_{k=1..K}
@@ -229,11 +261,14 @@ Joint Polyline Encoding (JPE):
 
 | 数据源 | domain_id | 用途 |
 |--------|----------|------|
-| Waymo Open Motion | 0 (Source) | 预训练主数据 |
+| Waymo Open Motion | 0 (Source) | 预训练主数据（自然性正则） |
 | INTERACTION | 1 (Source) | 强交互辅助 |
-| CNCAP XPeng P7+ | 2 (Target) | 域自适应目标 |
-| CNCAP GAC A66 | 3 (Target) | 域自适应目标 |
-| CNCAP GAC AY5T | 4 (Target) | 域自适应目标 |
+| CNCAP GAC S9 | 2 | surrogate 数据源（LOBO） |
+| CNCAP GAC E8 | 3 | surrogate 数据源（LOBO；规程 run 仅 25，按类分层） |
+| CNCAP XPeng P7+ | 4 | surrogate 数据源（LOBO） |
+| CNCAP GAC A66 | 5 | surrogate 数据源（LOBO；企标功能项不入主实验） |
+
+> 2026-09-10 修订：domain_id 与 Stage4 §5.2 schema 统一；"域自适应目标"旧口径作废（见 2026-09-01 修订块第 1 条）。
 
 ---
 
