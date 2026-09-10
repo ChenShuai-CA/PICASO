@@ -1415,23 +1415,27 @@ class SpecReader:
 
 | 证据 | 定义 | 说明 |
 |------|------|------|
-| E1 几何重叠 | VUT 旋转矩形（.spec `VehicleLength/Width` + Motion Pack 位姿）与目标包络（GVT/VRU 载具尺寸从 .spec/ExpInfo 与 C-NCAP 附录目标规格读取，标定一次后固定）在任一帧重叠 | 最强证据 |
-| E2 接触动力学 | `Forward acceleration` 帧间突变（\|Δa\| ≥ 5 m/s² 初值，且与车速骤降同向）或 `Yaw velocity` 同帧异常扰动 | 排除平滑制动误判 |
-| E3 距离阈值 | `Relative resultant distance` < 接触阈值（目标与车长和的 10% 量级，标定后固定） | 补充证据 |
-| E4 中止旗标 | `SR path abort = 1` 或 `Abort path speed = 1` | 仅作线索，不单独定碰撞（设备安全中止同样置位） |
+| E1 几何接触 | `Relative longitudinal distance` ∈ (−thr, +thr) **且** 横向重叠 \|目标Y − VUT Y\| < (车宽+目标宽)/2 + 0.3 m，且 VUT 仍在运动（v > 0.05 m/s）；thr = 10% × (车长+目标长) | v0.3：相对通道几何（R1/R5）。双侧界排除通过后无界负值；横向重叠排除横穿错开通过 |
+| E2 接触动力学 | `Forward acceleration` 帧间突变（\|Δa\| ≥ 5 m/s²/frame，且 0.1 s 内速度下降 ≥0.3 m/s 同向确认） | 排除平滑制动误判（AEB 平滑制动 ≈0.4 m/s²/frame 不触发） |
+| E3 距离阈值 | 窗口内 `Relative longitudinal distance` 最小值 < thr | v0.2：`Relative resultant distance` 实测恒 0（死通道），弃用（R1） |
+| E4 中止旗标 | `SR path abort = 1` 或 `Abort path speed = 1` | 仅作线索，不单独定碰撞（设备安全中止同样置位；实证：43 碰撞中 34 个 E4=0） |
 
 **判定规则**：`collision = E1 ∨ (E2 ∧ E3)`；仅 E4 而无 E1/E2/E3 → `equipment_abort`（surrogate 池剔除，生成池同样剔除）。碰撞 run 记录 `t_collision`（首个满足证据帧），轨迹供 surrogate 使用至碰撞帧。
 
+**事件窗（G.2.5，v0.3/R5）**：全部标签证据只在 [T0, T_end] 内检索，T_end = 最早发生者：① VUT 停车（v<0.05 m/s 且此后 1 s 不再超过）；② 目标纵向越过 VUT（relD < −(车长+目标长)）；③ T0+15 s；④ run 末。依据：G.5 抽样发现 E1/min_dist 在通过后垃圾帧（relD 无界负值至 −386 m、目标返回起点段 dy>20 m）上误触发。
+
 ### G.3 minTTC
 
-T0（按 §2.6 多策略定位）之后至 run 末（碰撞 run 至碰撞帧）窗口内 `Time to collision (longitudinal)` 通道的最小值，同时记录 `t_minTTC`（argmin 时刻）。VRU 场景沿用同一通道（§2.7.E 交叉校验项）。
+T0（按 §2.6 多策略定位）之后至 T_end（碰撞 run 至碰撞帧）窗口内 `Time to collision (longitudinal)` 通道的最小值，同时记录 `t_minTTC`（argmin 时刻）。VRU 场景沿用同一通道（§2.7.E 交叉校验项）。
+
+**有效性护栏（v0.2/R3）**：仅计 TTC ∈ (0, 30] s、纵向真接近（rel vel < −0.3 m/s）、VUT 仍在运动（v > 0.5 m/s）的帧——排除 9999 哨兵值、停车后伪低 TTC 帧、蠕行噪声。**已知近似（论文限制声明）**：该通道为纵向量，横穿目标横向错开通过时仍可能给出低值（如 CSTA 横向 2.65 m 错开通过时纵向 TTC→0.04）；以 `dy_at_min` 辅助判读，G.5 人工校验覆盖。
 
 ### G.4 AEB 触发时刻
 
-`t_AEB` = T0 后首个**制动响应上升沿**：`Brake force (unfiltered)` 或 `BR Position` 超过"T0 前 1 s 中位基线 + 阈值"的首帧；输出相对量 `t_AEB_rel = t_AEB − T0`。
+`t_AEB` = T0 后首个系统制动响应时刻；输出相对量 `t_AEB_rel = t_AEB − T0`（v0.2/R2）：
 
-- **前提核对**：AEB 规程中机器人在 T0 松油门、不主动制动——从 .spec 的 AR/BR 控制段确认；若显示机器人制动控制段 → 该 run 标记 `needs_manual_review`。
-- **交叉验证**：触发后 `Forward velocity` 应转入单调下降；若存在 FCW/AEB 事件数字通道则优先采用。
+1. **主证据：纵向减速度 onset**——`Forward acceleration` < −2 m/s² 且持续 ≥0.1 s（IMU 量测，品牌无关）。依据：`Brake force (unfiltered)` 在三品牌 AEB 全制动中仅 ~0–13 N，不能反映制动；`BR Position` 负基线（−82~−15 mm，各车不同）→ 0 跳变作辅助证据（基线+10 mm 台阶）。
+2. AEB 规程中机器人 T0 后松油门不制动（.spec AR 段确认），故 T0 后减速度 = 车辆系统制动；若 .spec 显示机器人制动控制段 → 该 run 标记 `needs_manual_review`。
 
 ### G.5 人工校验（20 run）
 
@@ -1444,3 +1448,19 @@ T0（按 §2.6 多策略定位）之后至 run 末（碰撞 run 至碰撞帧）�
 ### G.7 类别平衡审计
 
 按 brand × scenario 汇总碰撞率。若全池碰撞率过低（<5% 量级）：碰撞分类降为辅助目标（报告逐类一致率），**主目标改为 minTTC / t_AEB_rel 回归**（每个有效 run 均有定义）；M4 门以 minTTC MAE 为主判据（与附录 F 判定规则衔接）。
+
+### G.8 v0.3 实证修订记录（2026-09-10，首轮全量提取 + 轨迹核对）
+
+497 run 全量提取（0 门控失败 / 0 错误）+ 4 run 逐帧轨迹核对 + 20 run 分层抽样预检驱动的规范修订（extractor `labels_v0.3`）：
+
+| # | 发现（实证） | 修订 |
+|---|------|------|
+| R1 | `Relative resultant distance` 恒 0（死通道）；Object 1 位姿参考为前轴而非包络中心（偏 ~2.3 m），矩形 SAT 判碰撞在 4 个核对 run 上全部误报 | E1/E3 改用 `Relative longitudinal distance`（实测为有效车间隙）+ 位置横向重叠（G.2） |
+| R2 | `Brake force (unfiltered)` 在三品牌 AEB 全制动（a≈−7~−10 m/s²）中仅 ~0–13 N，不可用；`BR Position` 负基线（−82~−15 mm，各车不同）→ 0 跳变与制动同步 | t_AEB 主证据改减速度 onset（a<−2 m/s² 持续 0.1 s），BR Position 台阶为辅（G.4） |
+| R3 | TTC 通道含 9999 哨兵与停车后伪值（VUT 停止、目标继续移动时纵向 TTC→0.04 但横向错开 2.65 m 无接触可能） | 有效性护栏：TTC∈(0,30]、rv<−0.3、v>0.5（G.3）；surrogate 侧对 >3 s 做 3.0 s 截断（冲突早解除，无临迫语义） |
+| R4 | E8 的 Time tolerance 1 常开（真触发器 TT2 在 .spec 独立段的 StartTrigger 中） | spec 解析跨段扫描非 PF 段的 Time-tolerance StartTrigger；TTC≈3 校验仅用于 TTC 通道型触发器 |
+| R5 | E1 曾在通过后垃圾帧误触发（relD 无界负值至 −386 m、目标返回起点段 dy>20 m）；ELK 超车避让（L.6.3.5）下的 CCOv 为转向测试（VUT 不制动、目标横向错开通过），16 run 全部误入 AEB 族且 12 个误判碰撞 | 事件窗 T_end 规则（G.2.5）+ E1 双侧界；ELK 父目录条件强制 steering 族；E8 "-cal"/A66 "[CAL]" 标定 run 从 surrogate 池剔除 |
+
+**v0.3 池构成**：AEB 族有效 226 run / 27 碰撞（11.9%）；surrogate 回归池（双池规则 + cal 剔除 + minTTC 有效）198 run。品牌内 OOF minTTC MAE（3 种子）：A66 0.358 / E8 0.364 / S9 0.475 / P7+ 0.330（中位数基线 0.400/0.451/0.391/0.397；同工况重复噪声下界 0.06–0.11）。LOBO 预览（主表类）MAE 0.13–0.62。碰撞分类 OOF-AUC：A66 0.79 / P7+ 0.84 / S9 0.08（仅 2 正样本，退化）。
+
+**遗留（进入 G.5 人工校验清单）**：① S9 SCPO / A66 CCFT 等 E2∧E3 型碰撞判定（目标横向 >6 m 时的减速度尖峰来源）；② 横穿类纵向 TTC 近似（CCFT S9 中位 0.026 s 的近距离通过判读）；③ CCRH minTTC ~20 s（冲突早解除语义，已被 3 s 截断吸收，代数上无碍）。

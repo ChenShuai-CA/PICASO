@@ -1,0 +1,83 @@
+PICASO surrogate v0 报告（minTTC 回归主目标）
+生成: 2026-09-10
+
+========================================================================
+0. 池构成（G.7 平衡审计摘要）
+  CBLA    GAC_A66       n=   4 col=  0 minTTC_med=0.37
+  CBNAO   GAC_A66       n=   3 col=  0 minTTC_med=0.78
+  CBNAO   GAC_S9        n=   4 col=  0 minTTC_med=0.71
+  CCFT    GAC_A66       n=   6 col=  2 minTTC_med=0.26
+  CCFT    GAC_E8        n=   1 col=  1 minTTC_med=0.11
+  CCFT    GAC_S9        n=   8 col=  0 minTTC_med=0.03
+  CCFT    XPENG_P7PLUS  n=   3 col=  0 minTTC_med=0.56
+  CCRH    GAC_A66       n=   2 col=  0 minTTC_med=3.00
+  CCRH    GAC_S9        n=   2 col=  0 minTTC_med=3.00
+  CCRH    XPENG_P7PLUS  n=   2 col=  0 minTTC_med=3.00
+  CCRs    GAC_A66       n=  12 col=  0 minTTC_med=0.79
+  CCRs    GAC_E8        n=   9 col=  3 minTTC_med=0.64
+  CCRs    GAC_S9        n=   5 col=  0 minTTC_med=0.88
+  CCRs    XPENG_P7PLUS  n=  10 col=  5 minTTC_med=0.28
+  CPFAO   GAC_A66       n=   6 col=  0 minTTC_med=0.86
+  CPFAO   GAC_S9        n=   8 col=  0 minTTC_med=0.67
+  CPLA    GAC_A66       n=   9 col=  1 minTTC_med=0.45
+  CPLA    GAC_S9        n=   4 col=  0 minTTC_med=0.53
+  CPNCO   GAC_A66       n=   3 col=  1 minTTC_med=0.74
+  CPNCO   GAC_S9        n=   4 col=  0 minTTC_med=0.79
+  CPTA    GAC_A66       n=   9 col=  0 minTTC_med=0.63
+  CPTA    GAC_E8        n=   2 col=  2 minTTC_med=0.09
+  CPTA    GAC_S9        n=  10 col=  0 minTTC_med=0.66
+  CPTA    XPENG_P7PLUS  n=  18 col=  0 minTTC_med=0.59
+  CSFAO   GAC_A66       n=   3 col=  1 minTTC_med=0.66
+  CSFAO   GAC_S9        n=   3 col=  0 minTTC_med=0.55
+  CSTA    GAC_A66       n=  10 col=  1 minTTC_med=0.01
+  CSTA    GAC_S9        n=   6 col=  0 minTTC_med=0.83
+  CSTA    XPENG_P7PLUS  n=   4 col=  0 minTTC_med=0.94
+  SCP     GAC_A66       n=   5 col=  0 minTTC_med=0.01
+  SCP     GAC_E8        n=   1 col=  1 minTTC_med=0.12
+  SCP     GAC_S9        n=   7 col=  0 minTTC_med=0.00
+  SCP     XPENG_P7PLUS  n=   6 col=  3 minTTC_med=0.07
+  SCPO    GAC_A66       n=   2 col=  0 minTTC_med=0.90
+  SCPO    GAC_S9        n=   3 col=  2 minTTC_med=0.06
+  SCPO    XPENG_P7PLUS  n=   4 col=  3 minTTC_med=0.09
+========================================================================
+A. 品牌内 OOF（GroupKFold-5 by condition_id, 3 seeds）
+brand            n n_cond     MAE   ±std baseline   floor  med_ttc
+GAC_A66         74     58   0.358  0.000    0.400   0.112    0.687
+GAC_E8          13     11   0.364  0.000    0.451   0.059    0.166
+GAC_S9          64     48   0.475  0.000    0.391   0.077    0.613
+XPENG_P7PLUS    47     28   0.330  0.000    0.397   0.055    0.562
+POOLED         198
+
+========================================================================
+B. LOBO 预览（主表类，留一品牌，3 seeds）
+class   held_out      n_te n_tr     MAE   ±std    base    med
+CCRs    GAC_A66         12   24   0.130  0.000   0.169  0.791
+CCRs    GAC_E8           9   27   0.457  0.000   0.273  0.641
+CCRs    GAC_S9           5   31   0.620  0.000   0.625  0.881
+CCRs    XPENG_P7PLUS    10   26   0.394  0.000   0.408  0.276
+CPTA    GAC_A66          9   30   0.139  0.000   0.134  0.632
+CPTA    GAC_E8           2   37  insufficient
+CPTA    GAC_S9          10   29   0.166  0.000   0.089  0.663
+CPTA    XPENG_P7PLUS    18   21   0.269  0.000   0.215  0.586
+CCFT    GAC_A66          6   12   0.233  0.000   0.301  0.264
+CCFT    GAC_E8           1   17  insufficient
+CCFT    GAC_S9           8   10   0.359  0.000   0.301  0.026
+CCFT    XPENG_P7PLUS     3   15   0.405  0.000   0.544  0.562
+CSTA    GAC_A66         10   10   0.621  0.000   0.666  0.007
+CSTA    GAC_E8           0   20  insufficient
+CSTA    GAC_S9           6   14   0.508  0.000   0.450  0.831
+CSTA    XPENG_P7PLUS     4   16   0.348  0.000   0.511  0.939
+CPLA    GAC_A66          9    4  insufficient
+CPLA    GAC_E8           0   13  insufficient
+CPLA    GAC_S9           4    9  insufficient
+CPLA    XPENG_P7PLUS     0   13  insufficient
+
+========================================================================
+C. 碰撞分类（辅，品牌内 OOF，3 seeds）
+positive collision runs in pool: 26
+  GAC_A66       n=  74 pos=  6 OOF-AUC=0.793
+  GAC_S9        n=  64 pos=  2 OOF-AUC=0.081
+  XPENG_P7PLUS  n=  47 pos= 11 OOF-AUC=0.838
+
+========================================================================
+go/no-go 参照：品牌内 minTTC MAE 与 0.4s 量级比对（内部门阈值，非论文口径）
