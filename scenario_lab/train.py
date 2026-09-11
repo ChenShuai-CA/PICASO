@@ -8,6 +8,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from collections import Counter
 import json
+import math
 import time
 import numpy as np
 import torch
@@ -55,10 +56,8 @@ def perturb_spec(spec, rng, calibrated=None):
     """Draw execution-perturbation parameters for a base spec.
 
     Without ``calibrated`` the draws follow the pre-registered assumed ranges.
-    With a config from ``load_perturb_config`` the two parameters identifiable
-    from ABD AEB logs (brake_deceleration, response_delay) draw from measured
-    ranges; action_delay_steps and target_accel_scale keep their assumed ranges
-    because no VUT-side channel can identify them (documented in the config).
+    With a config from ``load_perturb_config`` each parameter draws from the
+    versioned bounds and retains the provenance documented in that config.
     """
     s = deepcopy(spec)
     if calibrated is None:
@@ -77,19 +76,34 @@ def perturb_spec(spec, rng, calibrated=None):
     s.action_delay_steps = int(rng.integers(steps['low'], steps['high'] + 1))
     scale = p['target_accel_scale']
     s.target_accel_scale = float(rng.uniform(scale['low'], scale['high']))
-    # Partial: two of four parameters are calibrated, two retained as assumed.
+    # Partial: the config records which bounds are data-supported versus assumed.
     s.perturbation_source = f"{calibrated['version']}_partial"
     return s
 
 
 def load_perturb_config(path):
     config = json.loads(Path(path).read_text(encoding='utf-8'))
+    if not isinstance(config.get('version'), str) or not config['version']:
+        raise ValueError('perturb config requires a nonempty version')
     required = ('brake_deceleration', 'response_delay', 'action_delay_steps',
                 'target_accel_scale')
-    missing = [name for name in required
-               if 'low' not in config.get('parameters', {}).get(name, {})]
+    parameters = config.get('parameters', {})
+    missing = [name for name in required if not {'dist', 'low', 'high'} <= set(
+        parameters.get(name, {}))]
     if missing:
         raise ValueError(f'perturb config missing parameter bounds: {missing}')
+    for name in required:
+        entry = parameters[name]
+        if entry['dist'] not in ('uniform', 'integers'):
+            raise ValueError(f'unsupported perturb distribution for {name}')
+        low, high = entry['low'], entry['high']
+        if (not isinstance(low, (int, float)) or not isinstance(high, (int, float))
+                or not math.isfinite(low) or not math.isfinite(high) or low > high):
+            raise ValueError(f'invalid perturb bounds for {name}')
+    steps = parameters['action_delay_steps']
+    if steps['dist'] != 'integers' or any(
+            not isinstance(steps[key], int) for key in ('low', 'high')):
+        raise ValueError('action_delay_steps requires integer bounds')
     return config
 
 

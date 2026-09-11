@@ -1308,3 +1308,20 @@ BR Velocity/载荷计全程活跃、BR Command 全部有非零指令历史；7/8
 （CorrectForBrakeNonLinearity）。结论：装了 BR 使"事件窗内 cmd≡0"成为有效检验；
 若未装 BR 则 AEB 归因仍成立（−9~−11 m/s² 减速只能来自车辆自身或驾驶员违规）。
 仪表级确认途径（RC Setup > Transducer Connections）已列入用户抽查清单。
+
+## 2026-09-12 · P3.2 复核修正：abd_supported_v1
+
+对原始手册、事件窗与 `scenario_lab` 参数语义复核后，P3.1 的 10 条入选记录保留，但证据等级明确为
+`AEB-attributed by elimination`，不是直接 AEB 激活信号。P3.2 的两项映射作如下更正：
+
+1. env 的 `brake_deceleration` 是触发后施加的恒定减速度。原配置使用瞬时峰值
+   U(9.128,11.419)，会高估整个停车过程。新配置按事件窗速度积分与停车距离换算等效恒定减速度，
+   得到 U(5.455,8.174) m/s²；这是 10 条观测极值构成的敏感性包络，不是总体概率分布。
+2. `onset_TTC-v/|peak|` 是触发策略、几何、制动建立过程的混合余量，不能识别
+   trigger-to-output delay。`response_delay` 因此恢复假定 U(0.1,0.4)，观测 0.055–0.386 仅作描述。
+
+`action_delay_steps` 与 `target_accel_scale` 继续保留假定。新交付为
+`runs/20260912_abd_calibration/abd_supported_v1.json`，source 标签
+`abd_supported_v1_partial`。原 `abd_calibrated_v1.json` 保留作历史记录但废止，不得用于正式 P2.8。
+配置加载器同时增加版本、分布、有限数值、上下界和整数范围校验；evaluate 报告的 source 改为从
+配置版本生成。LOO 更名为内部端点敏感性，不再称为独立验证。

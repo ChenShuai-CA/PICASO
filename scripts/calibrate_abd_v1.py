@@ -1,12 +1,12 @@
-"""P3.2: AEB perturbation calibration -> abd_calibrated_v1.
+"""P3.2: ABD-supported perturbation envelope -> abd_supported_v1.
 
 Reads the runs that manual_review.csv marks eligible (P3.1 evidence review),
-re-extracts event-window features from the raw ABD exports, fits calibrated
-distributions for the two env parameters that are identifiable from VUT-side
-logs (brake_deceleration, response_delay), and writes a versioned perturbation
-config plus independent verification records (leave-one-out refit and onset
-threshold sensitivity).  Nothing here mutates scenario_lab defaults; the config
-is consumed explicitly via --perturb-config.
+re-extracts event-window features from the raw ABD exports, fits an empirical
+envelope for the env parameter identifiable from VUT-side logs (effective
+constant brake_deceleration), and writes a versioned perturbation config plus
+internal robustness records. The observed TTC margin is retained as a timing
+proxy and is not mapped to response_delay. Nothing here mutates scenario_lab
+defaults; the config is consumed explicitly via --perturb-config.
 """
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from audit_abd_calibration import (  # noqa: E402
 REVIEW = ROOT / 'runs/20260911_abd_review/manual_review.csv'
 ABD_ROOT = ROOT / 'Data/ABD_Data'
 OUT = ROOT / 'runs/20260912_abd_calibration'
-CONFIG_NAME = 'abd_calibrated_v1.json'
+CONFIG_NAME = 'abd_supported_v1.json'
 
 
 def load_run(path: Path):
@@ -53,6 +53,13 @@ def features(arrays):
     ttc = arrays.get('Time to collision (longitudinal)')
     onset_ttc = float(ttc[onset]) if ttc is not None else float('nan')
     v0 = event['onset_speed_kph'] / 3.6
+    velocity = np.maximum(speed[onset:end], 0.) / 3.6
+    travelled = float(np.trapezoid(velocity, time[onset:end]))
+    vend = float(velocity[-1])
+    duration = float(time[end - 1] - time[onset])
+    effective_distance = ((v0 ** 2 - vend ** 2) / (2. * travelled)
+                          if travelled > 1e-9 else float('nan'))
+    effective_time = ((v0 - vend) / duration if duration > 1e-9 else float('nan'))
     br = arrays.get('BR Position')
     force = arrays.get('Brake force (unfiltered)')
     return {
@@ -61,6 +68,9 @@ def features(arrays):
         'onset_ttc_s': round(onset_ttc, 4),
         'peak_deceleration_mps2': round(peak, 3),
         'p05_acceleration_mps2': round(event['p05_acceleration_mps2'], 3),
+        'stopping_distance_from_onset_m': round(travelled, 3),
+        'effective_constant_deceleration_distance_mps2': round(effective_distance, 3),
+        'effective_constant_deceleration_time_mps2': round(effective_time, 3),
         'time_onset_to_peak_s': round(t_peak - float(time[onset]), 3),
         'event_duration_s': round(event['duration_s'], 3),
         'margin_time_s': round(onset_ttc - v0 / abs(peak), 4),
@@ -162,8 +172,15 @@ def main():
     margin_ccrs = stat([r['margin_time_s'] for r in ccrs])
     margin_all = stat([r['margin_time_s'] for r in records])
     ttp = stat([r['time_onset_to_peak_s'] for r in records])
+    effective_all = stat([
+        r['effective_constant_deceleration_distance_mps2'] for r in records])
+    effective_ccrs = stat([
+        r['effective_constant_deceleration_distance_mps2'] for r in ccrs])
+    effective_turn = stat([
+        r['effective_constant_deceleration_distance_mps2'] for r in turning]) \
+        if turning else None
 
-    # --- independent verification: leave-one-out refit stability -------------
+    # --- internal robustness: leave-one-out endpoint sensitivity --------------
     loo = []
     for i in range(len(records)):
         keep = [r for j, r in enumerate(records) if j != i]
@@ -171,6 +188,11 @@ def main():
             'held_out': records[i]['test_id'],
             'peak_range': [round(min(r['peak_deceleration_mps2'] for r in keep), 3),
                            round(max(r['peak_deceleration_mps2'] for r in keep), 3)],
+            'effective_constant_range': [
+                round(min(r['effective_constant_deceleration_distance_mps2']
+                          for r in keep), 3),
+                round(max(r['effective_constant_deceleration_distance_mps2']
+                          for r in keep), 3)],
             'margin_ccrs_range': ([round(min(r['margin_time_s'] for r in keep
                                              if r['scenario'] == 'CCRs'), 3),
                                    round(max(r['margin_time_s'] for r in keep
@@ -179,6 +201,9 @@ def main():
         })
     loo_peak_dev = max(abs(l['peak_range'][0] - peak_all['min']) for l in loo), \
         max(abs(l['peak_range'][1] - peak_all['max']) for l in loo)
+    loo_effective_dev = (
+        max(abs(l['effective_constant_range'][0] - effective_all['min']) for l in loo),
+        max(abs(l['effective_constant_range'][1] - effective_all['max']) for l in loo))
     loo_margin_dev = max(abs(l['margin_ccrs_range'][0] - margin_ccrs['min']) for l in loo), \
         max(abs(l['margin_ccrs_range'][1] - margin_ccrs['max']) for l in loo)
 
@@ -195,6 +220,7 @@ def main():
         'leave_one_out': {
             'records': loo,
             'max_peak_range_deviation': loo_peak_dev,
+            'max_effective_constant_range_deviation': loo_effective_dev,
             'max_margin_ccrs_range_deviation': loo_margin_dev,
         },
         'onset_threshold_sensitivity': {
@@ -223,35 +249,42 @@ def main():
     }
 
     config = {
-        'version': 'abd_calibrated_v1',
+        'version': 'abd_supported_v1',
         'created': '2026-09-12',
         'purpose': 'scenario_lab perturb_spec calibrated parameter draws',
         'eligible_runs': len(records),
+        'abd_supported_parameter_count': 1,
+        'total_perturbation_parameters': 4,
         'source_runs': [{'run': r['run'], 'sha256': r['sha256'],
                          'scenario': r['scenario']} for r in records],
         'parameters': {
             'brake_deceleration': {
                 'dist': 'uniform',
-                'low': round(min(abs(peak_all['min']), abs(peak_all['max'])), 3),
-                'high': round(max(abs(peak_all['min']), abs(peak_all['max'])), 3),
-                'unit': 'm/s2 (positive braking magnitude; env applies -value)',
-                'summary_measured_signed_mps2': peak_all,
-                'ccrs_subset': peak_ccrs,
-                'turning_subset': peak_turn,
-                'evidence': ('measured peak sustained deceleration in AEB-attributed '
-                             'event windows (audit onset detection, 0.10 s smoothing); '
-                             'p05 within 0.15 m/s2 of peak in all 10 runs, i.e. '
-                             'near-constant braking plateau; threshold sensitivity: '
-                             'peak diff 0.000 m/s2 in all 8 CCRs runs at -0.5 m/s2'),
+                'low': effective_all['min'], 'high': effective_all['max'],
+                'unit': 'm/s2 (positive distance-equivalent constant magnitude)',
+                'status': 'abd_supported_empirical_envelope_not_population_distribution',
+                'summary_distance_equivalent_mps2': effective_all,
+                'ccrs_subset': effective_ccrs,
+                'turning_subset': effective_turn,
+                'peak_deceleration_diagnostic_signed_mps2': peak_all,
+                'mapping': ('a_eff=(v_onset^2-v_end^2)/(2*integral(v dt)); matches '
+                            'scenario_lab constant-deceleration stopping distance'),
+                'evidence': ('AEB-attributed event windows; measured speed integrated '
+                             'from braking onset to <=1 kph. Uniform sampling is a '
+                             'bounded sensitivity design over observed extrema, not a '
+                             'fitted fleet probability distribution.'),
             },
             'response_delay': {
                 'dist': 'uniform',
-                'low': margin_ccrs['min'], 'high': margin_ccrs['max'],
-                'summary_ccrs': margin_ccrs, 'summary_all': margin_all,
+                'low': 0.1, 'high': 0.4,
+                'status': 'retained_assumed_proxy_only_not_identifiable',
+                'observed_margin_proxy_ccrs': margin_ccrs,
+                'observed_margin_proxy_all': margin_all,
                 'proxy': 'margin_time = onset_ttc - v_onset/|peak_decel|',
-                'evidence': ('CCRs subset (8 runs, 19.2-21.0 kph, one speed regime); '
-                             'margin time is the observable upper-bound proxy for '
-                             'trigger-to-onset delay; real AEB request signal not logged'),
+                'evidence': ('CCRs subset (8 runs, 19.2-21.0 kph, one speed regime). '
+                             'Margin time mixes trigger policy, geometry and braking '
+                             'build-up; without an AEB request signal it is not '
+                             'trigger-to-output delay and is not mapped to response_delay.'),
             },
             'action_delay_steps': {
                 'dist': 'integers', 'low': 0, 'high': 2,
@@ -275,8 +308,9 @@ def main():
                         'risk documented; no direct AEB status channel'),
         'limitations': [
             'n=10 runs across 8 vehicles; per-vehicle distributions underdetermined',
-            'response_delay calibrated from a proxy observable, not the AEB request signal',
-            'two of four perturbation parameters retained as assumed (documented above)',
+            'only one of four perturbation parameters has an ABD-supported env mapping',
+            'response timing margin is descriptive and response_delay remains assumed',
+            'the empirical uniform is a sensitivity envelope, not a population fit',
             '15-TANG contributes 3 of 10 runs (CCRs/CCFT/CPTA one each)',
         ],
     }
@@ -293,6 +327,9 @@ def main():
                     'peak_deceleration_turning': peak_turn, 'onset_ttc_ccrs': ttc_ccrs,
                     'margin_time_ccrs': margin_ccrs, 'margin_time_all': margin_all,
                     'time_onset_to_peak_all': ttp,
+                    'effective_constant_deceleration_distance_all': effective_all,
+                    'effective_constant_deceleration_distance_ccrs': effective_ccrs,
+                    'effective_constant_deceleration_distance_turning': effective_turn,
                     'per_vehicle': {
                         v: stat([r['peak_deceleration_mps2'] for r in records
                                  if r['vehicle'] == v])
@@ -303,9 +340,11 @@ def main():
 
     print(json.dumps({
         'eligible': len(records), 'ccrs': len(ccrs), 'turning': len(turning),
-        'brake_deceleration': [peak_all['min'], peak_all['max']],
-        'response_delay_ccrs': [margin_ccrs['min'], margin_ccrs['max']],
-        'loo_max_dev': {'peak': loo_peak_dev, 'margin': loo_margin_dev},
+        'brake_deceleration_distance_equivalent': [effective_all['min'], effective_all['max']],
+        'response_delay_assumed': [0.1, 0.4],
+        'response_margin_proxy_ccrs': [margin_ccrs['min'], margin_ccrs['max']],
+        'loo_max_dev': {'peak': loo_peak_dev, 'effective_constant': loo_effective_dev,
+                        'margin_proxy': loo_margin_dev},
         'threshold_sens_peak_diff': stat(peak_diff),
     }, ensure_ascii=False, indent=2))
 

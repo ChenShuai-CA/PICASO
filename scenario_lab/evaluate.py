@@ -196,7 +196,7 @@ def evaluate(policy, output, count=20, seed=1000, branches=('single', 'dual'), p
                   role_action_mode=role_action_mode,
                   perturbations=perturbations,
                   perturbation_source=(spec.perturbation_source if perturbations == 1
-                                       else ('abd_calibrated_v1_partial' if perturb_config
+                                       else (f"{perturb_config['version']}_partial" if perturb_config
                                              else 'assumed_sensitivity_not_abd_calibrated')),
                   metrics=summarize(rows, seed), **header)
     (output / 'episodes.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows), encoding='utf-8')

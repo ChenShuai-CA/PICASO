@@ -1,0 +1,149 @@
+{
+  "version": "abd_supported_v1",
+  "created": "2026-09-12",
+  "purpose": "scenario_lab perturb_spec calibrated parameter draws",
+  "eligible_runs": 10,
+  "abd_supported_parameter_count": 1,
+  "total_perturbation_parameters": 4,
+  "source_runs": [
+    {
+      "run": "14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R1.txt",
+      "sha256": "35fb5df3df23cb95234d3de51301c9f025625a5c0338e4eb63ab93ea75848a50",
+      "scenario": "CCRs"
+    },
+    {
+      "run": "15-TANG L-CNCAP2024/23-C-NCAP ADAS 2024 (VUT)/38-CCFT [L.6.1.9]/39-AEB/40-Farside/41-GVT 20 kph/3400-VUT 10 kph; CCFT 20 kph AEB/V15_T3400_R1.txt",
+      "sha256": "785f4183840d3098e056c67d9ee6a88c9bc8dffb86a1915a3d3da6ae674962f9",
+      "scenario": "CCFT"
+    },
+    {
+      "run": "15-TANG L-CNCAP2024/23-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/3323-VUT 20 kph; CCRs -50 % AEB/V15_T3323_R1.txt",
+      "sha256": "326818149a9f870c24cc294034777c73a7549552bbcb3a45208e7b6af088bd4f",
+      "scenario": "CCRs"
+    },
+    {
+      "run": "15-TANG L-CNCAP2024/26-C-NCAP VRU 2024 (VUT)/22-CPTA-LN [O.6.1.9]/23-CPTA-LN 5 kph AEB (Day)/5195-VUT 10 kph; CPTA-LN 5 kph AEB (Day)/V15_T5195_R1.txt",
+      "sha256": "4db9d7fd6f2cf8387dd60405c79076105f4353df786f4d88333ea7d07f2968a7",
+      "scenario": "CPTA"
+    },
+    {
+      "run": "6-C-NCAP 2024 Bao5/8-L6.1.5-CCRs-VUT/10-L6.1.5-CCRS-VUT-AEB/11-L6.1.5-CCRs-VUT-AEB/170-L6.1.5-CCRs-VUT-AEB-20kph-(-50%)/V6_T170_R2.txt",
+      "sha256": "4754259c5f5ca4a8b4f1a0fe48d52f104677f30f5f290202feaf2472cd73c686",
+      "scenario": "CCRs"
+    },
+    {
+      "run": "8-huajingS/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/54-VUT 20 kph; CCRs -50 % AEB/V8_T54_R1.txt",
+      "sha256": "6f54cf17f3f309900efb48a2fdf07d7289af2746f7433f2c5bfaefd27d40109a",
+      "scenario": "CCRs"
+    },
+    {
+      "run": "9-BZ7/5-C-IASI ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB-CNCAP/11-CCRs/52-VUT 20 kph; CCRs -50 % AEB/V9_T52_R1.txt",
+      "sha256": "dd68a9683d20968d857dd73e6c55ac34b7e7897922b04dc89fd7ec65f0ab3be1",
+      "scenario": "CCRs"
+    },
+    {
+      "run": "Guang_Qi_A66_data/3-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/183-VUT 20 kph; CCRs -50 % AEB/V3_T183_R1.txt",
+      "sha256": "28333bf65ee01f8e49966d7d3e51c271e842d01fc71615404639e3e14bdfdba5",
+      "scenario": "CCRs"
+    },
+    {
+      "run": "Guang_Qi_E8_data/8-L6.1.5-CCRs-VUT/10-L6.1.5-CCRS-VUT-AEB/11-L6.1.5-CCRs-VUT-AEB/170-L6.1.5-CCRs-VUT-AEB-20kph-(-50%)/V5_T170_R1.txt",
+      "sha256": "dd9983f7efa7bb6cff8310f9a7520c0394ab9f5dbd4ce2705cff63f69b2b7586",
+      "scenario": "CCRs"
+    },
+    {
+      "run": "Guang_Qi_S9_data/2-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/27-VUT 20 kph; CCRs -50 % AEB/V4_T27_R1.txt",
+      "sha256": "2092e3eec4fac1aff91771c397f0d089c2a91b387be0cd0821c9c29759faf847",
+      "scenario": "CCRs"
+    }
+  ],
+  "parameters": {
+    "brake_deceleration": {
+      "dist": "uniform",
+      "low": 5.455,
+      "high": 8.174,
+      "unit": "m/s2 (positive distance-equivalent constant magnitude)",
+      "status": "abd_supported_empirical_envelope_not_population_distribution",
+      "summary_distance_equivalent_mps2": {
+        "n": 10,
+        "min": 5.455,
+        "median": 6.929,
+        "max": 8.174,
+        "mean": 6.833,
+        "std": 0.951
+      },
+      "ccrs_subset": {
+        "n": 8,
+        "min": 5.455,
+        "median": 7.377,
+        "max": 8.174,
+        "mean": 7.092,
+        "std": 0.88
+      },
+      "turning_subset": {
+        "n": 2,
+        "min": 5.681,
+        "median": 5.796,
+        "max": 5.91,
+        "mean": 5.796,
+        "std": 0.162
+      },
+      "peak_deceleration_diagnostic_signed_mps2": {
+        "n": 10,
+        "min": -11.419,
+        "median": -10.741,
+        "max": -9.128,
+        "mean": -10.48,
+        "std": 0.764
+      },
+      "mapping": "a_eff=(v_onset^2-v_end^2)/(2*integral(v dt)); matches scenario_lab constant-deceleration stopping distance",
+      "evidence": "AEB-attributed event windows; measured speed integrated from braking onset to <=1 kph. Uniform sampling is a bounded sensitivity design over observed extrema, not a fitted fleet probability distribution."
+    },
+    "response_delay": {
+      "dist": "uniform",
+      "low": 0.1,
+      "high": 0.4,
+      "status": "retained_assumed_proxy_only_not_identifiable",
+      "observed_margin_proxy_ccrs": {
+        "n": 8,
+        "min": 0.055,
+        "median": 0.227,
+        "max": 0.386,
+        "mean": 0.219,
+        "std": 0.12
+      },
+      "observed_margin_proxy_all": {
+        "n": 10,
+        "min": 0.055,
+        "median": 0.263,
+        "max": 0.981,
+        "mean": 0.325,
+        "std": 0.27
+      },
+      "proxy": "margin_time = onset_ttc - v_onset/|peak_decel|",
+      "evidence": "CCRs subset (8 runs, 19.2-21.0 kph, one speed regime). Margin time mixes trigger policy, geometry and braking build-up; without an AEB request signal it is not trigger-to-output delay and is not mapped to response_delay."
+    },
+    "action_delay_steps": {
+      "dist": "integers",
+      "low": 0,
+      "high": 2,
+      "status": "retained_assumed_not_identifiable",
+      "evidence": "0-2 decision steps (<=40 ms) cannot be resolved from 100 Hz VUT logs without the AEB request signal"
+    },
+    "target_accel_scale": {
+      "dist": "uniform",
+      "low": 0.85,
+      "high": 1.15,
+      "status": "retained_assumed_npc_side_not_in_vut_logs",
+      "evidence": "parameter scales NPC (pedestrian/occluder) actions; VUT-side ABD exports contain no NPC execution channels; measured cross-run peak spread normalised to pooled median: 0.850-1.063"
+    }
+  },
+  "attribution": "AEB by elimination chain (MANUAL_EVIDENCE.md E3): window BR Command==0 absolutes, trigger flags unchanged, AR throttle-hold recipe, protocol driver non-intervention; residual driver-override risk documented; no direct AEB status channel",
+  "limitations": [
+    "n=10 runs across 8 vehicles; per-vehicle distributions underdetermined",
+    "only one of four perturbation parameters has an ABD-supported env mapping",
+    "response timing margin is descriptive and response_delay remains assumed",
+    "the empirical uniform is a sensitivity envelope, not a population fit",
+    "15-TANG contributes 3 of 10 runs (CCRs/CCFT/CPTA one each)"
+  ]
+}
