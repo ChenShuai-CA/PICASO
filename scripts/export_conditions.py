@@ -16,7 +16,8 @@ def main():
     p.add_argument('--branches', nargs='+', default=['single', 'dual'], choices=['single', 'dual'])
     p.add_argument('--sampler-version', type=int, default=2, choices=[1, 2])
     p.add_argument('--role', default='reference', choices=['reference', 'stress'])
-    p.add_argument('--purpose', default='diagnostic', choices=['diagnostic', 'development', 'heldout'])
+    p.add_argument('--purpose', default='diagnostic',
+                   choices=['training', 'diagnostic', 'development', 'heldout'])
     p.add_argument('--controller', default='stopping', choices=['stopping', 'ttc'])
     a = p.parse_args()
     manifest = export_conditions(a.output, seed=a.seed, count=a.count, branches=tuple(a.branches),

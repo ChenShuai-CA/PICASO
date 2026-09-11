@@ -82,6 +82,15 @@ def test_condition_manifest_roundtrip_and_rng_decoupling(tmp_path):
     assert rows(out_full) == {**rows(out_full), **rows(out_dual)}
 
 
+def test_training_condition_manifest_is_explicit(tmp_path):
+    path = tmp_path / 'training.json'
+    export_conditions(path, seed=51, count=2, sampler_version=2, purpose='training')
+    specs, manifest = load_conditions(path)
+    assert manifest['purpose'] == 'training'
+    assert manifest['condition_set_version'] == 'training_seed51_samplerv2'
+    assert len(specs) == 4
+
+
 def test_load_conditions_rejects_version_mismatch(tmp_path):
     path = tmp_path / 'bad.json'
     manifest = export_conditions(path, seed=1, count=2, sampler_version=2)

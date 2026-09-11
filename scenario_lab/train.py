@@ -149,6 +149,8 @@ def train(output, config=None, pretrained=None):
         raise ValueError('invalid training configuration')
     if cfg.role_action_mode not in ('none', 'lane_locked'):
         raise ValueError('invalid role_action_mode')
+    if cfg.reference_kl < 0:
+        raise ValueError('reference_kl must be nonnegative')
     if not 0 <= cfg.mixed_warmup_fraction < 1:
         raise ValueError('mixed_warmup_fraction must be in [0, 1)')
     if cfg.interaction_budget is not None and cfg.interaction_budget < cfg.episodes_per_update:
@@ -168,7 +170,7 @@ def train(output, config=None, pretrained=None):
         bundle = torch.load(pretrained, map_location=cfg.device, weights_only=True)
         actor.load_state_dict(bundle['actor'])
     critic = Critics(cfg.hidden, cfg.algorithm == 'ippo').to(cfg.device)
-    reference = deepcopy(actor).eval() if pretrained else None
+    reference = deepcopy(actor).eval() if pretrained and cfg.reference_kl > 0 else None
     if reference:
         for p in reference.parameters():
             p.requires_grad_(False)

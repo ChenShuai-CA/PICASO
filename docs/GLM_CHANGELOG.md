@@ -942,3 +942,80 @@ teacher schema 验证，禁止把它们用于训练后再在同一 dev80 评价�
 验证集，再从独立 training-only 条件种子运行 parameter-CEM，建立带 provenance 的 teacher corpus；
 随后以固定总交互预算比较 script、纯 MAPPO、BC-only 和 BC→MAPPO。trajectory 解只作为可达
 上界和后续残差动作扩展依据。
+
+---
+
+## 2026-09-11 · P2.5 独立 CEM teacher 与策略迁移预注册（运行前）
+
+### 目的与数据边界
+
+本阶段检验 P2.4 定位出的学习/优化瓶颈能否通过低维 parameter-CEM teacher 缓解。现有
+`development_seed31000_samplerv2` 的 80 条条件冻结为验证集，P2.4 的 dev CEM 解禁止进入监督。
+另以 seed=51000、sampler v2 / physics v2、reference role 生成 purpose=`training` 的条件集，
+single/dual 各 120 条。构建 corpus 前按除 scenario_id 外的完整物理/控制参数指纹检查 training/dev
+交集，任何重叠直接终止。
+
+### Teacher 与行为克隆
+
+- training-only 条件上运行 parameter-CEM，search seed=107、population=8、`lane_locked`，每条件
+  精确 1000 decision steps；所有无效和末尾截断尝试继续计入搜索成本；
+- 只纳入能以原搜索 seed 确定性重放为 complete、valid、dangerous 的 best pulse 解；不成功条件
+  保留在搜索分母但不伪造监督标签；
+- 每个分支按 condition_index % 5 == 0 固定为 teacher-val，其余 teacher-train；
+- Actor 保持与 P2.3 相同的 43,016 参数结构，监督输入只含 actor 可见 observation；整 episode
+  recurrent replay，20 epochs、batch=16、learning rate 3e-4，使用 inverse-role-frequency 和
+  `1 + 2*abs(longitudinal_action)` 活动加权 MSE；策略种子 7/17/27/37/47；
+- BC-only checkpoint 直接评价；BC→MAPPO 从对应 BC checkpoint 初始化，reference KL 固定为 0，
+  无 robust、无 public prior、mixed warmup=0，每个分支精确 6000 在线训练步，总计 12000。
+
+### 冻结对照与判据
+
+对照复用 P2.3 同种子纯 MAPPO 12k checkpoint/evaluation 和 P2.2 script，全部在同一 dev80、
+`lane_locked` 条件上评价。主判据：BC→MAPPO 相对 script 的有效危险率差在 single、dual 两分支
+分别做 seed×scenario 双层配对 bootstrap（B=2000、seed=2026），点估计 >0、95% CI 下界严格
+>0，同时 BC→MAPPO 每 seed/branch valid_rate ≥0.80、角色违规总数为 0。两分支均满足才允许进入
+heldout 决策。
+
+机制指标预先固定但不替代主判据：BC-only-script、BC→MAPPO-pure MAPPO、BC→MAPPO-BC-only
+的危险率/风险差；teacher train/val 数、重放拒绝数、BC val MSE、动作活动度、target-target
+collision 和训练期无效原因全部报告。若 BC-only 提升而 BC→MAPPO 退化，归因于在线微调遗忘；
+若二者都无提升，归因于 teacher 蒸馏或 actor 可观测性不足；任何 dev 结果仍不作为 heldout 结论。
+
+### P2.5 实施结果
+
+23/23 个正式 job 通过，总计 873.67 s。training-only parameter-CEM 对 single/dual 各执行
+120 条件 × 1000 decision steps，得到 151 个 complete、valid、dangerous 且重放一致的 teacher
+episode；其中 single train/val 为 70/13，dual 为 53/15。training/dev 完整条件指纹交集为 0，
+teacher corpus SHA-256 为
+`db310f0df743c5065045688724a8987be787213667cca0ec51d19fa85a6b23dd`。五个 BC 和五个
+BC→MAPPO 均完成，后者逐模型 single/dual 各精确训练 6000 步。全部 dev 评价 valid_rate=1.0、
+角色违规为 0；heldout 未读。
+
+| 比较 | 分支 | 有效危险率差 [95% CI] | 判定 |
+|---|---|---:|---:|
+| BC-only - script | single | +0.030 [-0.150,+0.210] | 无可靠提升 |
+| BC-only - script | dual | -0.020 [-0.125,+0.085] | 无可靠提升 |
+| BC→MAPPO - script | single | +0.055 [-0.110,+0.205] | **主判据 FAIL** |
+| BC→MAPPO - script | dual | -0.010 [-0.110,+0.090] | **主判据 FAIL** |
+| BC→MAPPO - pure MAPPO | single | +0.055 [-0.065,+0.175] | 无可靠迁移增益 |
+| BC→MAPPO - pure MAPPO | dual | -0.015 [-0.120,+0.075] | 无可靠迁移增益 |
+
+五个 BC 的最佳 val MSE 均出现在 epoch 1（0.05854–0.05906），到预注册的 epoch 20 上升为
+0.06593–0.07348；这一现象只能作为事后过拟合线索，不能改用 epoch 1 重算正式判据。BC 的 dev
+输出跨种子高度一致，而 BC→MAPPO 增加了动作幅度和种子方差，却没有形成稳定正效应，因此没有
+证据把失败主要归为在线微调遗忘；BC-only 在进入在线训练前已经未超过 script。
+
+为缩小失败原因，另做不改变正式判据的 training-domain 事后诊断。151 个被选 teacher 中有 75 个
+（49.7%）在零动作 script 下已经 dangerous，说明“只要求 CEM dangerous”会混入大量无需学习
+增量干预的监督。更关键的是，在 script-safe 而 CEM 成功的 teacher 条件上，BC 对 single 的闭环
+危险复现率为 train 0.50–0.575、val 0.50，而 dual 仅为 train 0.10–0.20、val 0.125–0.25；teacher
+重放本身为 1.0。teacher-forced active-action 符号准确率也只有 single-val 0.533、dual-val 0.608。
+因此当前最具体的失败定位是：**低维开环 pulse 解存在，但逐时刻动作回归没有可靠转化为闭环策略，
+尤其 dual 分支存在严重的条件动作混叠或闭环分布偏移**。现有观测不能再细分这两种机制，不能把
+其中任一种写成已经证明的根因。
+
+P2.5 不满足进入 heldout 的预注册门槛，heldout 继续封存。下一阶段不再重复同一 BC→MAPPO 配方；
+应先用独立 training-only 数据预注册一个小型机制实验：只保留 script-safe 的增量 teacher，把
+监督目标从逐步 pulse 动作改为 condition/early-history 到 pulse 参数的预测，使用 teacher-val 选择
+停止点，并分别报告参数重放、teacher 条件闭环复现和冻结 dev 效应。只有 dual 的训练域闭环复现
+先显著高于本次 0.10–0.25，才值得再次投入正式 dev 多种子评价。

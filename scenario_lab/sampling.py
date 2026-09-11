@@ -14,7 +14,7 @@ from .schema import ScenarioSpec
 
 SAMPLER_VERSION = 2
 PHYSICS_VERSION = 2
-PURPOSES = ('diagnostic', 'development', 'heldout')
+PURPOSES = ('training', 'diagnostic', 'development', 'heldout')
 # Resampling keeps the occluder near the ego-pedestrian sight line band; values far
 # outside it would break the occlusion mechanism the dual branch exists to study.
 _OCCLUDER_FRACTION_RESAMPLE = (.5, .75)

@@ -270,7 +270,7 @@ def search(spec, output, kind='parameters', budget=40, seed=0, population=8,
     output.mkdir(parents=True, exist_ok=True)
     if best_params is not None:
         run_episode(_cem_policy(spec, kind, best_params), spec, seed, output / 'best_trace.json')
-    result = dict(kind=kind,
+    result = dict(kind=kind, seed=seed,
                   parameters=best_params.tolist() if best_params is not None else None,
                   best=best, budget=budget if interaction_budget is None else None,
                   interaction_budget=interaction_budget,
@@ -324,7 +324,7 @@ def search_conditions(conditions, output, kind='parameters', budget=40, seed=0,
     steps = sum(r['decision_steps'] for r in all_attempts)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
-    result = dict(kind=kind,
+    result = dict(kind=kind, seed=seed,
                   budget_per_condition=budget if interaction_budget is None else None,
                   interaction_budget_per_condition=interaction_budget,
                   population=population, role_action_mode=role_action_mode,

@@ -17,6 +17,8 @@ def main():
     train.add_argument('--mixed-warmup-fraction', type=float, default=.2,
                        help='fraction of mixed training reserved for single-only warmup')
     train.add_argument('--algorithm', choices=['ppo', 'ippo', 'mappo'], default='mappo')
+    train.add_argument('--reference-kl', type=float, default=.02,
+                       help='KL weight to the initial actor when --pretrained is used')
     train.add_argument('--device', default='auto')
     train.add_argument('--pretrained')
     train.add_argument('--no-robust', action='store_true')
@@ -89,6 +91,20 @@ def main():
     prior.add_argument('--seed', type=int, default=7)
     prior.add_argument('--no-neighbors', action='store_true',
                        help='self-only ablation: mask neighbor slots, same corpus')
+    teacher = sub.add_parser('build-teacher')
+    teacher.add_argument('--conditions', required=True)
+    teacher.add_argument('--dev-conditions', required=True)
+    teacher.add_argument('--search-single', required=True)
+    teacher.add_argument('--search-dual', required=True)
+    teacher.add_argument('--output', required=True)
+    teacher_train = sub.add_parser('pretrain-teacher')
+    teacher_train.add_argument('--corpus', required=True)
+    teacher_train.add_argument('--output', required=True)
+    teacher_train.add_argument('--epochs', type=int, default=20)
+    teacher_train.add_argument('--batch-size', type=int, default=16)
+    teacher_train.add_argument('--hidden', type=int, default=64)
+    teacher_train.add_argument('--seed', type=int, default=7)
+    teacher_train.add_argument('--device', default='auto')
     a = p.parse_args()
     if hasattr(a, 'device'):
         a.device = resolve_device(a.device)
@@ -97,7 +113,8 @@ def main():
         result = train(a.output, TrainConfig(seed=a.seed, updates=a.updates,
                        episodes_per_update=a.episodes_per_update, mode=a.mode,
                        mixed_warmup_fraction=a.mixed_warmup_fraction,
-                       algorithm=a.algorithm, device=a.device, robust=not a.no_robust,
+                       algorithm=a.algorithm, reference_kl=a.reference_kl,
+                       device=a.device, robust=not a.no_robust,
                        role_constraints=not a.no_role_constraints,
                        role_action_mode=a.role_action_mode,
                        interaction_budget=a.interaction_budget,
@@ -160,10 +177,18 @@ def main():
                                 include_pedestrians=a.include_pedestrians, per_location=a.per_location,
                                 location_splits=LOCATION_SPLITS_V5 if a.location_splits_v5 else None,
                                 max_files_interaction=a.max_files_interaction)
-    else:
+    elif a.command == 'pretrain':
         from .pretrain import pretrain
         result = pretrain(a.corpus, a.output, a.epochs, seed=a.seed, device=a.device,
                           use_neighbors=not a.no_neighbors)
+    elif a.command == 'build-teacher':
+        from .teacher import build_teacher_corpus
+        result = build_teacher_corpus(
+            a.conditions, a.dev_conditions, (a.search_single, a.search_dual), a.output)
+    else:
+        from .teacher import pretrain_teacher
+        result = pretrain_teacher(a.corpus, a.output, a.epochs, a.hidden, a.seed,
+                                  a.device, a.batch_size)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
