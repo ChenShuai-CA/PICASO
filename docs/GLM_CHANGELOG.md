@@ -1147,3 +1147,93 @@ MSE 为 0.416（训练均值基线 0.540），完整 ScenarioSpec 诊断上界�
 覆盖率、P2.6 精确 teacher 重放和完整 spec 诊断上界都反驳了这一解释。更准确的说法是：当前从
 搜索轨迹抽取出的监督集太小、角色失衡、标签非唯一，且监督损失与最终危险覆盖目标不一致；ABD
 校准尚未完成也意味着这些合成条件仍不能代表最终目标分布。
+
+---
+
+## 2026-09-11 · P2.7 多成功解集合监督预注册（运行前）
+
+### 数据与边界
+
+P2.7 检验“单个 CEM best + 参数 MSE”是否是 P2.6 模式平均的主要原因。训练源复用互不重叠的
+`training_seed51000_samplerv2` 与 `training_seed61000_samplerv2` attempts，并新增 dual-only
+`training_seed62000_samplerv2` 160 条条件，使用 search seed=137/157、population=8、每条件精确
+1000 decision steps，以增加角色1条件数和同条件多解。最终一次性机制 screen 使用全新的
+`training_seed71000_samplerv2`，single/dual 各120条，search seed=177、相同 CEM 预算。
+
+所有源继续限定 `lane_locked`。每个条件重新以对应 replay seed 执行零动作 script，只保留 script
+安全、CEM attempt complete/valid/dangerous、所有活跃 pulse onset≥0.5 s 的条件和候选。候选先取
+得分上半部，再从最高分解开始按80-step实际动作 RMS 距离作 farthest-first，最多8解；少于2解的
+条件仍保留并如实报告。training 与 screen 及现有 dev 做条件指纹隔离；dev 指纹只在 screen 门槛
+通过后读取和检查。heldout 不读。
+
+### 模型与损失
+
+- 每个角色只输入自身最初5个 actor-visible observation；0.0–0.4 s 输出零动作；
+- 共享 token encoder、role embedding、attention、GRU，hidden=16；每角色输出 K=4 组
+  amplitude/start/duration，候选 head 编号在角色间对齐，但角色特征不交叉；
+- 集合损失为 teacher→head coverage Chamfer 项加 0.25×head→teacher precision 项，距离在所有
+  活跃角色及三个参数维度上平均；训练时按分支逆频率加权；
+- policy seed=7/17/27/37/47，最多100 epochs、batch=16、Adam 3e-4；condition_index%5==0
+  为固定 val，以 single/dual 等权 val set loss 选择 epoch，screen 不参与选择；
+- 同时冻结一个强正则 ridge 单候选基线：每角色以成功动作 medoid 为目标，正则强度只由 train-val
+  在预定网格 {0.01,0.1,1,10,100} 选择。
+
+### 评价、成本与门槛
+
+每个 learned-set condition 执行4个候选 rollout，条件成功定义为至少一个 complete、valid、dangerous
+候选；所有候选步数、无效原因和成功前累计步数均记录。对照为 ridge 单候选和按固定 seed=2026
+生成、同样满足 onset≥0.5 s 的 uniform random 4候选；screen 条件本身均为 script-safe，精确 teacher
+候选重放只作100%可达性校验。
+
+进入 dev 须在 single、dual 分别同时满足：screen 合格条件≥15；learned-4 危险覆盖率的 seed×condition
+bootstrap（B=2000、seed=2026）95% CI 下界分别严格高于 P2.6 固定阈值0.50/0.25；learned-4 相对
+ridge-1 的配对覆盖差95% CI下界>0；相对 random-4 的配对差95% CI下界≥-0.05；全部 learned 候选
+attempt valid_rate≥0.80且角色违规为0。两分支均通过才读取dev80；否则以训练域机制结果结束。
+
+若进入 dev，正式报告 learned-4、ridge-1、random-4、script 的条件覆盖和总交互成本。learned-4
+相对 script 的 superiority 只有在两分支配对95% CI下界>0、有效性门槛满足时成立，并必须明确限定
+为“四候选 rollout 预算”，不能写成单次前向策略优越或等成本于 script/CEM。
+
+---
+
+## 2026-09-11 · P2.7 多成功解集合监督结果
+
+P2.7 已按上述预注册执行。新增 CEM 搜索在 `training_seed62000_samplerv2` dual 160 条件、两个
+search seed，以及 `training_seed71000_samplerv2` single/dual 各120条独立 screen 上共消耗
+560,000 decision steps；所有搜索均为 `lane_locked`、population=8、每条件精确1000步。复用的
+seed51000/61000 attempts 与新增 seed62000 组成训练源，所有训练、screen、dev 条件指纹重叠均为0；
+heldout 未读。
+
+过滤后训练集为174个条件（single 76、dual 98；train/val 分别为64/12和75/23），独立 screen
+为68个条件（single 48、dual 20）。精确 selected-teacher 重放在两分支条件覆盖率均为1.0。候选
+密度低于设计预期：训练174条中100条最终只有1个候选，候选数中位数为1；screen 68条中44条
+只有1个候选。主要损耗来自无合格危险解、script 本身已危险及 onset<0.5 s 过滤。
+
+五个3,416参数的 hidden=16、K=4 模型分别在 epoch 91/16/16/28/20 选择 checkpoint。预注册
+screen 机制门双分支均通过：
+
+- single learned-4 0.721 [0.596, 0.838]，ridge-1 0.479，差0.242
+  [0.108, 0.383]；random-4 0.417，差0.304 [0.163, 0.438]；候选有效率1.000；
+- dual learned-4 0.700 [0.500, 0.890]，ridge-1 0.450，差0.250
+  [0.080, 0.450]；random-4 0.350，差0.350 [0.150, 0.550]；候选有效率0.932，
+  角色违规0。
+
+因此按预注册规则解封 dev80。learned-4 在 dev single 为0.520、script 0.250，配对差0.270
+[0.100, 0.440]；dual 为0.550、script 0.350，配对差0.200 [0.095, 0.325]。候选有效率分别
+1.000/0.958，角色违规均为0，双分支均通过本阶段 dev superiority 判据。这一结果严格对应每条件
+最多4次 rollout；screen 中 learned 的全部候选交互步为 single 68,075、dual 27,690（包含5个
+policy seed），每 condition×seed 到首次成功或耗尽的平均步数为180.6/181.3，不能解释为与单次
+script 或 ridge 等成本。
+
+事后 head 诊断同时限制了结论。每个 seed 的 any-4 覆盖比其最佳固定 head 在 screen 高
+single 0.208–0.271、dual 固定0.150，在 dev 高 single 0.100–0.150、dual 0.125–0.225；四个
+head 的动作确实互异。但同一 head 的跨条件动作 RMS 仅为 screen single 0.0002、dual 0.0012，
+而 head 质心间 RMS 为0.1859/0.1379；条件相关方差占比分别只有0.0000/0.0003，dev 也近乎为0。
+所以 P2.7 实际学到的是四个全局 pulse 原型库，尚未学到随 actor-visible history 改变的条件化候选集。
+
+当前可支持的结论是：**在当前合成 lane-locked 分布和四次闭环尝试预算下，训练数据得到的四候选
+原型库在一次独立 training-domain screen 及解封后的 dev 上优于 script，并在 screen 上优于等候选数
+uniform random 与单候选 ridge。** 这部分首次满足了预算限定的“学习结果优于脚本”判据，但不能
+扩写为单次闭环策略优越、条件化生成已解决、heldout 已确认或 ABD 扰动已校准。P2.7 也说明单标签
+模式平均不是唯一瓶颈；下一阶段若继续学习主线，应把强固定四原型库列为正式基线，并预注册最低
+条件依赖/相对原型库增益门槛，否则继续扩大 K 只是在增加搜索式 portfolio 成本。
