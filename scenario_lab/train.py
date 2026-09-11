@@ -51,14 +51,46 @@ class TrainConfig:
     threads: int = 1
 
 
-def perturb_spec(spec, rng):
+def perturb_spec(spec, rng, calibrated=None):
+    """Draw execution-perturbation parameters for a base spec.
+
+    Without ``calibrated`` the draws follow the pre-registered assumed ranges.
+    With a config from ``load_perturb_config`` the two parameters identifiable
+    from ABD AEB logs (brake_deceleration, response_delay) draw from measured
+    ranges; action_delay_steps and target_accel_scale keep their assumed ranges
+    because no VUT-side channel can identify them (documented in the config).
+    """
     s = deepcopy(spec)
-    s.response_delay = float(rng.uniform(.1, .4))
-    s.brake_deceleration = float(rng.uniform(5.5, 8.0))
-    s.action_delay_steps = int(rng.integers(0, 3))
-    s.target_accel_scale = float(rng.uniform(.85, 1.15))
-    s.perturbation_source = 'assumed_sensitivity_not_abd_calibrated'
+    if calibrated is None:
+        s.response_delay = float(rng.uniform(.1, .4))
+        s.brake_deceleration = float(rng.uniform(5.5, 8.0))
+        s.action_delay_steps = int(rng.integers(0, 3))
+        s.target_accel_scale = float(rng.uniform(.85, 1.15))
+        s.perturbation_source = 'assumed_sensitivity_not_abd_calibrated'
+        return s
+    p = calibrated['parameters']
+    s.response_delay = float(rng.uniform(p['response_delay']['low'],
+                                         p['response_delay']['high']))
+    s.brake_deceleration = float(rng.uniform(p['brake_deceleration']['low'],
+                                             p['brake_deceleration']['high']))
+    steps = p['action_delay_steps']
+    s.action_delay_steps = int(rng.integers(steps['low'], steps['high'] + 1))
+    scale = p['target_accel_scale']
+    s.target_accel_scale = float(rng.uniform(scale['low'], scale['high']))
+    # Partial: two of four parameters are calibrated, two retained as assumed.
+    s.perturbation_source = f"{calibrated['version']}_partial"
     return s
+
+
+def load_perturb_config(path):
+    config = json.loads(Path(path).read_text(encoding='utf-8'))
+    required = ('brake_deceleration', 'response_delay', 'action_delay_steps',
+                'target_accel_scale')
+    missing = [name for name in required
+               if 'low' not in config.get('parameters', {}).get(name, {})]
+    if missing:
+        raise ValueError(f'perturb config missing parameter bounds: {missing}')
+    return config
 
 
 def advantages(rewards, values, gamma=.99, lam=.95, bootstrap=None):

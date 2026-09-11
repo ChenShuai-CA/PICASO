@@ -44,6 +44,9 @@ def main():
     ev.add_argument('--role-action-mode', choices=['none', 'lane_locked'],
                     help='override execution projection; defaults to the policy bundle setting')
     ev.add_argument('--one-learning-target', action='store_true')
+    ev.add_argument('--perturb-config',
+                    help='calibrated perturbation config (e.g. abd_calibrated_v1.json); '
+                         'applies to --perturbations > 1 draws')
     bench = sub.add_parser('benchmark')
     bench.add_argument('--policy', required=True)
     bench.add_argument('--device', default='auto')
@@ -167,9 +170,16 @@ def main():
                 version = manifest['condition_set_version']
             role_action_mode = (a.role_action_mode
                                 or ((bundle or {}).get('config') or {}).get('role_action_mode', 'none'))
+            perturb_config = None
+            if a.perturb_config:
+                from .train import load_perturb_config
+                perturb_config = load_perturb_config(a.perturb_config)
+                if a.perturbations <= 1:
+                    raise SystemExit('--perturb-config requires --perturbations > 1')
             result = evaluate(runner, a.output, a.count, a.seed, perturbations=a.perturbations,
                               controller=a.controller, conditions=conditions,
-                              condition_set_version=version, role_action_mode=role_action_mode)
+                              condition_set_version=version, role_action_mode=role_action_mode,
+                              perturb_config=perturb_config)
         else:
             result = benchmark(runner, a.output, a.steps)
     elif a.command == 'search':

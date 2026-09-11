@@ -151,7 +151,7 @@ def summarize(rows, seed=0, b_rounds=2000):
 
 def evaluate(policy, output, count=20, seed=1000, branches=('single', 'dual'), perturbations=1, export=2,
              controller='stopping', conditions=None, condition_set_version=None,
-             role_action_mode='none'):
+             role_action_mode='none', perturb_config=None):
     if count < 1 or perturbations < 1:
         raise ValueError('evaluation count and perturbations must be positive')
     output = Path(output)
@@ -184,13 +184,21 @@ def evaluate(policy, output, count=20, seed=1000, branches=('single', 'dual'), p
         spec = deepcopy(spec)
         spec.role_action_mode = role_action_mode
         for j in range(perturbations):
-            s = perturb_spec(spec, np.random.default_rng(seed + i * 100 + j)) if perturbations > 1 else spec
+            if perturbations > 1:
+                s = perturb_spec(spec, np.random.default_rng(seed + i * 100 + j),
+                                 calibrated=perturb_config)
+            else:
+                s = spec
             path = output / f'{branch}_{i:04d}_{j:02d}.json' if i < export else None
             row = run_episode(policy, s, seed + i * 100 + j, path)
             rows.append(row)
     report = dict(results_kind='pilot_until_preregistered_multiseed_study', controller=controller,
                   role_action_mode=role_action_mode,
-                  perturbations=perturbations, metrics=summarize(rows, seed), **header)
+                  perturbations=perturbations,
+                  perturbation_source=(spec.perturbation_source if perturbations == 1
+                                       else ('abd_calibrated_v1_partial' if perturb_config
+                                             else 'assumed_sensitivity_not_abd_calibrated')),
+                  metrics=summarize(rows, seed), **header)
     (output / 'episodes.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows), encoding='utf-8')
     (output / 'summary.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
     return report

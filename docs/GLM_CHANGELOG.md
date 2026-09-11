@@ -1237,3 +1237,61 @@ uniform random 与单候选 ridge。** 这部分首次满足了预算限定的�
 扩写为单次闭环策略优越、条件化生成已解决、heldout 已确认或 ABD 扰动已校准。P2.7 也说明单标签
 模式平均不是唯一瓶颈；下一阶段若继续学习主线，应把强固定四原型库列为正式基线，并预注册最低
 条件依赖/相对原型库增益门槛，否则继续扩大 K 只是在增加搜索式 portfolio 成本。
+
+## 2026-09-12 · P3.1 ABD 说明书证据解锁（manual_review.csv 24/24 填毕）
+
+**动机**：audit（runs/20260911_abd_calibration_audit）判 NO-GO 的根因是"制动归因链未文档化"；
+`C:\Program Files (x86)\ABD` 安装目录含全部官方说明书，可解锁人工核对。
+
+**做法**：pymupdf 提取 8 份关键 PDF 共 572 页为页标记文本（runs/20260911_abd_review/manuals_txt/，
+引用一律给文件+页码）；通道语义逐条对照 RC Software Manual（RM-S-01 Iss.23）§6.12.11.11；
+规程配方对照 AN-6092（Euro NCAP C2C 2020）与 AN-6157.01/.02（C-NCAP 2024 VRU）；
+数据侧用 audit evidence.json 窗口绝对值复核（delta 判据不充分——V14_T503 基线 9.95 EU 证明
+"恒非零保持"存在，必须查 base=min=max 绝对值）。
+
+**关键发现**（证据全文：runs/20260911_abd_review/MANUAL_EVIDENCE.md E1–E7）：
+1. `UseBrakeRobot` spec 标志真实语义 = "Use BR for speed control"速度控制选项
+   （RC §11.4.5.7 p.339-340；AN-6157.01 p.13 n.b. "will not change BR use for turning tests"），
+   不是"制动事件由机器人执行"的声明。audit 以 flag=True 整体排除 11 条属保守政策。
+2. CCRs AEB 配方 = VUT SR/AR 组合，AR 于 TTC=3s 转 hold filtered throttle"确保不干扰 AEB"，
+   AR 结束=速度低于测试速度 5 kph（防油门覆盖 AEB，协议 §8.4.5）；BR 仅 FCW 变体；
+   驾驶员仅 deadman（AN-6092 p.14-15）。CPTA = Car-to-Pedestrian **Turning** Adult（转弯），
+   BR 使用不受 flag 控制（AN-6157.02 p.45-46）。
+3. 消除法归因链成立：窗内 BR Command≡0（绝对值）+ 触发标志无变化 + AR 油门保持不可能
+   −9~−11 m/s² + 规程驾驶员不干预 ⇒ AEB；驾驶员违规踩踏板为不可区分残余风险（已文档化）。
+4. 绝对值复核把 3 条被 flag 误杀的运行恢复为 AEB 归因（V15_T3400 CCFT、V15_T5195 CPTA、
+   V4_T27 S9 CCRs）——audit 原产物未改动，升级在此留痕。
+
+**结果**：manual_review.csv 24/24 行填毕（utf-8-sig，每格证据引用）：eligible_for_abd_calibrated_v1=10、
+excluded_brake_robot_sourced=7、excluded_no_braking_response=3、
+excluded_calibration_run_no_response=3、excluded_calibration_run_robot_command_step=1。
+audit 的 NO-GO 解除条件（归因链文档化）已满足。
+
+## 2026-09-12 · P3.2 正式校准 abd_calibrated_v1（10 条 AEB 归因记录）
+
+**脚本**：`scripts/calibrate_abd_v1.py`（新；复用 audit 解析器/事件窗，audit 产物不动）。
+**产物**：runs/20260912_abd_calibration/{abd_calibrated_v1.json, calibration_table.csv,
+distributions.json, verification.json, REPORT.md}。
+
+**四项交付**：
+1. 去重/划分：sha256+test_id 双唯一（10/10）；CCRs 8（19.2–21.0 kph）+ turning 2（10.5 kph）
+   分速度制度；8 车型，15-TANG 贡献 3 条。
+2. 分布：`brake_deceleration` **U(9.128, 11.419)** m/s²（峰减速 pooled 中位 10.74、std 0.76；
+   p05 与峰差 ≤0.15=平台期）——假定域 U(5.5,8.0) 整体低于实测，此前扰动低估 ego 制动强度。
+   `response_delay` **U(0.055, 0.386)** s（CCRs margin-time=onset_TTC−v/|peak| 代理，中位 0.227；
+   env 语义=触发→输出延迟，AEB 请求信号未记录故为上界代理，已如实标注）。
+   `action_delay_steps`/`target_accel_scale` 保留假定并标注不可辨识原因（≤40 ms 无通道可辨；
+   后者为 NPC 侧缩放、VUT 日志无 NPC 通道——曾考虑用峰减速散布映射，读 env.py:165 后纠正）。
+3. 独立验证：LOO 重拟合（peak 域端点最大移 0.31/0.40=极值定义效应；margin 下界由两独立车型
+   支撑）；替代阈值 −0.5 m/s²：CCRs 峰差全部 0.000、onset 差 ≤0.11 s（7/8），turning 2 条
+   不稳（软阈值锁到转弯早期轻微减速）⇒ response_delay 只用 CCRs 子集有据。
+4. 版本化配置：abd_calibrated_v1.json（版本/provenance/每参数证据/不可辨识标注）；
+   scenario_lab 集成：`perturb_spec(spec, rng, calibrated=None)` + `load_perturb_config()` +
+   evaluate `--perturb-config`（默认路径行为不变，source 标签 abd_calibrated_v1_partial）。
+
+**测试**：新增 tests/test_perturb_config.py（4 项：校准域内采样/默认回归/缺字段拒绝/交付配置
+可消费含"实测域整体高于假定域"断言）；全套 pytest 93 passed。
+
+**未解决/边界**：n=10 跨 8 车型，per-vehicle 分布不可辨识；归因仍为消除法（无直接 AEB CAN 通道，
+驾驶员违规踩踏板不可区分）；用户 Robot Controller 抽查未做（reviewer 列已注明 pending）；
+margin-time 为代理量非直接时延测量。C-NCAP C2C 无 ABD 专册，引 Euro NCAP 2020 为最近同构配方。
