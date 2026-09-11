@@ -26,8 +26,10 @@ def test_each_source_and_holdout_gets_budget(tmp_path, monkeypatch):
     monkeypatch.setattr('scenario_lab.waymo.iter_waymo_tracks', fake_tracks)
     report = prepare_public(tmp_path, tmp_path/'corpus', max_examples=64)
     assert report['ready_for_joint_pilot']
-    assert report['sources'] == {'interaction': 32, 'waymo': 32}
-    assert report['splits']['train'] == report['splits']['val'] == 32
+    # Quotas moved from per-file 3:1 to per-group 3:2 (v5 neighbor corpus, CHANGELOG
+    # P1.2 R2): each fake group caps at 9 vehicle + 6 pedestrian = 15 examples.
+    assert report['sources'] == {'interaction': 30, 'waymo': 30}
+    assert report['splits']['train'] == report['splits']['val'] == 30
     assert report['cross_split_groups_quarantined'] == 0
     with pytest.raises(FileExistsError):
         prepare_public(tmp_path, tmp_path/'corpus', max_examples=64)

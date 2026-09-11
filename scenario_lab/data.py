@@ -40,6 +40,9 @@ AGENT_TYPE_KIND = {
     'car': 'vehicle', 'truck': 'vehicle', 'bus': 'vehicle', 'trailer': 'vehicle',
     'van': 'vehicle', 'motorcycle': 'other', 'bicycle': 'other',
     'pedestrian': 'pedestrian', 'ped': 'pedestrian',
+    # INTERACTION pedestrian exports label their only agent type as the official
+    # mixed class 'pedestrian/bicycle' (v5 corpus inclusion; see GLM_CHANGELOG P1.2).
+    'pedestrian/bicycle': 'pedestrian',
 }
 
 _SPLIT_TOKEN_MAP = {'train': 'train', 'val': 'val', 'validation': 'val',

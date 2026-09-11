@@ -52,12 +52,22 @@ def main():
     prepare.add_argument('--max-files', type=int, default=2)
     prepare.add_argument('--records-per-file', type=int, default=8)
     prepare.add_argument('--max-examples', type=int, default=10000)
+    prepare.add_argument('--include-pedestrians', action='store_true',
+                         help='also select INTERACTION pedestrian_tracks exports')
+    prepare.add_argument('--per-location', type=int, default=None,
+                         help='cap INTERACTION files per location (vehicle+pedestrian combined)')
+    prepare.add_argument('--max-files-interaction', type=int, default=None,
+                         help='separate INTERACTION file budget when it differs from --max-files')
+    prepare.add_argument('--location-splits-v5', action='store_true',
+                         help='apply the pre-registered v5 INTERACTION holdout map')
     prior = sub.add_parser('pretrain')
     prior.add_argument('--corpus', required=True)
     prior.add_argument('--output', required=True)
     prior.add_argument('--epochs', type=int, default=5)
     prior.add_argument('--device', default='auto')
     prior.add_argument('--seed', type=int, default=7)
+    prior.add_argument('--no-neighbors', action='store_true',
+                       help='self-only ablation: mask neighbor slots, same corpus')
     a = p.parse_args()
     if hasattr(a, 'device'):
         a.device = resolve_device(a.device)
@@ -100,11 +110,15 @@ def main():
         result = dict(outputs=audit_result['outputs'], inventory_rows=audit_result['inventory']['n_rows'],
                       sources={k: {key: value for key, value in audit_result[k].items() if key != 'samples'} for k in ('abd', 'interaction')})
     elif a.command == 'prepare-public':
-        from .pretrain import prepare_public
-        result = prepare_public(a.root, a.output, a.max_files, a.records_per_file, a.max_examples)
+        from .pretrain import prepare_public, LOCATION_SPLITS_V5
+        result = prepare_public(a.root, a.output, a.max_files, a.records_per_file, a.max_examples,
+                                include_pedestrians=a.include_pedestrians, per_location=a.per_location,
+                                location_splits=LOCATION_SPLITS_V5 if a.location_splits_v5 else None,
+                                max_files_interaction=a.max_files_interaction)
     else:
         from .pretrain import pretrain
-        result = pretrain(a.corpus, a.output, a.epochs, seed=a.seed, device=a.device)
+        result = pretrain(a.corpus, a.output, a.epochs, seed=a.seed, device=a.device,
+                          use_neighbors=not a.no_neighbors)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

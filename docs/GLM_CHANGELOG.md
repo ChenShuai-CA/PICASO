@@ -218,3 +218,203 @@ P1.2 邻居对齐交互先验的设计必须同时回应：val 零 INTERACTION �
 
 - 新增：`scripts/corpus_stats.py`（审计脚本，含 pretraining.json 口径自检，自检不过即报错退出）。
 - 产物：`runs/20260911_p1_corpus_stats/`（未提交，属 runs/ 大产物）。
+
+---
+
+## 2026-09-11 · P1.2 预注册（先于任何 v5 语料构建与训练落笔；用户已确认范围与判据）
+
+### R1. 动机（来自 P1.1 审计的三个量化事实）
+
+1. val split 100% 来自 Waymo（INTERACTION 12 location hash 出 11 train/1 test/0 val）——prior 从未
+   在 INTERACTION 分布上验证；2. prior val MSE 0.2375 ≥ 零动作 0.2373（所有口径同向）；3. 行人
+   2.9% 全 Waymo。本轮加入邻居对齐交互上下文与 INTERACTION 行人导出（166 个
+   pedestrian_tracks CSV，v4 被 `startswith('vehicle_tracks_')` 过滤排除）。
+
+### R2. 语料 v5 构成规则（固定，不依结果调整）
+
+- INTERACTION split 改为**显式 location 映射**（split_group 函数不动，prepare 层覆盖）：
+  规则 = 按 `sha256('interaction_holdout_v5\x1f{location}')` 十六进制升序取末 2 个为 val。
+  计算结果（2026-09-11 落笔前算定）：**val = DR_USA_Roundabout_SR、DR_DEU_Roundabout_OF**；
+  train = DR_USA_Roundabout_EP、DR_USA_Intersection_EP1、DR_USA_Intersection_GL、
+  DR_USA_Roundabout_FT、DR_USA_Intersection_MA、DR_USA_Intersection_EP0。INTERACTION 不设
+  test 桶；test 保持 Waymo-only。官方 validation-set-list 文件为空（官方 val 划分不可得），
+  故用本规则替代 location 级 hash（12 location hash 出 0 个 val 的既成事实）。
+- 邻居对齐：同 group（INTERACTION=location、Waymo=sid）共同时间戳（整数帧键 round(t*10)，
+  100ms 网格精确匹配不插值）≥8 帧的候选里，按窗口内平均距离取每 kind top-1，>40m 不填；
+  窗口内邻居身份固定（禁止逐帧切换）。特征：旋转到 anchor 朝向系，/40,/10,/15 + kind one-hot
+  （OBS_DIM 布局同 env.observe）；anchor 自身槽编码与 v4 完全一致；行人 anchor 的车邻居填
+  slot2、车 anchor 的行人邻居填 slot1、slot0 恒空。
+- 预算：max_examples=20000，INTERACTION 每 location 文件上限 4，行人目标占比 ≥20%，
+  Waymo 沿用 4 tfrecord（2 train+2 val）。产物 runs/20260911_p1_corpus_v5/。
+- **行人筛选依据（首轮构建时发现并记录）**：INTERACTION 行人导出的 `agent_type` 唯一取值是
+  官方混合类 `pedestrian/bicycle`（首轮语料 0 个 INTERACTION 例子的根因：映射表未收录 →
+  kind='other' 被丢弃）。v5 接受该混合类映射为 'pedestrian'（官方格式事实，非我们自己的
+  判别；Waymo 侧维持既有 unambiguous 规则），桶内文件排序改为 location 主序（否则名字序让
+  pedestrian 文件占满全部选择名额）。首轮 548 例全 Waymo 的废语料已删除重建，此段即留痕。
+
+### R3. 训练变体（超参钉死：epochs=10、hidden=64、seed=7、lr=3e-4，不做任何调参）
+
+1. `prior_v5_self`：v5 语料，self-only 视图（邻居槽 token_mask 置 False，同一份 npz——
+   消融不引入语料差异）；
+2. `prior_v5_nb`：v5 语料，neighbor 视图。
+对照：零动作基线（解析）；旧 prior_v4（v4 语料 5 epochs 训练）在 v5 val self-only 视图上推理，
+仅作跨语料参考行，不进判据。
+
+### R4. 判据与统计（用户 2026-09-11 确认）
+
+- **主判据**：prior_v5_nb 的 val MSE 低于零动作基线，且两者 95% CI 不重叠；
+- **次判据**：prior_v5_nb 低于 prior_v5_self，且 95% CI 不重叠；
+- bootstrap：聚类单位 (source, group_id)，B=2000，seed=2026；全角色 + 分角色（role0/role1）
+  两版；INTERACTION 侧组粒度为 location 级（val 仅 2 组），另出 per-source 分层数字并如实
+  标注统计力限制。
+- 判据结果 PASS/FAIL 均如实落盘；FAIL 即负结果（P4 论文的合法内容），禁止事后换标准或
+  按结果回调超参/规则。
+
+---
+
+## 2026-09-11 · P1.2 实施：语料 v5 + 邻居对齐 + 两变体训练 + 预注册判据判定（结果：双 FAIL 负结果）
+
+**执行环境**：同 P0。产物：`runs/20260911_p1_corpus_v5/`（语料）、`runs/20260911_p1_prior_self/`、
+`runs/20260911_p1_prior_nb/`（训练）、`runs/20260911_p1_eval/`（正式对照与判定）。
+
+### 1. 语料 v5 构建：五轮失败与修复（全部留痕，最终构成见 §2）
+
+| 轮次 | 症状 | 根因 | 修复 |
+|---|---|---|---|
+| 1 | 548 例全 Waymo，INTERACTION 0 例 | 行人导出 `agent_type` 唯一值是官方混合类 `pedestrian/bicycle`，不在 `AGENT_TYPE_KIND` → kind='other' 被丢 | data.py 加映射（官方格式事实，非自判别；预注册 R2 已补记） |
+| 2 | 32 个入选文件全 pedestrian_tracks | 桶内按文件名排序，pedestrian_tracks 字母序占满预算 | 桶排序改 (location, name)——location 主序交叉两族文件 |
+| 3 | 混入 DR_CHN_*/DR_DEU_Merging 等映射外 location（走 hash 进 train 桶挤名额） | 显式映射只覆盖参与名单，未排除名单外文件 | `location_splits` 兼作参与名单过滤 |
+| 4 | vehicle 仅 12.6% | per_location=4 在行人文件 ≥4 的 location 把 vehicle 文件截光 | 每 location 文件族前缀平分（各 per_location//2） |
+| 5 | Waymo 548 例（v4 为 2082） | records_per_file=8 → 每 tfrecord 只解 8 个 scenario | `--records-per-file 32` |
+
+每轮失败语料目录已删除重建（脚本 FileExistsError 防重入设计使然）；最终语料构成与第 5 轮修复后一致。
+
+### 2. 最终语料构成（runs/20260911_p1_corpus_v5，交叉表全达标）
+
+**10770 例**：INTERACTION 8750 + Waymo 2020；train 7404 / val 3228 / test 138；
+vehicle 7833 / pedestrian **2937 = 27.3%**（预注册 ≥20% ✓）；独立组 135；
+`cross_split_groups_quarantined=0` ✓；`windows_with_neighbors=10757`（99.9%）。
+val 构成：INTERACTION vehicle 1500 + pedestrian 654（SR+OF 两 location、两 kind 均非零 ✓）+
+Waymo vehicle 986 + pedestrian 88——**val 67% 来自 INTERACTION，v4 的"val 零 INTERACTION"缺口消除**。
+INTERACTION×test 为零（预注册 R2：INTERACTION 不设 test 桶，test 保持 Waymo-only，如实记录）。
+
+构建命令（参数由 report.json 与终端历史复原，report.json 为准）：
+```bash
+python -m scenario_lab prepare-public --output runs/20260911_p1_corpus_v5 --max-files 4 \
+  --max-files-interaction 32 --records-per-file 32 --max-examples 20000 \
+  --include-pedestrians --per-location 4 --location-splits-v5
+```
+
+### 3. NaN 训练崩溃与修复（语料构成不变）
+
+首轮训练 prior_v5_nb 在 epoch 1 内崩于 `Normal()` 断言（log_prob 全 NaN）：npz 内 6 个非有限
+token。根因：INTERACTION 行人无 psi_rad（heading 速度推导，低速 NaN）；anchor 自身窗口有
+isfinite 检查，但**作为邻居被编码时无检查**——低速邻居把 NaN 注入 token。修复（双保险）：
+`_neighbor_candidates` 对候选帧 (xy, velocity, heading) 加与 anchor 相同的有限性检查；
+`pretrain()` 对 tokens 加 finite 硬拒绝（非有限即 raise，防再训）。语料原样重建后构成数字逐项
+一致，训练正常完成。教训留痕：v4 无邻居路径故从未暴露；邻居编码引入了第二类数据质量入口。
+
+### 4. 训练两变体（超参 = 预注册 R3：epochs=10、hidden=64、seed=7、lr=3e-4，不调参）
+
+```bash
+python -m scenario_lab pretrain --corpus runs/20260911_p1_corpus_v5/motion_prior.npz \
+  --output runs/20260911_p1_prior_self --epochs 10 --device cuda --no-neighbors
+python -m scenario_lab pretrain --corpus runs/20260911_p1_corpus_v5/motion_prior.npz \
+  --output runs/20260911_p1_prior_nb --epochs 10 --device cuda
+```
+
+| 变体 | ep1 train/val | ep10 train/val | 最佳 val |
+|---|---|---|---|
+| prior_v5_self | 0.17982 / 0.19147 | 0.17687 / 0.19221 | **0.19085**（ep9） |
+| prior_v5_nb | 0.17972 / 0.19172 | 0.17615 / 0.19282 | **0.19137**（ep9） |
+
+train_mse 持续下降而 val_mse 微升（gap ≈ 0.016）——记忆化而非泛化；两变体 val 曲线几乎重合。
+
+### 5. 正式对照与预注册判据判定（runs/20260911_p1_eval）
+
+```bash
+python scripts/corpus_stats.py --corpus runs/20260911_p1_corpus_v5 --output runs/20260911_p1_eval \
+  --priors prior_v5_self=runs/20260911_p1_prior_self/prior.pt prior_v5_nb=runs/20260911_p1_prior_nb/prior.pt \
+  --reference prior_v4_cross=runs/20260911_gpu_pilot/prior/prior.pt \
+  --verdict "prior_v5_nb,zero-action baseline" --verdict "prior_v5_nb,prior_v5_self" \
+  --bootstrap 2000 --seed 2026
+```
+
+- 工程留痕：首轮跑用下划线名 `zero-action_baseline` 与默认空格名不匹配，主判据对未生成
+  verdict；用引号传空格名重跑（同 seed 同数据，点估计与 CI 完全一致）后正式落盘。
+- 本轮脚本升级：每个 prior 按 bundle 内保存的 `use_neighbors` 恢复自身训练视图评估
+  （prior_v5_self 若在全量 mask 下评估会与其 logged val_mse 口径不符）；新增 `--reference`
+  通道（跨语料参考行：v4 prior 在 v5 val self-only 视图推理，自检不适用、不进判据）；
+  `--verdict` 改可重复多对。
+- 口径自检：两 v5 变体在 val[:1024] 复算与 pretraining.json 末轮 val_mse 差 ~1e-7，PASS。
+
+**判定结果：主判据、次判据全部切片 FAIL（预注册 R4 口径，负结果如实落盘）**
+
+| 判据 | 切片 | below MSE [95% CI] | above MSE [95% CI] | 不重叠 | 判定 |
+|---|---|---|---|---|---|
+| 主：nb < 零动作 | all roles | 0.196315 [0.1746, 0.2496] | 0.193648 [0.1706, 0.2476] | 否 | **FAIL** |
+| 主：nb < 零动作 | role 0 ped | 0.176483 [0.1319, 0.3588] | 0.175638 [0.1315, 0.3582] | 否 | **FAIL** |
+| 主：nb < 零动作 | role 1 veh | 0.202235 [0.1900, 0.2419] | 0.199024 [0.1852, 0.2390] | 否 | **FAIL** |
+| 次：nb < self | all roles | 0.196315 [0.1746, 0.2496] | 0.195709 [0.1733, 0.2503] | 否 | **FAIL** |
+| 次：nb < self | role 0 ped | 0.176483 [0.1319, 0.3588] | 0.176123 [0.1316, 0.3595] | 否 | **FAIL** |
+| 次：nb < self | role 1 veh | 0.202235 [0.1900, 0.2419] | 0.201555 [0.1886, 0.2425] | 否 | **FAIL** |
+
+完整 4 模型 × 6 切片表（含 role 加权口径、per-source 分层、v4 跨语料参考行）见
+`runs/20260911_p1_eval/CORPUS_STATS.md` 与 `mse_table.csv`。
+
+### 6. 解读（工程诊断边界内，非论文证据）
+
+1. **负结果与 P1.1 同向且更干净**：v5 val 全角色 MSE 排序 零动作 0.19365 < prior_v4_cross
+   0.19385 < prior_v5_self 0.19571 < prior_v5_nb 0.19632——所有学习变体点估计不低于零动作，
+   且 v4 在 v5 语料上同样≈零动作。"动作目标已归一化 + 多数窗口近匀速 → 零预测强基线"的解释
+   在扩大语料（+行人 27%）、显式 INTERACTION 留出、加邻居上下文后依然成立。
+2. **邻居特征零净增益**（次判据方向为负）：self 略优于 nb。在 hidden=64 / 10 epochs 公平预算下，
+   top-1 邻居 token 未提供可用的预测信息；结合 §4 的 train/val gap，模型容量或预算不足以利用
+   交互上下文——但按预注册超参不回调，此备择解释如实保留。
+3. **来源间差异主导**：零动作口径下 INTERACTION val 0.1709 vs Waymo val 0.2392（差 0.068），
+   远大于任何模型间差（<0.003）；4 个模型在两 source 上排序一致。val 指标被来源构成
+   （67% INTERACTION）主导——后续一切 val 比较必须分层报告（本表已含 per-source 切片）。
+4. **CI 宽度 = 统计力限制的量化**：role0 CI [0.1315, 0.3582] 极宽，因 INTERACTION 行人 654 例
+   聚在 2 个 location 组、val 共仅 ~88 组（INTERACTION 2 + Waymo 86）——组级聚类 bootstrap 的
+   方差主导 CI。这是预注册风险清单写明的限制，非新发现；如需有统计力的 CI 判定，未来需更多
+   独立 val 组（INTERACTION case 级组是候选项，但须先论证 case 级无泄漏）。
+5. **对 P2 的输入**：开环 val MSE 无法区分先验价值——P2 公平预算评价中先验应作为策略训练的
+   初始化/正则来检验，零动作与 prior_v5_* 均作对照行保留。负结果本身是 P4 可写的预注册内容。
+
+### 7. 测试
+
+- 全量 **60 passed**（53 既有 + 7 新增 tests/test_neighbor_alignment.py）；预算断言随 per-group
+  3:2 配额更新为 30（tests/test_pretrain.py，带注释）。
+- 新增测试覆盖：邻居未来帧篡改→窗口输入不变（构造性无泄漏）；anchor 未来帧篡改→仅 target 变；
+  旋转几何（anchor π/4、邻居正北 5m → (5/√2, 5/√2)）；窗口级 top-1 选择与 >40m 拒绝；
+  heldout location 组绝不进 train；location split 映射尊重。
+
+### 8. 版本与重跑标记
+
+| 产物 | 状态 |
+|---|---|
+| `runs/20260911_public_v4`（v4 语料）与旧 prior | 不变，仅历史参考（P1.1 已标） |
+| `runs/20260911_p1_corpus_v5` | 当前唯一语料（feature_version=neighbor-v1；corpus_sha256 已存入两 prior bundle） |
+| prior_v5_self / prior_v5_nb | 判定 FAIL，**不得作"改进"宣称**；保留作 P2 对照行 |
+| `runs/20260911_p1_eval` | 预注册判定正式落盘（summary.json 含 6 条 verdict 全记录） |
+| 交叉版本并列 | 任何 v4/v5 数字并列必须标注 corpus_version，禁混排成趋势 |
+
+### 9. 本轮修改文件
+
+- 修改：`scenario_lab/pretrain.py`（v5 显式留出+邻居对齐窗口+per-group 配额+use_neighbors 消融
+  +finite 硬检查）、`scenario_lab/data.py`（AGENT_TYPE_KIND 加 pedestrian/bicycle）、
+  `scenario_lab/__main__.py`（prepare-public/pretrain 新参数）、`scripts/corpus_stats.py`
+  （多 prior+聚类 bootstrap+多 verdict+训练视图恢复+--reference）、`tests/test_pretrain.py`。
+- 新增：`tests/test_neighbor_alignment.py`。
+- 未触碰：用户既有未提交改动（HANDOFF.md、stage2_extract.py、abd_parser/inventory 删除记录）、
+  runs/ 既有产物、Data/。
+
+### 10. 未解决问题
+
+- CI 统计力不足（§6.4）——不改聚类单位（预注册钉死），P2 若需更强判定再预注册新规则。
+- hidden=64/10 epochs 欠拟合与容量不足的备择解释无法排除（超参不回调，§6.2）。
+- Waymo 地图解码后置（P1.2d，未开始）。
+- 语料 token 为 anchor 旋转系编码，与 env.observe 全局相对编码存在迁移 gap（v4 起即如此，
+  P2 前不解决）。
+- 行人 heading 低速 NaN：anchor 侧靠 speed≥0.3 过滤兜底，未做系统性抽查统计（本轮仅修复
+  邻居侧注入路径）。
