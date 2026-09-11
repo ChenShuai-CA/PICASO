@@ -10,7 +10,8 @@ import json
 import time
 import numpy as np
 import torch
-from .env import ScenarioEnv, sample_spec
+from .env import ScenarioEnv
+from .sampling import sample_spec
 from .policy import Actor, Critics, action_log_prob, save_bundle
 
 
@@ -32,6 +33,9 @@ class TrainConfig:
     algorithm: str = 'mappo'
     role_constraints: bool = True
     robust: bool = True
+    # Scenario sampler used for on-policy spec draws; 1 keeps the legacy training
+    # distribution, 2 pairs physics v2 with constructive reference feasibility.
+    sampler_version: int = 1
     device: str = 'cpu'
     threads: int = 1
 
@@ -151,7 +155,8 @@ def train(output, config=None, pretrained=None):
             if not robust_phase or e % 2 == 0:
                 if robust_phase and cfg.mode == 'mixed':
                     branch = 'single' if (e // 2 + update) % 2 == 0 else 'dual'
-                base = sample_spec(rng, branch, update * cfg.episodes_per_update + e)
+                base = sample_spec(rng, branch, update * cfg.episodes_per_update + e,
+                                   version=cfg.sampler_version)
                 base.role_constraints = cfg.role_constraints
             spec = perturb_spec(base, rng) if robust_phase else deepcopy(base)
             ep = collect_episode(actor, critic, spec, int(rng.integers(2**31)), cfg.device)

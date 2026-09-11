@@ -95,7 +95,14 @@ def signature(row):
     return hashlib.sha256(repr(bins).encode()).hexdigest()[:16]
 
 
-def summarize(rows, seed=0):
+def summarize(rows, seed=0, b_rounds=2000):
+    """Branch metrics with group-clustered bootstrap CIs (preregistered B and seed).
+
+    Episode-length, control-effort and clipping aggregates sit next to the outcome
+    rates so the interaction budget and the naturalness raw material are explicit;
+    invalid attempts stay in every denominator. b_rounds default upgraded from the
+    pilot's hard-coded 1000 (P2 preregistration); pilot artifacts are not recomputed.
+    """
     result = {}
     rng = np.random.default_rng(seed)
     for branch in ('single', 'dual'):
@@ -104,17 +111,26 @@ def summarize(rows, seed=0):
             continue
         valid = np.array([r['valid'] for r in subset])
         danger = np.array([r['dangerous'] for r in subset])
+        steps = np.array([r['decision_steps'] for r in subset], dtype=float)
         # Cluster bootstrap: all perturbations of a base scenario remain together.
         groups = sorted({r['scenario_id'] for r in subset})
         group_rates = np.array([np.mean([r['dangerous'] for r in subset if r['scenario_id'] == g]) for g in groups])
-        estimates = np.array([np.mean(rng.choice(group_rates, len(groups), replace=True)) for _ in range(1000)])
+        estimates = np.array([np.mean(rng.choice(group_rates, len(groups), replace=True)) for _ in range(b_rounds)])
+        efforts = [r['total_effort'] for r in subset if 'total_effort' in r]
         result[branch] = dict(attempts=len(subset), independent_scenarios=len(groups),
+                              bootstrap_rounds=b_rounds,
                               valid_rate=float(valid.mean()), dangerous_rate=float(danger.mean()),
                               dangerous_rate_cluster_ci95=np.quantile(estimates, [.025, .975]).tolist(),
                               collision_rate=float(np.mean([r['collision'] for r in subset])),
                               unique_valid_dangerous=len({signature(r) for r in subset if r['dangerous']}),
                               mean_clearance=float(np.mean([r['min_clearance'] for r in subset])),
-                              total_steps=sum(r['decision_steps'] for r in subset),
+                              total_steps=int(steps.sum()),
+                              steps_mean=float(steps.mean()), steps_median=float(np.median(steps)),
+                              effort_mean=float(np.mean(efforts)) if efforts else None,
+                              clipped_rate=float(np.mean([r['clipped_actions'] / max(r['decision_steps'], 1)
+                                                           for r in subset])),
+                              brake_coverage=float(np.mean([r['first_brake_time'] is not None
+                                                             for r in subset])),
                               wall_s=sum(r['wall_s'] for r in subset))
     return result
 
@@ -162,9 +178,8 @@ def evaluate(policy, output, count=20, seed=1000, branches=('single', 'dual'), p
     return report
 
 
-def search(spec, output, kind='parameters', budget=40, seed=0, population=8):
-    if budget < 2 or population < 2:
-        raise ValueError('CEM requires budget and population >=2')
+def _cem(spec, budget, seed, population, kind):
+    """One CEM run on one condition; every sampled episode is kept and counted."""
     rng = np.random.default_rng(seed)
     dim = 6 if kind == 'parameters' else 32
     cls = ParamPolicy if kind == 'parameters' else TrajectoryPolicy
@@ -172,7 +187,6 @@ def search(spec, output, kind='parameters', budget=40, seed=0, population=8):
     attempts = []
     best = None
     best_params = None
-    started = time.perf_counter()
     while len(attempts) < budget:
         n = min(population, budget - len(attempts))
         candidates = np.clip(rng.normal(mean, std, (n, dim)), -1, 1)
@@ -188,6 +202,15 @@ def search(spec, output, kind='parameters', budget=40, seed=0, population=8):
         elite = candidates[np.argsort(scored)[-max(1, n // 4):]]
         mean = .3 * mean + .7 * elite.mean(0)
         std = np.maximum(.1, .3 * std + .7 * elite.std(0))
+    return attempts, best, best_params
+
+
+def search(spec, output, kind='parameters', budget=40, seed=0, population=8):
+    if budget < 2 or population < 2:
+        raise ValueError('CEM requires budget and population >=2')
+    started = time.perf_counter()
+    attempts, best, best_params = _cem(spec, budget, seed, population, kind)
+    cls = ParamPolicy if kind == 'parameters' else TrajectoryPolicy
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     run_episode(cls(best_params), spec, seed, output / 'best_trace.json')
@@ -198,6 +221,51 @@ def search(spec, output, kind='parameters', budget=40, seed=0, population=8):
                   warning='best-of-search result; compare only with equivalent search budget')
     (output / 'search.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     (output / 'attempts.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in attempts), encoding='utf-8')
+    return result
+
+
+def search_conditions(conditions, output, kind='parameters', budget=40, seed=0,
+                      population=8, branches=('dual',)):
+    """Per-condition CEM across a frozen condition manifest (P2 preregistration).
+
+    Budget is per condition; invalid attempts count toward evaluations and the
+    denominators. Best-of-search rows are never comparable to single-sample
+    policies without matching search budgets.
+    """
+    if budget < 2 or population < 2:
+        raise ValueError('CEM requires budget and population >=2')
+    specs = [c for c in conditions if c.branch in branches]
+    if not specs:
+        raise ValueError('no conditions match the requested branches')
+    per_condition, all_attempts = [], []
+    started = time.perf_counter()
+    for i, spec in enumerate(specs):
+        attempts, best, best_params = _cem(spec, budget, seed + i, population, kind)
+        for row in attempts:
+            row['condition_index'] = i
+        all_attempts.extend(attempts)
+        per_condition.append(dict(condition_index=i, scenario_id=spec.scenario_id,
+                                  branch=spec.branch, evaluations=len(attempts),
+                                  interaction_steps=sum(r['decision_steps'] for r in attempts),
+                                  valid_attempts=sum(r['valid'] for r in attempts),
+                                  best_score=best['score'] if best else None,
+                                  best_valid=best['valid'] if best else None,
+                                  best_dangerous=best['dangerous'] if best else None,
+                                  best_parameters=best_params.tolist() if best_params is not None else None))
+    steps = sum(r['decision_steps'] for r in all_attempts)
+    output = Path(output)
+    output.mkdir(parents=True, exist_ok=True)
+    result = dict(kind=kind, budget_per_condition=budget, branches=list(branches),
+                  n_conditions=len(specs), total_evaluations=len(all_attempts),
+                  total_interaction_steps=steps,
+                  mean_steps_per_condition=steps / len(specs),
+                  valid_attempts=sum(r['valid'] for r in all_attempts),
+                  per_condition=per_condition,
+                  elapsed_s=time.perf_counter() - started,
+                  warning='best-of-search result; compare only with equivalent search budget')
+    (output / 'conditions_search.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
+    (output / 'attempts.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in all_attempts),
+                                           encoding='utf-8')
     return result
 
 

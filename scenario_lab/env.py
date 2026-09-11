@@ -47,6 +47,7 @@ class ScenarioEnv:
         self.clipped_actions = 0
         self.occluded_steps = 0
         self.total_steps = 0
+        self.effort_total = 0.
         self.first_brake_time = None
         self.record = EpisodeRecord(scenario=s.to_dict(), seed=int(seed))
         self._refresh_tracks()
@@ -218,6 +219,7 @@ class ScenarioEnv:
         self.peak_risk = max(self.peak_risk, math.exp(-self.min_clearance / 2.))
         self.done = bool(self.collision or self.invalid_reasons or self.time + 1e-9 >= self.spec.horizon)
         effort = float(np.square(applied - self.last_actions).sum() / max(self.mask.sum(), 1))
+        self.effort_total += effort  # naturalness raw material, reported outside the reward
         reward = self.peak_risk - previous_risk - .002 * effort
         if self.collision:
             reward += self.collision_speed / max(self.spec.ego_speed, 1)
@@ -240,6 +242,7 @@ class ScenarioEnv:
                     first_brake_time=self.first_brake_time, elapsed=self.time,
                     occlusion_fraction=self.occluded_steps / max(self.total_steps, 1),
                     clipped_actions=self.clipped_actions,
+                    total_effort=self.effort_total,
                     perturbation_source=self.spec.perturbation_source)
 
     def _record(self, obs, requested):

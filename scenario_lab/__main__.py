@@ -19,6 +19,9 @@ def main():
     train.add_argument('--pretrained')
     train.add_argument('--no-robust', action='store_true')
     train.add_argument('--no-role-constraints', action='store_true')
+    train.add_argument('--sampler-version', type=int, default=1, choices=[1, 2],
+                       help='scenario sampler for on-policy draws (2 pairs physics v2 '
+                            'with constructive reference feasibility)')
     ev = sub.add_parser('evaluate')
     ev.add_argument('--policy')
     ev.add_argument('--device', default='auto')
@@ -35,7 +38,10 @@ def main():
     bench.add_argument('--output', required=True)
     bench.add_argument('--steps', type=int, default=10000)
     search = sub.add_parser('search')
-    search.add_argument('--branch', choices=['single', 'dual'], default='dual')
+    search.add_argument('--branch', choices=['single', 'dual'], default='dual',
+                        help='single-spec mode, or the branch filter in --conditions mode')
+    search.add_argument('--conditions',
+                        help='frozen condition manifest: per-condition CEM over matching branches')
     search.add_argument('--kind', choices=['parameters', 'trajectory'], default='parameters')
     search.add_argument('--budget', type=int, default=40)
     search.add_argument('--seed', type=int, default=7)
@@ -76,7 +82,8 @@ def main():
         result = train(a.output, TrainConfig(seed=a.seed, updates=a.updates,
                        episodes_per_update=a.episodes_per_update, mode=a.mode,
                        algorithm=a.algorithm, device=a.device, robust=not a.no_robust,
-                       role_constraints=not a.no_role_constraints), a.pretrained)
+                       role_constraints=not a.no_role_constraints,
+                       sampler_version=a.sampler_version), a.pretrained)
     elif a.command in ('evaluate', 'benchmark'):
         from .evaluate import evaluate, benchmark, ScriptPolicy, OneLearningPolicy
         from .policy import load_bundle
@@ -98,9 +105,15 @@ def main():
         else:
             result = benchmark(runner, a.output, a.steps)
     elif a.command == 'search':
-        from .evaluate import search
+        from .evaluate import search, search_conditions
         from .schema import ScenarioSpec
-        result = search(ScenarioSpec(branch=a.branch), a.output, a.kind, a.budget, a.seed)
+        if a.conditions:
+            from .sampling import load_conditions
+            conditions, _ = load_conditions(a.conditions)
+            result = search_conditions(conditions, a.output, a.kind, a.budget, a.seed,
+                                       branches=(a.branch,))
+        else:
+            result = search(ScenarioSpec(branch=a.branch), a.output, a.kind, a.budget, a.seed)
     elif a.command == 'replay':
         from .evaluate import replay
         result = replay(a.trace)

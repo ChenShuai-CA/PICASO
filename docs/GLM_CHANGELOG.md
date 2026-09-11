@@ -418,3 +418,215 @@ python scripts/corpus_stats.py --corpus runs/20260911_p1_corpus_v5 --output runs
   P2 前不解决）。
 - 行人 heading 低速 NaN：anchor 侧靠 speed≥0.3 过滤兜底，未做系统性抽查统计（本轮仅修复
   邻居侧注入路径）。
+
+---
+
+## 2026-09-11 · P2 预注册（先于任何 P2 代码与实验落笔；用户已确认先验/规模/预算三项）
+
+### R1. 动机（HANDOFF §7 P2 五条 + P0 遗留两项）
+
+1. 等交互步数公平性：invalid 提前终止使各方法 episode 长度不等，相同 update/episode 数不等价
+   （P0 §9 遗留）；2. 三类成本（训练总成本/固定策略生成成本/每场景再搜索成本）须分账并列，
+   CEM best-of-search 不得与策略一次采样直接比；3. 参数/动作序列搜索目前各只优化一个固定案例，
+   须覆盖多初始条件且无效尝试计入预算与分母；4. 缺独立自然性指标与可避让性诊断（奖励函数不能
+   自证自然性）；5. 敏感性对照须有/无稳健性后训练在相同扰动种子上比较（pilot 只评过主模型
+   扰动）；6. seed1000×20 已被查看=诊断集，正式保留集必须重新冻结且不得用于挑模型；
+   7. pilot 全部 checkpoint 为 physics v1/sampler v1 训练，正式矩阵须在 v2 下重训。
+
+### R2. 条件集冻结（生成即固定，不依结果调整）
+
+- **dev**：seed 31000、40 条件/分支（single+dual 共 80）、sampler v2、role=reference、
+  physics v2、controller=stopping、purpose=development。用于本轮全部评价与迭代。
+- **heldout**：seed 41000、同规格、purpose=heldout。**生成即封存，本轮任何命令不得读取**；
+  待 dev 侧结论稳定、判据口径不变更后作一次性最终评价（独立后续步骤）。
+- 危险阈值：`dangerous` 实现定义（valid 且 collision 或 min_clearance<0.5 m）；有效率分母含
+  无效尝试（无效拉低危险率，禁止靠制造无效刷高）；去重：`evaluate.signature()` 参数+结局粗 bin
+  （实现既有，冻结沿用）；聚类单位：scenario_id；bootstrap：组率 cluster bootstrap，
+  **B=2000、seed=2026**（evaluate.summarize 的 b_rounds 由硬编码 1000 参数化为 2000，属口径
+  升级，pilot 旧 summary 不重算，新表注明 B）。
+
+### R3. 训练矩阵（physics v2 / sampler v2；名义预算 = 24 updates × 4 episodes = pilot 的 2 倍，与 pilot 数字不可比，如实标注）
+
+超参全部 TrainConfig 默认（epochs=3、hidden=64、lr=3e-4、mappo、mixed、robust=True、
+role_constraints=True），只变 seed/先验/robust/sampler_version（新字段，默认 1 兼容旧路径）：
+
+| 组 | 配置 | 对应判据 |
+|---|---|---|
+| A7/A17/A27 | prior=prior_v5_nb、robust、sampler v2、seed 7/17/27 | 主判据（3 种子） |
+| B7 | 同 A7 但无 --pretrained | 次判据 1（先验价值） |
+| C7 | 同 A7 但 --no-robust | 次判据 2（稳健性机制） |
+
+总环境步数逐 update 落盘（training.jsonl steps），组间偏差如实报告。
+
+### R4. 评价与判据（全部在 dev 集；CEM 与可避让性为参考/诊断行）
+
+- **固定方法一次采样**：script（零动作基线）+ A7/A17/A27/B7/C7 × dev 80 条件 × 1 扰动。
+- **主判据**：A 组 3 seed 合并——每 scenario 的组率 = 同 scenario 3 次尝试（3 个 seed 模型各一）
+  的 dangerous 均值，对 80×2 分支内 scenario 聚类 bootstrap（B=2000 seed=2026）；PASS 条件 =
+  合并危险率点估计高于 script 且 95% CI 不重叠（A 上界侧在 script 之上）。任一方向 FAIL 如实报。
+- **次判据 1（先验）**：B7 vs A7（同 seed、同条件集），同口径 CI 判定。
+- **次判据 2（稳健性）**：A7 与 C7 × dev × 10 扰动/条件（相同扰动种子序列：seed+i*100+j）；
+  指标 = 每 scenario 跨扰动 dangerous 率的组内 std（中位数）+ 合并危险率；PASS 条件 = A7 的
+  std 中位数低于 C7 且合并危险率点估计不低于 C7（CI 并列报告）。**预注册修正留痕
+  （2026-09-11，任何 P2 实验运行前）**：初稿把"危险率不劣"写成 CI 分离（下界≥C7 上界），
+  这要求稳健性机制同时显著*提高*危险率，与该机制宣称的稳定化语义不符；改为点估计不低于，
+  CI 并列报告不进 PASS 条件。此为设计修正而非按结果回调（时点：训练矩阵未启动）。
+- **CEM 多条件参考行**（不进判据）：dual 40 条件 × {parameters, trajectory} × budget 40/条件；
+  落盘 total_evaluations / total_interaction_steps / valid_attempts（无效尝试计入）；输出标注
+  best-of-search，禁止与一次采样行直接排序。
+- **可避让性诊断**（参考行）：A 组 3 seed 在 dev 上 controller=ttc 反事实重评；
+  avoidable_fraction = stopping 下危险且 ttc 下不危险的条件比例；标注为近似（仅替换 ego 制动律，
+  非完整避让可行性判定）。
+- **成本三列分账**（每方法×分支并列）：训练总步数、固定策略评价步数（total_steps）、
+  CEM 每条件平均步数+总评估数。
+
+### R5. 措辞边界
+
+dev 集一切数字 = 开发诊断，不是论文证据；"优于基线"表述必须等 heldout 一次性评价通过主判据后
+才可进入论文主张（本轮不评 heldout）。判据 PASS/FAIL 均如实落盘；FAIL 即负结果，禁止事后换
+标准、按结果回调超参/条件集/阈值。
+
+---
+
+## 2026-09-11 · P2 实施：训练矩阵 + dev 评价矩阵 + 预注册判据判定（结果：主判据与两个次判据全 FAIL）
+
+**执行环境**：同 P0。产物：`runs/20260911_p2_train_{a7,a17,a27,b7,c7}/`、
+`runs/20260911_p2_eval_{script,a7,a17,a27,b7,c7,a7_perturb,c7_perturb,a7_ttc,a17_ttc,a27_ttc}/`、
+`runs/20260911_p2_search_{param,traj}/`、`runs/20260911_p2_summary/`（comparison.csv、verdicts.csv、
+sensitivity.csv、avoidability.csv、REPORT.md、comparison.png/svg）。
+
+### 1. 条件集冻结（先于训练）
+
+- dev：seed 31000、80 条件（single 40 + dual 40）、sampler v2 reference 重采样最多 35 次、
+  `reference_infeasible=0`、version=`development_seed31000_samplerv2`。
+- heldout：seed 41000、80 条件、dual 重采样最多 40 次、`reference_infeasible=1`（保留并计数）、
+  version=`heldout_seed41000_samplerv2`。**生成后封存，本段任何命令未读取。**
+
+### 2. 训练矩阵（预注册 R3 逐字执行，无调参）
+
+```bash
+python -m scenario_lab train --output runs/20260911_p2_train_a7 --updates 24 \
+  --episodes-per-update 4 --seed 7 --sampler-version 2 --device cuda \
+  --pretrained runs/20260911_p1_prior_nb/prior.pt        # a17/a27 同式换 seed
+python -m scenario_lab train --output runs/20260911_p2_train_b7 ...（无 --pretrained）
+python -m scenario_lab train --output runs/20260911_p2_train_c7 ... --no-robust
+```
+
+| 组 | bundle 校验 | 训练总步数 | 末 update valid_rate | 备注 |
+|---|---|---:|---:|---|
+| a7 | pretrained=T, robust=T, sampler=2 | 5752 | 0.5 | |
+| a17 | pretrained=T, robust=T, sampler=2 | 6085 | **0.0**（robust_utility=-1.0） | **reference_kl 0.0017→0.35 单调上漂**（a7/a27 稳定在 <0.05） |
+| a27 | pretrained=T, robust=T, sampler=2 | 5716 | 0.5 | |
+| b7 | pretrained=F, robust=T, sampler=2 | 6190 | 0.5 | |
+| c7 | pretrained=T, robust=F, sampler=2 | 5665 | 0.5 | |
+
+- 组间步数偏差 ±4.5%（5665–6190）——sampler v2 重采样使 episode 长度本身变化，如实分账。
+- **训练期红旗（先于评价即已可见）**：a17 是唯一 reference_kl 大幅上漂且末段 valid_rate 塌到 0
+  的组——策略在训练中即坍缩，不是评价期偶发。
+
+### 3. 评价矩阵（全部 dev 80 条件；执行种子 1000=CLI 默认，全方法共享同一扰动序列）
+
+13 个 run：script + 5 模型（×1 扰动）、a7/c7 ×10 扰动（敏感性）、CEM dual×{parameters,
+trajectory} budget 40、A 组 ×controller=ttc。全部成功，无重跑。
+
+### 4. 对照表（完整表见 `runs/20260911_p2_summary/REPORT.md`，B=2000 seed=2026 cluster bootstrap）
+
+| 方法 | 分支 | 危险率 [95% CI] | 有效率 | 尝试 | 独立场景 | 评价步数 | 训练步数 |
+|---|---|---|---:|---:|---:|---:|---:|
+| script | single | 0.2500 [0.125,0.375] | 1.000 | 40 | 40 | 2976 | — |
+| script | dual | 0.3500 [0.200,0.500] | 1.000 | 40 | 40 | 2737 | — |
+| a7 | single | 0.2500 [0.125,0.375] | 1.000 | 40 | 40 | 2975 | 5752 |
+| a7 | dual | 0.1000 [0.025,0.200] | **0.100** | 40 | 40 | 1438 | 5752 |
+| a17 | single | 0.0500 [0.000,0.125] | **0.050** | 40 | 40 | 1989 | 6085 |
+| a17 | dual | 0.1250 [0.025,0.225] | **0.125** | 40 | 40 | 2046 | 6085 |
+| a27 | single | 0.3000 [0.175,0.450] | 1.000 | 40 | 40 | 2830 | 5716 |
+| a27 | dual | 0.3000 [0.150,0.450] | 0.975 | 40 | 40 | 2793 | 5716 |
+| b7 | single | 0.2500 [0.125,0.375] | 1.000 | 40 | 40 | 2974 | 6190 |
+| b7 | dual | 0.3250 [0.175,0.475] | 0.800 | 40 | 40 | 2744 | 6190 |
+| c7 | single | 0.2500 [0.125,0.375] | 1.000 | 40 | 40 | 2880 | 5665 |
+| c7 | dual | 0.3250 [0.175,0.475] | 0.625 | 40 | 40 | 2336 | 5665 |
+| **A_3seed 合并** | single | 0.2000 [0.108,0.300] | | 120 | 40 | 7794 | 17553 |
+| **A_3seed 合并** | dual | 0.1750 [0.100,0.258] | | 120 | 40 | 6277 | 17553 |
+
+无效尝试明细（分母含无效，预注册 R2）：a17 single 38/40、dual 35/40 全为 **pedestrian_role**
+违规；a7 dual 36/40 = occluder_role 22 + target_target_collision 14；a27 仅 1（dual）；
+b7 dual 8（occluder_role）；c7 dual 15（occluder_role 9 + target_target 6）。
+
+### 5. 预注册判据判定（全部落盘 verdicts.csv；FAIL 如实报）
+
+| 判据 | 分支 | 数字 | 判定 |
+|---|---|---|---|
+| 主：A_3seed > script（CI 不重叠且更高） | single | 0.2000 [0.108,0.300] vs 0.2500 [0.125,0.375] | **FAIL**（点估计反低且重叠） |
+| 主：A_3seed > script | dual | 0.1750 [0.100,0.258] vs 0.3500 [0.200,0.500] | **FAIL**（同上） |
+| 次 1（先验）：a7 > b7 | single | 0.2500 vs 0.2500（CI 全同） | **FAIL**（打平） |
+| 次 1（先验）：a7 > b7 | dual | 0.1000 vs 0.3250 | **FAIL**（方向反） |
+| 次 2（稳健性）：A7 std<C7 且危险率不低于 | single | std 0.0000 vs 0.0000；率 0.2525 vs 0.2500 | **FAIL**（std 不严格更低） |
+| 次 2（稳健性） | dual | std 0.0000 vs 0.0000；率 0.1225 vs 0.3300 | **FAIL**（两条件均不满足） |
+
+### 6. 失效模式诊断（判据之外的结构性发现）
+
+1. **种子方差主导，且以"无效坍缩"形态出现**：a27 干净（dual 0.975 有效、危险率 0.300 ≥
+   script 0.350 的 CI 内），a7 只塌 dual（0.10 有效），a17 双分支塌（0.05/0.125）。合并判据被
+   无效尝试稀释——这正是 R2"分母含无效、禁止靠制造无效刷高"设计的镜像惩罚：坍缩组把 A 组
+   合并危险率拉到 script 之下。
+2. **a17 与 P0 的 seed17 病理跨版本再现**：P0（physics v1/sampler v1）dual_seed7 评价 13/20
+   pedestrian_role；本轮（v2/v2 重训）a17 训练期 reference_kl 单调漂移到 0.35 + 评价期 73/80
+   pedestrian_role。先验锚被挣脱 → 策略滑出角色约束包络。根因未查（候选：KL 权重 0.02 不足、
+   robust 阶段 mean-std 效用放大越界动作），如实列为未解决问题。
+3. **先验的 dual 负效应不能归因（单 seed）**：a7（先验）dual 0.10 有效 vs b7（无先验）0.80——
+   同 seed 同预算下唯一差异是先验，但无重复，不能宣称"先验有害"；single 上两者完全打平
+   （含 CI），与 P1.2"先验≈零动作"的开环结论在闭环评价中复现。
+4. **扰动敏感性对照无区分力**：a7/c7 的 400 次扰动尝试（40 条件×10）within-scenario std 全为
+   0——预注册扰动尺度下结局从不翻转，判据设计对此无区分力（本身是发现：需更大扰动尺度或
+   初始条件级扰动才能测稳健性）。次判据 2 的 FAIL 属"无区分力型 FAIL"而非"稳健性更差"。
+5. **可避让性 0%**：A 组全部 45 个 stopping 危险条件在 ttc 反事实下无一转安全——危险结局不是
+   ego 制动律可挽回的（结构性危险而非控制器失误）。近似边界：只换 ego 制动律，非完整
+   避让可行性判定。
+6. **CEM 参考行（best-of-search，禁与一次采样排序）**：parameters 28/40（70%）、trajectory
+   36/40（90%）条件找到危险解；成本 1600 评估/条件均值 2487 步（param）、1395 步（traj），
+   对比固定策略 ~70 步/episode——35×/20× 的每条件搜索成本换取覆盖率（vs script 一次采样
+   dual 35% 条件危险）。三列分账齐备（训练 5665–6190 / 评价 1438–2976 / 搜索 1395–2487 每条件）。
+7. **自然性原材料**：effort_mean script=0（解析零动作恒等）、b7 ~4e-5（近零动作）、a7/a27
+   0.001–0.014、c7 dual 0.0095、a17 0.036–0.047——坍缩组动作不平滑度最高，与失效模式一致。
+
+### 7. 测试与验证
+
+- 全量 **65 passed**（60 既有 + 5 新增 tests/test_p2_fairness.py：search_conditions 预算精确性
+  与无效计入、单 spec 模式不变、total_effort 累计与零动作恒零、summarize 新字段、sampler v2
+  训练路径记录）。
+- WSL 转发缺陷（第三次遇到，留痕）：`bash -lc` 多行命令里的 shell 变量赋值/循环变量在
+  wsl.exe 转发中丢失（`$P` 展开为空 → exit 127；`for f in ...` 的 `$f` 同样）——训练矩阵首启
+  与本轮两次检查脚本均中招；处置 = 全展开单行命令 / 临时 .py 文件。无半成品目录残留
+  （FileExistsError 防重入设计使然，已验证）。
+
+### 8. 版本与重跑标记
+
+| 产物 | 状态 |
+|---|---|
+| `runs/20260911_gpu_pilot/*`、P0/P1 全部旧产物 | 不变，pilot=physics v1/sampler v1 legacy |
+| `runs/20260911_p2_conditions/heldout_seed41000.json` | **仍封存**（本段未读取；是否执行一次性评价待用户决策——主判据 dev 已 FAIL，跑 heldout 不会改变 FAIL 事实本身） |
+| `runs/20260911_p2_*` | 本轮正式产物（v2/v2） |
+| a17/a7 checkpoint | 坍缩组，保留作诊断证据，不得删除或重训替换（预注册禁止事后筛样本） |
+
+### 9. 本轮修改文件
+
+- 修改：`scenario_lab/env.py`（effort_total 累计 + summary total_effort）、`scenario_lab/train.py`
+  （TrainConfig.sampler_version + 采样调用改 sampling.sample_spec dispatch）、
+  `scenario_lab/evaluate.py`（summarize b_rounds/自然性聚合字段、_cem 提取、search_conditions
+  多条件 CEM）、`scenario_lab/__main__.py`（train --sampler-version、search --conditions）、
+  `docs/GLM_CHANGELOG.md`（本段）。
+- 新增：`scripts/summarize_p2.py`、`tests/test_p2_fairness.py`。
+- 未触碰：用户既有未提交改动（HANDOFF.md、stage2_extract.py、abd_parser/inventory 删除记录）、
+  runs/ 既有产物、Data/、heldout 条件集。
+
+### 10. 未解决问题 / 依赖用户决策
+
+- heldout 一次性评价是否执行：主判据 dev 已 FAIL；按 R5 措辞边界，"优于基线"主张在本轮
+  任何情况下不可用。heldout 评价的唯一作用是给论文留一个干净的"预注册全流程执行完毕"记录，
+  是否花这次评价由用户定。
+- a17 reference_kl 漂移根因未查（KL 权重 / robust 效用交互两个候选假设未区分）。
+- 扰动尺度无区分力：下轮若重设敏感性实验，需预注册更大的扰动幅度或初始条件级扰动。
+- 24×4 名义预算下三种子即出现两例坍缩：预算-稳定性关系（12×4 pilot 无此现象）本身值得
+  系统研究，但属新实验、须重新预注册。
+- CEM trajectory 有效尝试率仅 42%（679/1600）——动作序列参数化在中budget 下大量无效，
+  参数化方式待改进（下轮预注册范围）。
