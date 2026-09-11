@@ -1019,3 +1019,78 @@ P2.5 不满足进入 heldout 的预注册门槛，heldout 继续封存。下一�
 监督目标从逐步 pulse 动作改为 condition/early-history 到 pulse 参数的预测，使用 teacher-val 选择
 停止点，并分别报告参数重放、teacher 条件闭环复现和冻结 dev 效应。只有 dual 的训练域闭环复现
 先显著高于本次 0.10–0.25，才值得再次投入正式 dev 多种子评价。
+
+---
+
+## 2026-09-11 · P2.6 增量 pulse 参数预测机制筛选预注册（运行前）
+
+### 目的与证据边界
+
+P2.6 只检验 P2.5 的逐时刻行为克隆失败能否通过“先识别条件、再预测完整低维 pulse”缓解，
+不在本阶段继续叠加 PPO。训练监督只来自已完成的 P2.5 training-only CEM；重新执行零动作 script，
+仅保留 script-safe、CEM 重放 complete/valid/dangerous 的增量 teacher。现有 dev80 不参与模型选择。
+
+另生成 `training_seed61000_samplerv2`，single/dual 各 120 条，运行 parameter-CEM，search seed=127、
+population=8、`lane_locked`、每条件精确 1000 decision steps。该全新集合只作一次机制 screen，不进
+训练和早停。机制筛选前先做 training-screen 指纹审计；只有机制门槛通过时，才在 dev 评价前按
+除 scenario_id 外的完整物理/控制字段补做 dev 与二者的指纹审计；任一交集直接终止。heldout 不读。
+
+### 模型、输入与监督
+
+- 每个角色只使用自身 actor-visible observation；不接收 critic state、其他角色 token 或隐藏真值；
+- 收集 episode 最初 5 个 decision observation（0.0–0.4 s），期间输出零动作；只纳入所有活跃角色
+  pulse onset ≥0.5 s 的 teacher，保证这段 history 与 teacher 重放的前缀一致；
+- 共享 token encoder、role embedding、attention 和 GRU，但每个角色独立输出其 amplitude、start、
+  duration 三个归一化参数；执行从 t=0.5 s 起沿绝对 episode 时钟恢复 pulse，steering 固定为 0；
+- 策略种子 7/17/27/37/47，最多 50 epochs、batch=16、Adam 3e-4；只用 P2.5 原固定 split 的
+  teacher-train 更新，以 single/dual 分支等权的 teacher-val 参数 MSE 选择最佳 epoch，平局取较早者；
+- 不得以 P2.6 screen 或 dev 指标选 epoch、改输入长度、改筛选阈值或挑种子。
+
+### 机制门槛与条件执行路径
+
+P2.6 screen 中每个入选条件按原 CEM replay seed 闭环运行一次预测策略；因入选条件的 script 均安全，
+危险率就是新增覆盖率。对每个分支做 seed×scenario 双层 bootstrap（B=2000、seed=2026）。进入 dev
+评价须同时满足：每分支至少 15 个合格 screen 条件；single 危险率点估计 >0.50 且 95% CI 下界
+>0.50；dual 点估计 >0.25 且 95% CI 下界 >0.25；每 seed/branch valid_rate ≥0.80，角色违规总数
+为 0。0.50/0.25 是 P2.5 在 script-safe teacher-val 上观察到的对应上界，不从 P2.6 数据调整。
+
+只有上述两分支机制门槛均通过，运行器才允许读取冻结 dev80 并评价五个 checkpoint。dev 主判据为
+预测策略相对 script 的危险率差在 single、dual 均点估计 >0、双层 bootstrap 95% CI 下界 >0，
+同时保持 valid_rate 和角色约束门槛。若机制门槛未通过，P2.6 以训练域机制负结果结束，dev 和
+heldout 均不读取；若通过但 dev 不通过，只说明训练域 pulse 复现没有转化成未见开发条件优势。
+
+### P2.6 实施结果
+
+14/14 个正式 job 通过，总计 347.15 s。全新 screen 的 parameter-CEM 对 single/dual 各执行
+120 条件 × 1000 decision steps；training-screen 完整条件指纹交集为 0。按预注册筛选后，P2.5
+训练 corpus 留下 60 个增量 teacher（single train/val 35/6，dual 15/4），独立 P2.6 screen 留下
+45 个（single 26，dual 19）。训练源的 240 条条件中，89 条无有效危险 teacher、69 条 script
+已危险、22 条 pulse 早于 0.5 s；screen 对应为 90、75、30 条。所有拒绝原因和未入选条件均保留
+在审计分母中。
+
+| 分支 | 独立 screen 条件 | 五种子危险复现率 [95% CI] | P2.5 固定门槛 | valid / 角色违规 | 判定 |
+|---|---:|---:|---:|---:|---:|
+| single | 26 | 0.269 [0.108,0.454] | >0.50 且 CI 下界 >0.50 | 1.0 / 0 | **FAIL** |
+| dual | 19 | 0.358 [0.158,0.579] | >0.25 且 CI 下界 >0.25 | 1.0 / 0 | **FAIL** |
+
+single 各 seed 为 0.192–0.346，dual 为 0.263–0.474。dual 点估计高于 P2.5 的 0.25 上界，
+但区间很宽且下界低于门槛，不能写成可靠改进；single 点估计和区间都没有达到预设水平。五个
+checkpoint 由 P2.5 teacher-val 选择在 epoch 8–44，分支等权 val 参数 MSE 为 0.817–0.824；模型均为
+43,142 参数。按条件执行路径，P2.6 没有读取或评价 dev，heldout 也未读取。
+
+事后参数诊断进一步显示，失败不能只归因于 screen 样本少。single 的预测参数在不同条件间标准差
+仅 0.000–0.004，而 teacher amplitude/start/duration 标准差在 screen 为 0.512/0.257/0.383；模型
+screen MSE 0.481–0.510，与训练角色均值常数基线 0.486 接近。dual 每个角色的预测标准差也均
+≤0.002，而 teacher 各维标准差约 0.20–0.62；模型 MSE 0.677–0.699，没有稳定优于角色均值基线
+0.677。screen 中 single 26 条有 17 条对五个 seed 全部失败、5 条全部成功；dual 19 条对应为
+10 条和 5 条，符合策略输出近似固定 pulse、只覆盖固定子集的表现。
+
+因此 P2.6 的可支持结论是：**把单个 CEM best 解改成整段 pulse 参数回归，仍未解决监督标签的
+可识别性问题**。每个条件可能存在多组功能等价的 CEM 解，单个随机最优参数并不是规范化真值；
+MSE 会把多模态解平均成近常数 pulse。0.5 s actor-visible history 是否还缺少足够条件信息仍是候选
+解释，但本次没有单独操纵 history 长度，不能把它确认为唯一根因。
+
+后续若继续推进，应先使用已落盘的全部 CEM attempts 量化“同条件成功解内部方差”与“跨条件方差”，
+再决定 P2.7：只有确认同条件多解性主导，才构建多解集合监督（例如多头候选加 set-min loss 或
+候选排序），并把多候选仿真成本显式计入方法比较；若 actor-visible history 对条件区分本身不足，
+则应调整可观测信息或任务定义，而不是继续增加 MSE 训练轮数。

@@ -105,6 +105,31 @@ def main():
     teacher_train.add_argument('--hidden', type=int, default=64)
     teacher_train.add_argument('--seed', type=int, default=7)
     teacher_train.add_argument('--device', default='auto')
+    pulse_corpus = sub.add_parser('build-pulse-corpus')
+    pulse_corpus.add_argument('--conditions', required=True)
+    pulse_corpus.add_argument('--search-single', required=True)
+    pulse_corpus.add_argument('--search-dual', required=True)
+    pulse_corpus.add_argument('--output', required=True)
+    pulse_corpus.add_argument('--split-kind', choices=['train_val', 'screen'], required=True)
+    pulse_corpus.add_argument('--audit-conditions', nargs='*', default=[])
+    pulse_train = sub.add_parser('train-pulse')
+    pulse_train.add_argument('--corpus', required=True)
+    pulse_train.add_argument('--output', required=True)
+    pulse_train.add_argument('--epochs', type=int, default=50)
+    pulse_train.add_argument('--batch-size', type=int, default=16)
+    pulse_train.add_argument('--hidden', type=int, default=64)
+    pulse_train.add_argument('--seed', type=int, default=7)
+    pulse_train.add_argument('--device', default='auto')
+    pulse_eval = sub.add_parser('evaluate-pulse-corpus')
+    pulse_eval.add_argument('--policy', required=True)
+    pulse_eval.add_argument('--corpus', required=True)
+    pulse_eval.add_argument('--output', required=True)
+    pulse_eval.add_argument('--device', default='auto')
+    pulse_dev = sub.add_parser('evaluate-pulse')
+    pulse_dev.add_argument('--policy', required=True)
+    pulse_dev.add_argument('--conditions', required=True)
+    pulse_dev.add_argument('--output', required=True)
+    pulse_dev.add_argument('--device', default='auto')
     a = p.parse_args()
     if hasattr(a, 'device'):
         a.device = resolve_device(a.device)
@@ -185,10 +210,32 @@ def main():
         from .teacher import build_teacher_corpus
         result = build_teacher_corpus(
             a.conditions, a.dev_conditions, (a.search_single, a.search_dual), a.output)
-    else:
+    elif a.command == 'pretrain-teacher':
         from .teacher import pretrain_teacher
         result = pretrain_teacher(a.corpus, a.output, a.epochs, a.hidden, a.seed,
                                   a.device, a.batch_size)
+    elif a.command == 'build-pulse-corpus':
+        from .pulse import build_incremental_pulse_corpus
+        result = build_incremental_pulse_corpus(
+            a.conditions, (a.search_single, a.search_dual), a.output,
+            a.split_kind, a.audit_conditions)
+    elif a.command == 'train-pulse':
+        from .pulse import train_pulse_predictor
+        result = train_pulse_predictor(a.corpus, a.output, a.epochs, a.hidden,
+                                       a.seed, a.device, a.batch_size)
+    elif a.command == 'evaluate-pulse-corpus':
+        from .pulse import evaluate_pulse_corpus, load_pulse_bundle
+        runner, _ = load_pulse_bundle(a.policy, a.device)
+        result = evaluate_pulse_corpus(runner, a.corpus, a.output)
+    else:
+        from .evaluate import evaluate
+        from .pulse import load_pulse_bundle
+        from .sampling import load_conditions
+        runner, bundle = load_pulse_bundle(a.policy, a.device)
+        conditions, manifest = load_conditions(a.conditions)
+        result = evaluate(runner, a.output, conditions=conditions,
+                          condition_set_version=manifest['condition_set_version'],
+                          role_action_mode=bundle['config']['role_action_mode'])
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
