@@ -11,6 +11,8 @@ from scenario_lab.evaluate import ScriptPolicy, run_episode, search, search_cond
 from scenario_lab.sampling import sample_spec_v2
 from scenario_lab.schema import ScenarioSpec
 from scenario_lab.train import TrainConfig, train
+from scripts.summarize_p2 import paired_cluster_stats
+from scripts.summarize_p21_rescue import two_way_paired_delta
 
 
 def test_search_conditions_budget_exact(tmp_path):
@@ -64,6 +66,30 @@ def test_summarize_budget_and_naturalness_fields():
     assert m['clipped_rate'] == pytest.approx((0 / 30 + 1 / 31 + 0 / 30 + 1 / 31) / 4)
     assert m['brake_coverage'] == 0.
     assert len(m['dangerous_rate_cluster_ci95']) == 2
+
+
+def test_paired_cluster_difference_keeps_common_scenarios():
+    left = [_row(0, 's0', True), _row(0, 's1', False)]
+    right = [_row(0, 's0', False), _row(0, 's1', False)]
+    result = paired_cluster_stats(left, right, 'single', b_rounds=100, seed=3)
+    assert result['scenarios'] == 2
+    assert result['dangerous_rate_delta'] == pytest.approx(.5)
+    assert result['valid_rate_delta'] == pytest.approx(-.5)
+    assert result['dangerous_rate_delta_ci95'][0] >= 0.
+
+
+def test_paired_cluster_difference_rejects_mismatched_scenarios():
+    with pytest.raises(ValueError, match='same single scenario ids'):
+        paired_cluster_stats([_row(0, 's0', False)], [_row(0, 's1', False)], 'single')
+
+
+def test_two_way_bootstrap_uses_paired_seed_scenario_grid():
+    left = {7: {'s0': 1., 's1': 0.}, 17: {'s0': 1., 's1': 1.}}
+    right = {7: {'s0': 0., 's1': 0.}, 17: {'s0': 0., 's1': 1.}}
+    result = two_way_paired_delta(left, right, b_rounds=100, seed=4)
+    assert result['delta'] == pytest.approx(.5)
+    assert result['seeds'] == 2 and result['scenarios'] == 2
+    assert result['ci95'][0] >= 0.
 
 
 def test_train_sampler_v2_path_records_version(tmp_path):

@@ -76,12 +76,39 @@ def test_invalid_and_nonfinite_actions():
     assert done and not info['valid'] and reward < 0 and not info['dangerous']
 
 
+def test_lane_locked_action_projection_preserves_role_axes():
+    env = ScenarioEnv()
+    env.reset(ScenarioSpec(branch='dual', role_action_mode='lane_locked',
+                           pedestrian_delay=0., role_constraints=True))
+    ped_x = env.bodies[1].x
+    occ_y = env.bodies[2].y
+    for _ in range(10):
+        _, _, done, info = env.step(np.array([[0., -1.], [0., 1.]]))
+        if done:
+            break
+    assert env.bodies[1].x == pytest.approx(ped_x)
+    assert env.bodies[1].heading == pytest.approx(np.pi / 2)
+    assert env.bodies[2].y == pytest.approx(occ_y)
+    assert env.bodies[2].heading == pytest.approx(0.)
+    assert not ({'pedestrian_role', 'occluder_role'} & set(info['invalid_reasons']))
+    assert info['role_projection_events'] > 0
+    assert info['role_projection_l1'] > 0
+
+
 def test_replay_and_timing(tmp_path):
     path = tmp_path / 'trace.json'
     info = run_episode(ScriptPolicy(), ScenarioSpec(branch='dual'), 42, path)
     assert replay(path)['matched']
     assert info['elapsed'] <= 8.001
     assert info['decision_steps'] <= 80
+    assert info['mean_abs_action'] == 0.0
+
+
+def test_mean_abs_action_reports_applied_control():
+    env = ScenarioEnv()
+    env.reset(ScenarioSpec(role_action_mode='lane_locked'))
+    _, _, _, info = env.step(np.array([[1., 1.], [0., 0.]]))
+    assert info['mean_abs_action'] == pytest.approx(1.0)
 
 
 def test_braking_reference_for_visible_stationary_object():

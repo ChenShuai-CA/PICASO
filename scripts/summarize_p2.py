@@ -50,6 +50,37 @@ def per_scenario_std(rows):
     return out
 
 
+def paired_cluster_stats(left_rows, right_rows, branch, b_rounds=2000, seed=2026):
+    """Paired scenario bootstrap for method differences on shared conditions.
+
+    Repeated attempts (training seeds or perturbations) are first averaged within
+    each scenario and method. The bootstrap then resamples the paired scenario
+    differences, retaining the common-condition design instead of comparing two
+    marginal confidence intervals.
+    """
+    def rates(rows, field):
+        subset = [r for r in rows if r['branch'] == branch]
+        groups = sorted({r['scenario_id'] for r in subset})
+        return {g: float(np.mean([r[field] for r in subset if r['scenario_id'] == g]))
+                for g in groups}
+
+    left_danger, right_danger = rates(left_rows, 'dangerous'), rates(right_rows, 'dangerous')
+    left_valid, right_valid = rates(left_rows, 'valid'), rates(right_rows, 'valid')
+    common = sorted(set(left_danger) & set(right_danger))
+    if not common or set(left_danger) != set(right_danger):
+        raise ValueError(f'paired methods do not share the same {branch} scenario ids')
+    danger_delta = np.array([left_danger[g] - right_danger[g] for g in common])
+    valid_delta = np.array([left_valid[g] - right_valid[g] for g in common])
+    rng = np.random.default_rng(seed)
+    draws = np.array([rng.choice(danger_delta, len(common), replace=True).mean()
+                      for _ in range(b_rounds)])
+    return dict(branch=branch, scenarios=len(common),
+                dangerous_rate_delta=float(danger_delta.mean()),
+                dangerous_rate_delta_ci95=np.quantile(draws, [.025, .975]).tolist(),
+                valid_rate_delta=float(valid_delta.mean()),
+                bootstrap_rounds=b_rounds, bootstrap_seed=seed)
+
+
 def parse_pair(item):
     name, _, value = item.partition('=')
     return name, value
@@ -69,6 +100,8 @@ def main():
                    help='name=stopping_dir,ttc_dir counterfactual pair (repeatable)')
     p.add_argument('--verdict', action='append', default=[],
                    help='belowName,aboveName preregistered non-overlap check (repeatable)')
+    p.add_argument('--paired', action='append', default=[],
+                   help='label=leftName,rightName paired scenario difference (repeatable)')
     p.add_argument('--bootstrap', type=int, default=2000)
     p.add_argument('--seed', type=int, default=2026)
     p.add_argument('--label', default='dev set')
@@ -130,6 +163,32 @@ def main():
         writer = csv.DictWriter(f, fieldnames=list(comparison[0]))
         writer.writeheader()
         writer.writerows(comparison)
+
+    paired = []
+    for item in a.paired:
+        label, _, names = item.partition('=')
+        left, right = names.split(',')
+        if left not in rows or right not in rows:
+            raise KeyError(f'paired comparison needs loaded rows: {left}, {right}')
+        for branch in ('single', 'dual'):
+            stat = paired_cluster_stats(rows[left], rows[right], branch, a.bootstrap, a.seed)
+            paired.append(dict(comparison=label, left=left, right=right, **stat))
+    if paired:
+        with (output / 'paired_differences.csv').open('w', newline='', encoding='utf-8') as f:
+            fields = ['comparison', 'left', 'right', 'branch', 'scenarios',
+                      'dangerous_rate_delta', 'dangerous_ci_lo', 'dangerous_ci_hi',
+                      'valid_rate_delta', 'bootstrap_rounds', 'bootstrap_seed']
+            writer = csv.DictWriter(f, fieldnames=fields)
+            writer.writeheader()
+            for row in paired:
+                ci = row['dangerous_rate_delta_ci95']
+                writer.writerow(dict(comparison=row['comparison'], left=row['left'], right=row['right'],
+                                     branch=row['branch'], scenarios=row['scenarios'],
+                                     dangerous_rate_delta=row['dangerous_rate_delta'],
+                                     dangerous_ci_lo=ci[0], dangerous_ci_hi=ci[1],
+                                     valid_rate_delta=row['valid_rate_delta'],
+                                     bootstrap_rounds=row['bootstrap_rounds'],
+                                     bootstrap_seed=row['bootstrap_seed']))
 
     verdicts = []
     for pair in a.verdict:
@@ -230,6 +289,15 @@ def main():
         for v in verdicts:
             lines.append(f"| {v['comparison']} | {v['branch']} | {v['below']} | {v['above']} | "
                          f"{v['non_overlap']} | {v['verdict']} |")
+    if paired:
+        lines += ['', '## Paired scenario differences', '',
+                  '| comparison (left - right) | branch | dangerous-rate delta [95% CI] | '
+                  'valid-rate delta | scenarios |', '|---|---|---|---:|---:|']
+        for r in paired:
+            lo, hi = r['dangerous_rate_delta_ci95']
+            lines.append(f"| {r['comparison']} | {r['branch']} | "
+                         f"{r['dangerous_rate_delta']:.4f} [{lo:.4f}, {hi:.4f}] | "
+                         f"{r['valid_rate_delta']:.4f} | {r['scenarios']} |")
     if searches:
         lines += ['', '## CEM per-condition search (cost accounting; best-of-search, never '
                       'ranked against single-sample rows)', '',

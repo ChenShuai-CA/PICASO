@@ -45,9 +45,12 @@ class ScenarioEnv:
         self.collision_speed = 0.
         self.invalid_reasons = set()
         self.clipped_actions = 0
+        self.role_projection_events = 0
+        self.role_projection_l1 = 0.
         self.occluded_steps = 0
         self.total_steps = 0
         self.effort_total = 0.
+        self.action_abs_total = 0.
         self.first_brake_time = None
         self.record = EpisodeRecord(scenario=s.to_dict(), seed=int(seed))
         self._refresh_tracks()
@@ -186,7 +189,18 @@ class ScenarioEnv:
             raise ValueError('actions must be finite shape (2,2)')
         self.clipped_actions += int(np.any(np.abs(requested[self.mask > 0]) > 1.))
         bounded = np.clip(requested, -1, 1) * self.mask[:, None]
-        self.action_queue.append(bounded.copy())
+        projected = bounded.copy()
+        if self.spec.role_action_mode == 'lane_locked':
+            # Both formal roles move along fixed orthogonal axes. Longitudinal
+            # acceleration remains learned; lateral/steering commands are removed
+            # before the execution-delay queue, so train and evaluation share the
+            # exact same projection semantics.
+            projected[:, 1] = 0.
+            correction = np.abs(projected - bounded) * self.mask[:, None]
+            if np.any(correction > 0):
+                self.role_projection_events += 1
+                self.role_projection_l1 += float(correction.sum())
+        self.action_queue.append(projected.copy())
         applied = self.action_queue.popleft()
         previous_risk = self.peak_risk
         for _ in range(5):
@@ -215,6 +229,7 @@ class ScenarioEnv:
             if self.collision or self.invalid_reasons:
                 break
         self.total_steps += 1
+        self.action_abs_total += float(np.abs(applied).sum() / max(self.mask.sum(), 1))
         self.occluded_steps += int(not self._visible(0, 1))
         self.peak_risk = max(self.peak_risk, math.exp(-self.min_clearance / 2.))
         self.done = bool(self.collision or self.invalid_reasons or self.time + 1e-9 >= self.spec.horizon)
@@ -242,7 +257,10 @@ class ScenarioEnv:
                     first_brake_time=self.first_brake_time, elapsed=self.time,
                     occlusion_fraction=self.occluded_steps / max(self.total_steps, 1),
                     clipped_actions=self.clipped_actions,
+                    role_projection_events=self.role_projection_events,
+                    role_projection_l1=self.role_projection_l1,
                     total_effort=self.effort_total,
+                    mean_abs_action=self.action_abs_total / max(self.total_steps, 1),
                     perturbation_source=self.spec.perturbation_source)
 
     def _record(self, obs, requested):

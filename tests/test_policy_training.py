@@ -34,6 +34,9 @@ def test_latent_logp_is_finite_for_large_actions():
 def test_gae_terminal_and_padding_contract():
     adv, ret = advantages(np.array([1., 2.]), np.zeros((2, 2)), gamma=1, lam=1)
     np.testing.assert_allclose(ret, [[3., 3.], [2., 2.]])
+    _, truncated_ret = advantages(np.array([1.]), np.zeros((1, 2)), gamma=1, lam=1,
+                                  bootstrap=np.array([2., 3.]))
+    np.testing.assert_allclose(truncated_ret, [[3., 4.]])
 
 
 def test_end_to_end_update_and_bundle(tmp_path):
@@ -45,6 +48,23 @@ def test_end_to_end_update_and_bundle(tmp_path):
         action = runner.act(ScenarioEnv().reset(ScenarioSpec(branch=branch)))
         assert action.shape == (2, 2) and np.abs(action).max() <= 1
     assert bundle['extra']['results_kind'] == 'pilot_not_paper_evidence'
+
+
+def test_exact_interaction_budget_and_diagnostics(tmp_path):
+    result = train(tmp_path, TrainConfig(updates=20, episodes_per_update=2, epochs=1,
+                                         hidden=32, interaction_budget=37,
+                                         role_action_mode='lane_locked',
+                                         mixed_warmup_fraction=0.0))
+    assert result[-1]['steps'] == 37
+    assert sum(row['truncated_episodes'] for row in result) >= 1
+    assert all('invalid_reasons' in row and 'projection_event_rate' in row
+               and 'grad_norm' in row and 'branch_steps' in row
+               and 'branch_episodes' in row for row in result)
+    assert sum(sum(row['branch_steps'].values()) for row in result) == 37
+    _, bundle = load_bundle(tmp_path / 'policy.pt')
+    assert bundle['config']['interaction_budget'] == 37
+    assert bundle['config']['role_action_mode'] == 'lane_locked'
+    assert bundle['config']['mixed_warmup_fraction'] == 0.0
 
 
 def test_gpu_update_and_both_branches(tmp_path):
@@ -62,3 +82,16 @@ def test_gpu_update_and_both_branches(tmp_path):
         assert np.isfinite(action).all()
         if branch == 'single':
             assert not action[1].any()
+
+
+def test_exact_per_branch_interaction_budget(tmp_path):
+    result = train(tmp_path, TrainConfig(
+        updates=10, episodes_per_update=2, epochs=1, hidden=32, mode='mixed',
+        robust=False, interaction_budget=36, branch_interaction_budget=18,
+        mixed_warmup_fraction=0.0, role_action_mode='lane_locked'))
+    totals = {'single': 0, 'dual': 0}
+    for row in result:
+        for branch, steps in row['branch_steps'].items():
+            totals[branch] += steps
+    assert totals == {'single': 18, 'dual': 18}
+    assert result[-1]['cumulative_branch_steps'] == totals

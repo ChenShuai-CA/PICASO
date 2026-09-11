@@ -630,3 +630,246 @@ b7 dual 8（occluder_role）；c7 dual 15（occluder_role 9 + target_target 6）
   系统研究，但属新实验、须重新预注册。
 - CEM trajectory 有效尝试率仅 42%（679/1600）——动作序列参数化在中budget 下大量无效，
   参数化方式待改进（下轮预注册范围）。
+
+---
+
+## 2026-09-11 · P2.1 稳定性救援预注册（Codex 回审后；正式实验前）
+
+### R1. 本阶段回答的问题
+
+P2 的主要失败不是危险度不足，而是训练种子以角色违规形式坍缩。当前阶段只判断：
+
+1. 将正式角色的横向动作投影到固定运动轴后，`pedestrian_role`/`occluder_role` 是否按构造归零；
+2. prior 与 robust 后训练的 2×2 组合中，哪一项与训练不稳定和目标间碰撞相关；
+3. 在严格相同的环境决策步预算下，坍缩是否仍跨种子出现。
+
+本阶段不验证 ABD 稳健性，不运行 heldout，不形成“优于基线”主张。
+
+### R2. 固定实现与预算
+
+- `role_action_mode=lane_locked`：行人保持初始横穿方向、遮挡车保持初始车道方向；纵向加速度仍由
+  策略学习。投影发生在动作限幅之后、执行延迟队列之前，并记录介入事件与 L1 修正量。
+- 每次训练严格收集 **6000 decision steps**；最后一个 episode 如被预算截断，使用下一状态 critic
+  值 bootstrap，禁止把非终止截断当作终止。`updates=40` 仅为允许达到预算的上限。
+- sampler v2 / physics v2、mixed MAPPO、episodes/update=4、hidden=64、lr=3e-4、其余沿用
+  TrainConfig。开发条件继续使用已查看的 `development_seed31000_samplerv2`。
+- 训练种子固定为 **7/17/27/37/47**。
+
+### R3. 2×2 因子矩阵
+
+| 因子组 | prior_v5_nb | robust 后训练 |
+|---|---:|---:|
+| PR | 是 | 是 |
+| PN | 是 | 否 |
+| NR | 否 | 是 |
+| NN | 否 | 否 |
+
+共 4×5=20 个训练 run；每个模型在同一 dev 80 条件上确定性评价一次。prior_v5_nb 仅作为既有
+机制的因果诊断项：其 INTERACTION `pedestrian/bicycle` 混合标签问题尚未修复，不能据本阶段结果
+建立公共“行人先验”贡献。
+
+### R4. 统计与 go/no-go
+
+- 每个方法先逐 seed 报告 single/dual 的 valid、dangerous、target-target collision；不得只报五种子合并值。
+- 共同场景比较使用 scenario 配对的 dangerous-rate 差值 bootstrap，B=2000、seed=2026；不再用
+  两个边际 CI 是否重叠代替配对检验。
+- 训练种子只报告五个独立结果的分布，不把 scenario bootstrap CI 解释为训练种子不确定性。
+- **稳定性门槛**：每个 seed、每个分支 valid_rate ≥0.80；`pedestrian_role` 与
+  `occluder_role` 必须为 0。任一 seed 低于门槛即判该因子组不稳定。
+- `target_target_collision` 单列；lane lock 不保证目标间避碰。若它成为主要无效来源，下一阶段
+  再预注册 target-separation guard，不在本阶段按 dev 结果临时修改。
+
+### R5. 后续路由
+
+- 若至少一个因子组五个种子全部通过稳定性门槛，再进入连续风险指标、ABD 扰动校准和强基线实验。
+- 若四组均不稳定，停止扩大当前 PPO/MAPPO 配置，转向受约束策略优化或策略+CEM 混合生成。
+- 原 `heldout_seed41000.json` 继续封存；最终方法冻结后另建 seed 对开发代理不可见的独立保留集。
+
+---
+
+## 2026-09-11 · P2.1 实施结果：角色坍缩解除，既有 prior 仍导致种子级时序坍缩
+
+**实现与验证**：`ScenarioSpec.role_action_mode=lane_locked`；训练增加精确
+`interaction_budget`、预算截断 critic bootstrap、逐 update invalid/action/projection/grad 诊断；评价从
+policy bundle 自动恢复投影模式；`summarize_p2.py` 增加共同场景配对差值；新增
+`run_p21_rescue.py` 与 `summarize_p21_rescue.py`。正式运行前全量 **69 passed**。
+
+执行命令：
+
+```bash
+python scripts/run_p21_rescue.py --output runs/20260911_p21_rescue \
+  --conditions runs/20260911_p2_conditions/dev_seed31000.json \
+  --prior runs/20260911_p1_prior_nb/prior.pt --budget 6000 --device cuda
+python scripts/summarize_p21_rescue.py runs/20260911_p21_rescue --bootstrap 2000 --seed 2026
+```
+
+41/41 jobs 通过；20 个训练 run 各精确 6000 decision steps；总任务耗时 1213.13 s（训练
+750.31 s，评价 462.82 s）。heldout 未读。逐 seed 结果、配对双层 bootstrap 和完整日志见
+`runs/20260911_p21_rescue/{REPORT.md,per_seed.csv,paired_effects.csv,jobs.json}`。
+
+### 1. 预注册稳定性门槛
+
+| 组 | 最低 valid_rate（任一 seed/branch） | role invalid | 结论 |
+|---|---:|---:|---|
+| PR（prior+robust） | 0.10（s47 dual） | 0 | **不稳定** |
+| PN（prior、无 robust） | 0.20（s47 dual） | 0 | **不稳定** |
+| NR（无 prior+robust） | 1.00 | 0 | **稳定** |
+| NN（无 prior、无 robust） | 1.00 | 0 | **稳定** |
+
+lane lock 将四组、五种子、单双分支的 `pedestrian_role`/`occluder_role` 全部归零，证明 P2 的
+角色违规主要来自无约束横向动作，而不是条件集几何。它不保证目标间分离：PR/PN 的 seed47 dual
+分别出现 36/32 个 `target_target_collision`，因此仍未通过稳定性门槛。
+
+### 2. 因子结论（双层配对 bootstrap：seed×scenario，B=2000）
+
+- 无 prior 的 NR/NN 五种子全部有效，危险率与 script 基本相同：NR-script single delta=0，
+  dual=0.000 [-0.020,0.030]；NN-script single=0，dual=-0.005 [-0.030,0.000]。当前策略稳定但
+  **没有学出优于零动作脚本的场景生成行为**。
+- prior 在 robust 条件下 dual dangerous delta=-0.085 [-0.245,0.020]、valid delta=-0.205
+  [-0.570,0.000]；无 robust 时 dual dangerous delta=-0.080 [-0.220,0.015]、valid delta=-0.180
+  [-0.525,0.000]。既有 prior 不仅无正增益，还带来 seed47 目标间时序坍缩。
+- robust 的效应接近零：有 prior 时 dual dangerous delta=0.000 [-0.065,0.100]；无 prior 时
+  0.005 [-0.015,0.035]。当前未校准扰动和四个末段 robust update 不支持稳健性贡献。
+- seed47 PR 的 max reference KL=0.331、PN=0.364；但 lane lock 后均无角色违规。KL 上升是策略
+  漂移信号，不是角色坍缩的充分条件；纵向动作与目标占用时序需要单独约束/诊断。
+
+### 3. 路由决定
+
+按 R5，NR/NN 已通过稳定性门槛，可以进入下一阶段；主线暂时移除 prior，NN 作为最小稳定基线，
+NR 仅保留为 robust 诊断对照。下一步先进行 ABD 控制来源与事件窗口核验，再预注册连续扰动和
+target-separation 机制。P1 prior 降级为负结果；混合 `pedestrian/bicycle` 标签不得继续称纯行人证据。
+
+---
+
+## 2026-09-11 · P3 ABD 可追溯证据审计：AEB 专属校准 NO-GO
+
+新增 `scripts/audit_abd_calibration.py`，对既有 24 条 CCRs/CPTA/CCFT 核对记录逐文件流式读取
+完整时序，只保留命名通道的小数组，并记录原文件 SHA-256。`.spec` 解析结果拆为
+`motion_control` 与 `brake_control`：SR/AR/PF 只能证明试验运动由机器人辅助，不能证明制动事件
+由机器人触发。未修改原始数据和空白人工核对表。
+
+结果位于 `runs/20260911_abd_calibration_audit/`：
+
+- 24/24 条的 `Points` 与可解析行数一致，无坏行；三类场景各 8 条；
+- 所有通道表中均无直接 AEB/FCW 激活状态；自动生成的 AEB 标签和碰撞标签均为 0；
+- `UseBrakeRobot=False` 的 8 条存在可检测减速响应；其中 7 条 CCRs 在事件窗口内
+  `BR Command`、`BR start`、`BR test`、`Motion Going BR` 均无变化，检测到的起始 TTC 为
+  0.654–0.915 s、峰值减速度为 -11.419 至 -9.128 m/s²；这些仅作为描述性证据包络；
+- 余下 1 条 E8 CPTA 虽标记 `UseBrakeRobot=False`，事件期 `BR Command` 变化约 16.06，单独列为
+  语义冲突项；
+- 11 条 `UseBrakeRobot=True` 记录因制动来源无法分离而排除，其中 1 条没有清晰减速响应；另有
+  5 条 `UseBrakeRobot=False` 记录没有清晰减速响应。
+
+结论为 **NO-GO for AEB-specific perturbation calibration**。7 条 CCRs 的一致模式是强候选证据，
+但目录名、TTC 触发和减速轨迹都不能替代 AEB 因果来源确认，因此未改动 `perturb_spec`，标签继续是
+`assumed_sensitivity_not_abd_calibrated`。`confirmation_queue.csv` 已逐条给出事件窗口、候选通道和
+唯一需要外部确认的问题；满足 P3“先完成其他独立任务，不捏造校准结果”的路由条件。
+
+---
+
+## 2026-09-11 · P2.2 共享/专用架构开发集筛查预注册（运行前）
+
+### R1. 问题与边界
+
+P2.1 已确定无 prior、无 robust 的 NN 是稳定最小配置，但它与零动作脚本几乎相同。本阶段在不引入
+新机制的情况下回答一个更窄问题：相同 actor 参数量、相同总交互预算时，mixed 共享 actor 在
+single/dual 正式分支上是否劣于对应 single-only/dual-only 专用训练。该结果只是开发集筛查，
+不能直接把 RQ1–RQ3 标为已支持。
+
+### R2. 固定矩阵
+
+- 模式：`mixed`、`single`、`dual`；种子 7/17/27/37/47，共 15 个训练 run；
+- 每个模型严格 6000 decision steps，MAPPO、sampler v2 / physics v2、`lane_locked`、无 prior、
+  无 robust；actor hidden=64，参数量必须完全相同；
+- mixed 的 `mixed_warmup_fraction=0`，从第一轮起 single/dual 交替，不使用原有 single-only
+  warmup；逐 update 和汇总均记录实际 branch steps/episodes；
+- 所有模型评价相同的 80 条 `development_seed31000_samplerv2` 条件；heldout 继续不读。
+
+这是**等总预算**比较：mixed 每个分支得到的训练步数少于专用模型，差额必须报告。等每分支预算
+比较需另行预注册，不能与本轮混报。
+
+### R3. 判据
+
+- 主比较：mixed-single-only 在 single 分支、mixed-dual-only 在 dual 分支的有效危险率差值；
+- 双层配对 bootstrap 同时重采样 5 个训练种子和 40 个共同场景，B=2000、seed=2026；
+- 开发集非劣容差预先固定为绝对危险率 0.05；95% 双侧区间下界 ≥ -0.05，且两侧所有相关
+  seed 的 valid_rate ≥0.80、角色违规为 0，才计 noninferiority pass；
+- 增设 activity gate：相关策略相对 script 至少改变一个 valid/dangerous 结局，或 mean absolute
+  applied action ≥0.01。非劣通过但 activity gate 失败，结论记为“低活动/无区分力”，不能支持
+  有用的共享学习；
+- target-target collision、mean absolute applied action、effort 和训练分支步数全部单列。
+
+### R4. 实施结果
+
+执行：
+
+```bash
+python scripts/run_p22_architecture.py \
+  --output runs/20260911_p22_architecture \
+  --conditions runs/20260911_p2_conditions/dev_seed31000.json \
+  --budget 6000 --device cuda
+python scripts/summarize_p22_architecture.py runs/20260911_p22_architecture \
+  --bootstrap 2000 --seed 2026
+```
+
+31/31 jobs 通过（15 train + script + 15 eval），总任务耗时 919.66 s，其中训练 553.57 s、评价
+366.09 s；15 个模型均为 43,016 个 actor 参数并精确训练 6000 步。所有评价 seed/branch 的
+valid_rate=1.0，角色违规和评价期 target-target collision 均为 0；heldout 未读。
+
+| 比较（mixed - specialized） | 分支 | 有效危险率差 [95% CI] | 非劣 | activity gate |
+|---|---|---|---:|---:|
+| mixed - single-only | single | +0.040 [-0.020, +0.125] | PASS | PASS |
+| mixed - dual-only | dual | +0.025 [+0.000, +0.070] | PASS | PASS |
+
+mixed 每种子的实际分支训练步数为 single 2983–3216、dual 2784–3017，约为专用模型 6000 步的
+一半，却通过两个开发集架构非劣判据。策略并非全为零动作：mixed 的 mean absolute applied action
+按 seed/branch 为 0.011–0.069，相对 script 共改变 single 10/200、dual 13/200 个结局。
+
+这项结果只支持一个窄结论：**在当前开发集、等总预算和受约束角色动作下，没有观察到共享训练相对
+专用训练的负迁移**。它不支持方法优于脚本：mixed-script 的 single 差为 +0.040
+[0.000,+0.105]、dual 为 -0.005 [-0.075,+0.060]，预注册的严格 superiority 均未通过；
+single-only 与 script 打平，dual-only 点估计低 0.030。下一项独立实验应做等每分支预算的 mixed
+比较，随后才考虑最终封存集；不能用本开发集结果直接把 RQ1–RQ3 标为“已支持”。
+
+---
+
+## 2026-09-11 · P2.3 等每分支预算预注册（运行前）
+
+P2.2 是等总预算比较，mixed 的每分支实际只得到约 3000 步。为完成 `research_claims.md` 要求的
+第二种预算口径，本阶段只训练 mixed seed 7/17/27/37/47，每个模型 single **精确 6000 步**、
+dual **精确 6000 步**，总计 12000 步；复用 P2.2 中同种子、同 43016 参数、对应分支 6000 步的
+single-only/dual-only checkpoint 与评价结果。
+
+其余配置固定：sampler v2 / physics v2、MAPPO、`lane_locked`、无 prior、无 robust、
+`mixed_warmup_fraction=0`，开发条件仍为 `development_seed31000_samplerv2`，heldout 不读。
+实现必须在 episode 层分别截断并验证两个分支的累计步数，不能以 12000 总步近似替代。
+
+主判据沿用 P2.2：mixed-single-only 和 mixed-dual-only 的有效危险率差做 seed×scenario 双层配对
+bootstrap（B=2000、seed=2026），95% CI 下界 ≥ -0.05，且 mixed 各 seed/branch valid_rate
+≥0.80、角色违规为 0。另报 12000-step mixed 相对 6000-step mixed 的预算扩展效应，以及相对
+script 的方法效应；后两项不改变主判据。
+
+### P2.3 实施结果
+
+10/10 jobs 通过（5 train + 5 eval），总任务耗时 457.13 s，其中训练 342.34 s、评价 114.78 s。
+每个 checkpoint 的 single/dual 累计步数均精确为 6000；五个 seed 两分支评价 valid_rate 均为
+1.0，角色违规和评价期 target-target collision 均为 0，heldout 未读。
+
+| 比较 | 分支 | 有效危险率差 [95% CI] | 判定 |
+|---|---|---|---|
+| 12k mixed - 6k single-only | single | 0.000 [-0.100, +0.090] | **非劣 FAIL** |
+| 12k mixed - 6k dual-only | dual | +0.035 [-0.060, +0.120] | **非劣 FAIL** |
+| 12k mixed - 6k mixed | single | -0.040 [-0.130, +0.030] | 预算扩展无正证据 |
+| 12k mixed - 6k mixed | dual | +0.010 [-0.075, +0.095] | 预算扩展无正证据 |
+| 12k mixed - script | single | 0.000 [-0.100, +0.090] | superiority FAIL |
+| 12k mixed - script | dual | +0.005 [-0.090, +0.095] | superiority FAIL |
+
+P2.2 的等总预算开发集非劣没有在等每分支预算下变得更稳；点估计没有显示 shared 负迁移，但
+训练种子不确定性越过 -0.05 容差。继续增加同一 PPO/MAPPO 配置的预算没有依据，当前最准确的
+结论是“共享架构可运行且稳定，是否非劣仍未定；生成方法没有超过脚本”。下一阶段应先验证受
+`lane_locked` 约束的纵向动作搜索是否仍有可利用空间：若约束 CEM 明显高于策略，则优化器/学习
+信号是瓶颈；若 CEM 也无增益，则需要改场景参数化，而不是继续堆 PPO 步数。
+
+同时修正未来 P1 语料路径：INTERACTION 官方 `pedestrian/bicycle` 混合类现在映射为 `other` 并
+带明确原因，不再进入 pedestrian-only 监督。既有 v5 corpus/prior 产物保持不变并继续作为负结果
+证据，不以重建覆盖。

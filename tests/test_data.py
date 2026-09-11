@@ -163,6 +163,18 @@ def test_iter_tracks_unknown_agent_type_maps_to_other_with_reason(tmp_path):
     assert any('mystery_bot' in reason for reason in r['provenance']['reasons'])
 
 
+def test_iter_tracks_mixed_vru_label_is_not_promoted_to_pedestrian(tmp_path):
+    p = tmp_path / 'LOC_MIXED' / 'pedestrian_tracks_000.csv'
+    p.parent.mkdir()
+    header = ['track_id', 'frame_id', 'timestamp_ms', 'agent_type', 'x', 'y', 'vx', 'vy']
+    rows = [['P1', 1 + i, 100 + 100 * i, 'pedestrian/bicycle',
+             1.0, 2.0 + i, 0.0, 1.0] for i in range(3)]
+    write_tracks_csv(p, header, rows)
+    record = list(iter_interaction_tracks(p))[0]
+    assert record['kind'] == 'other'
+    assert any('ambiguous' in reason for reason in record['provenance']['reasons'])
+
+
 def test_iter_tracks_official_split_dir_respected(tmp_path):
     p = tmp_path / 'LOC_A' / 'train' / 'LOC_A_train.csv'
     p.parent.mkdir(parents=True)
@@ -255,6 +267,8 @@ def test_inspect_abd_unknown_control_not_suitable(tmp_path):
     info = inspect_abd(p)
     assert info['config']['spec_found'] is False
     assert info['config']['control'] == 'unknown'
+    assert info['config']['motion_control'] == 'unknown'
+    assert info['config']['brake_control'] == 'unknown'
     assert info['config']['brake_robot_engaged'] is None
     assert info['suitable_for_aeb_calibration'] is False
     assert any('unknown' in reason for reason in info['reasons'])
@@ -270,6 +284,8 @@ def test_inspect_abd_brake_robot_true_not_suitable(tmp_path):
     assert info['config']['use_brake_robot'] is True
     assert info['config']['brake_robot_engaged'] is True
     assert info['config']['control'] == 'robot'
+    assert info['config']['motion_control'] == 'robot_assisted'
+    assert info['config']['brake_control'] == 'robot_enabled'
     assert info['suitable_for_aeb_calibration'] is False
 
 
@@ -282,6 +298,8 @@ def test_inspect_abd_brake_robot_false_is_candidate_but_unconfirmed(tmp_path):
     info = inspect_abd(p)
     assert info['config']['use_brake_robot'] is False
     assert info['config']['brake_robot_engaged'] is False
+    assert info['config']['motion_control'] == 'robot_assisted'
+    assert info['config']['brake_control'] == 'robot_disabled'
     assert info['calibration_candidate'] is True
     assert info['suitable_for_aeb_calibration'] is False
     assert info['role'] == 'unconfirmed'

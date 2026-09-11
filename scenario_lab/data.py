@@ -40,9 +40,9 @@ AGENT_TYPE_KIND = {
     'car': 'vehicle', 'truck': 'vehicle', 'bus': 'vehicle', 'trailer': 'vehicle',
     'van': 'vehicle', 'motorcycle': 'other', 'bicycle': 'other',
     'pedestrian': 'pedestrian', 'ped': 'pedestrian',
-    # INTERACTION pedestrian exports label their only agent type as the official
-    # mixed class 'pedestrian/bicycle' (v5 corpus inclusion; see GLM_CHANGELOG P1.2).
-    'pedestrian/bicycle': 'pedestrian',
+    # The official mixed label cannot be resolved to pedestrian or bicycle
+    # without another field.  Keep it out of the pedestrian supervision head.
+    'pedestrian/bicycle': 'other',
 }
 
 _SPLIT_TOKEN_MAP = {'train': 'train', 'val': 'val', 'validation': 'val',
@@ -56,7 +56,9 @@ _NON_LOCATION_TOKENS = {
     'tracks', 'recorded_trackfiles', 'records', 'interaction', 'data', 'exports',
 }
 
-# ABD .spec Type= prefixes that indicate robot control of the vehicle.
+# ABD .spec Type= prefixes that indicate robot assistance for some part of the
+# test (steering, accelerator, brake, path following, and so on).  Their mere
+# presence does not identify the causal source of a recorded braking event.
 _ROBOT_TYPE_PREFIXES = ('SR', 'AR', 'BR', 'PF', 'GR', 'CR', 'CBAR')
 
 # Known ABD robot path/track template suffixes (not run measurement exports).
@@ -252,6 +254,10 @@ def iter_interaction_tracks(path: Path) -> Iterator[dict]:
         track_reasons = list(file_reasons)
         if raw_agent is None:
             track_reasons.append("agent_type absent/empty -> kind='other'")
+        elif raw_agent.casefold() == 'pedestrian/bicycle':
+            track_reasons.append(
+                "ambiguous agent_type 'pedestrian/bicycle' -> kind='other'; "
+                'not used as pedestrian-only supervision')
         elif kind == 'other':
             track_reasons.append(
                 f"agent_type '{raw_agent}' not in supported mapping -> kind='other'")
@@ -348,7 +354,8 @@ def _config_from_spec(path: Path):
     """Control markers from the run's .spec (stem sibling, CurrentTestSpec.txt)."""
     config = {'spec_found': False, 'spec_path': None, 'spec_types': [],
               'use_brake_robot': None, 'brake_robot_engaged': None,
-              'control': 'unknown'}
+              'control': 'unknown', 'motion_control': 'unknown',
+              'brake_control': 'unknown'}
     parsed = None
     for candidate in (path.with_suffix('.spec'), path.parent / 'CurrentTestSpec.txt'):
         if candidate.exists():
@@ -370,14 +377,23 @@ def _config_from_spec(path: Path):
                                      else (False if use_brake is False else None))
     robot_types = [t for t in types
                    if t.upper().startswith(_ROBOT_TYPE_PREFIXES)]
+    config['motion_robot_types'] = robot_types
     config['control'] = 'robot' if robot_types else 'unknown'
+    config['motion_control'] = 'robot_assisted' if robot_types else 'unknown'
+    config['brake_control'] = ('robot_enabled' if config['brake_robot_engaged'] is True
+                               else ('robot_disabled'
+                                     if config['brake_robot_engaged'] is False
+                                     else 'unknown'))
     reasons = []
     if config['brake_robot_engaged'] is True:
         reasons.append('brake robot engaged (UseBrakeRobot or BR-type spec block): '
                        'brake events are robot inputs, not vehicle/AEB response')
     if config['control'] == 'unknown':
-        reasons.append('control unknown: spec contains no recognizable robot '
-                       'control type block')
+        reasons.append('motion control unknown: spec contains no recognizable '
+                       'robot-assistance type block')
+    if robot_types:
+        reasons.append('robot-assisted motion configuration does not establish '
+                       'the causal source of a recorded brake event')
     return config, reasons
 
 
@@ -390,8 +406,10 @@ def inspect_abd(path: Path, max_rows: int = 2000) -> dict:
     parse status and reasons. role is always 'unconfirmed' (channel semantics
     require human validation) and collision_label is always None: abort,
     path-exit and sync channels are run-control events, never collision
-    evidence. suitable_for_aeb_calibration is False whenever control is
-    unknown or the brake robot is engaged; vehicle mass is never assumed.
+    evidence. Robot steering/accelerator/path-following blocks do not identify
+    the brake-event source.  suitable_for_aeb_calibration remains False until
+    channel semantics and event causality are independently reviewed; vehicle
+    mass is never assumed.
     """
     path = Path(path)
     info = {
@@ -554,7 +572,6 @@ def inspect_abd(path: Path, max_rows: int = 2000) -> dict:
 
     info['calibration_candidate'] = bool(
         status == 'ok'
-        and config['control'] == 'robot'
         and config['brake_robot_engaged'] is False)
     # A configuration flag cannot establish the causal source of a brake event.
     info['suitable_for_aeb_calibration'] = False
@@ -642,6 +659,8 @@ def _manifest_row(source, rec):
         'n_channels': rec.get('n_channels', ''),
         'rows_sampled': rec.get('rows_read', ''),
         'control': config.get('control', ''),
+        'motion_control': config.get('motion_control', ''),
+        'brake_control': config.get('brake_control', ''),
         'use_brake_robot': ('' if config.get('use_brake_robot') is None
                             else str(config['use_brake_robot'])),
         'suitable_for_aeb_calibration': (
@@ -747,7 +766,8 @@ def audit_dataset(root: Path, output: Path, limit: int = 8) -> dict:
     with open(manifest_path, 'w', newline='', encoding='utf-8') as handle:
         writer = csv.DictWriter(handle, fieldnames=[
             'source', 'file', 'path', 'status', 'location', 'split', 'n_channels',
-            'rows_sampled', 'control', 'use_brake_robot',
+            'rows_sampled', 'control', 'motion_control', 'brake_control',
+            'use_brake_robot',
             'suitable_for_aeb_calibration', 'reasons'])
         writer.writeheader()
         writer.writerows(manifest_rows)

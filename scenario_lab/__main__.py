@@ -14,11 +14,19 @@ def main():
     train.add_argument('--episodes-per-update', type=int, default=4)
     train.add_argument('--seed', type=int, default=7)
     train.add_argument('--mode', choices=['single', 'dual', 'mixed'], default='mixed')
+    train.add_argument('--mixed-warmup-fraction', type=float, default=.2,
+                       help='fraction of mixed training reserved for single-only warmup')
     train.add_argument('--algorithm', choices=['ppo', 'ippo', 'mappo'], default='mappo')
     train.add_argument('--device', default='auto')
     train.add_argument('--pretrained')
     train.add_argument('--no-robust', action='store_true')
     train.add_argument('--no-role-constraints', action='store_true')
+    train.add_argument('--role-action-mode', choices=['none', 'lane_locked'], default='none',
+                       help='project target actions onto their assigned role axes')
+    train.add_argument('--interaction-budget', type=int,
+                       help='exact decision-step budget; final episode is critic-bootstrapped')
+    train.add_argument('--branch-interaction-budget', type=int,
+                       help='exact budget for each branch in non-robust mixed training')
     train.add_argument('--sampler-version', type=int, default=1, choices=[1, 2],
                        help='scenario sampler for on-policy draws (2 pairs physics v2 '
                             'with constructive reference feasibility)')
@@ -31,6 +39,8 @@ def main():
     ev.add_argument('--conditions')
     ev.add_argument('--perturbations', type=int, default=1)
     ev.add_argument('--controller', choices=['stopping', 'ttc'], default='stopping')
+    ev.add_argument('--role-action-mode', choices=['none', 'lane_locked'],
+                    help='override execution projection; defaults to the policy bundle setting')
     ev.add_argument('--one-learning-target', action='store_true')
     bench = sub.add_parser('benchmark')
     bench.add_argument('--policy', required=True)
@@ -81,15 +91,23 @@ def main():
         from .train import train, TrainConfig
         result = train(a.output, TrainConfig(seed=a.seed, updates=a.updates,
                        episodes_per_update=a.episodes_per_update, mode=a.mode,
+                       mixed_warmup_fraction=a.mixed_warmup_fraction,
                        algorithm=a.algorithm, device=a.device, robust=not a.no_robust,
                        role_constraints=not a.no_role_constraints,
+                       role_action_mode=a.role_action_mode,
+                       interaction_budget=a.interaction_budget,
+                       branch_interaction_budget=a.branch_interaction_budget,
                        sampler_version=a.sampler_version), a.pretrained)
     elif a.command in ('evaluate', 'benchmark'):
         from .evaluate import evaluate, benchmark, ScriptPolicy, OneLearningPolicy
         from .policy import load_bundle
         import torch
         torch.set_num_threads(1)
-        runner = load_bundle(a.policy, device=a.device)[0] if a.policy else ScriptPolicy()
+        bundle = None
+        if a.policy:
+            runner, bundle = load_bundle(a.policy, device=a.device)
+        else:
+            runner = ScriptPolicy()
         runtime_dir = Path(a.output).parent if a.command == 'benchmark' else Path(a.output)
         record_runtime(runtime_dir, a.device if a.policy else 'cpu')
         if a.command == 'evaluate':
@@ -100,8 +118,11 @@ def main():
                 from .sampling import load_conditions
                 conditions, manifest = load_conditions(a.conditions)
                 version = manifest['condition_set_version']
+            role_action_mode = (a.role_action_mode
+                                or ((bundle or {}).get('config') or {}).get('role_action_mode', 'none'))
             result = evaluate(runner, a.output, a.count, a.seed, perturbations=a.perturbations,
-                              controller=a.controller, conditions=conditions, condition_set_version=version)
+                              controller=a.controller, conditions=conditions,
+                              condition_set_version=version, role_action_mode=role_action_mode)
         else:
             result = benchmark(runner, a.output, a.steps)
     elif a.command == 'search':

@@ -25,6 +25,10 @@ class ScenarioSpec:
     target_accel_scale: float = 1.0
     observation_noise: float = 0.0
     role_constraints: bool = True
+    # Optional execution projection for learned target actions. ``lane_locked``
+    # keeps the crossing pedestrian and moving occluder on their assigned axes;
+    # legacy experiments use ``none`` and remain replay-compatible.
+    role_action_mode: Literal['none', 'lane_locked'] = 'none'
     protocol_level: str = 'research_extension'
     perturbation_source: str = 'assumed_sensitivity_not_abd_calibrated'
     # Version pinning so traces/conditions stay auditable across physics fixes.
@@ -43,6 +47,8 @@ class ScenarioSpec:
             raise ValueError('physics_version must be 1 or 2')
         if self.condition_role not in ('unspecified', 'reference', 'reference_infeasible', 'stress'):
             raise ValueError('unknown condition_role')
+        if self.role_action_mode not in ('none', 'lane_locked'):
+            raise ValueError('unknown role_action_mode')
         if self.sampler_version not in (1, 2):
             raise ValueError('sampler_version must be 1 or 2')
         numeric = [v for v in asdict(self).values() if isinstance(v, (int, float))]
