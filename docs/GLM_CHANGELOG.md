@@ -167,3 +167,54 @@ bash scripts/run.sh evaluate --policy runs/20260911_gpu_pilot/mixed_seed7/policy
   `scenario_lab/__main__.py`（evaluate --conditions）。
 - 未触碰：用户既有未提交改动（HANDOFF.md、stage2_extract.py、abd_parser/inventory 删除记录）、
   runs/20260911_gpu_pilot 全部旧产物、Data/。
+
+---
+
+## 2026-09-11 · P1.1：语料交叉统计 + 零动作基线 + 分角色验证误差（只量化现状，不改模型）
+
+**执行环境**：同上（WSL2 Ubuntu，scenario-gpu venv）。产物：`runs/20260911_p1_corpus_stats/`
+（cross_table.csv、zero_action_vs_prior.csv、CORPUS_STATS.md、summary.json）。
+
+```bash
+python scripts/corpus_stats.py   # 新脚本；corpus=runs/20260911_public_v4, prior=runs/20260911_gpu_pilot/prior/prior.pt
+```
+
+### 1. 覆盖交叉表（source × split × kind，12 格中 5 格为空，每格注明原因）
+
+| 发现 | 数值 |
+|---|---|
+| 行人占比 | 191/6601（2.9%），**全部来自 Waymo**；INTERACTION×pedestrian 为结构性零（vehicle_tracks 导出无行人行） |
+| val split 构成 | 1122 条 = Waymo vehicle 1030 + Waymo pedestrian 92，**INTERACTION 贡献为零**（其 4 个 location 组全部 hash 进 train 桶；recorded_trackfiles 文件名无官方 split token） |
+| test split | 148 条（Waymo training tfrecord 的 per-scenario hash 桶 9；validation 目录被 official token 强制 val） |
+
+比 HANDOFF 指出的"INTERACTION 验证集来源×角色覆盖缺口"更严重的一层：**prior 从未在 INTERACTION
+分布上被验证过**（不只行人缺失——车辆角色同样缺失），train/val 的来源构成完全不同
+（train 68% INTERACTION，val 0% INTERACTION）。
+
+### 2. 零动作基线 vs 训练后 prior（val 1122，pretrain.py 同口径）
+
+| 口径 | 零动作 | trained prior |
+|---|---:|---:|
+| 全角色无加权（val_mse 口径） | **0.237336** | 0.237515（劣 0.08%） |
+| 全角色 train 角色频率加权 | 0.319599 | 0.319932 |
+| role 0 pedestrian | 0.337935 | 0.338304 |
+| role 1 vehicle | 0.228351 | 0.228512 |
+
+- **所有口径上 prior 均不优于零动作**（pretraining.json 5 epochs 的 val_mse 0.2331→0.2333 也几乎
+  不降）。这量化解释了 pilot 中 prior 与 script 评价几乎一致的现象：5 epoch 的自身运动先验
+  收敛到"近似零动作"——动作目标已归一化且多数窗口近匀速，零预测是强基线。
+- 口径自检 PASS：本脚本在 logged val[:1024] 子集复算 prior 得 0.23327850，与 pretraining.json
+  末轮 val_mse 0.23327853 差 3e-08——上表全部数字与 pretrain.py 口径逐位一致。
+- role 0（行人）零动作误差 0.338 > role 1（车）0.228：行人窗口动作目标方差更大，而行人样本仅
+  191 条——先验最薄弱处恰是本项目场景（横穿行人）最需要的角色。
+
+### 3. 对 P1.2 的输入（不改任何模型的纯诊断结论）
+
+P1.2 邻居对齐交互先验的设计必须同时回应：val 零 INTERACTION 构成（换 split 策略或在 Waymo 内
+做来源平衡）；行人样本量（扩样并记录筛选依据，HANDOFF 已列）；超越零动作的最低门槛
+（新先验 val 报告必须并列零动作基线，这是本脚本固化下来的对照协议）。
+
+### 4. 本轮修改文件
+
+- 新增：`scripts/corpus_stats.py`（审计脚本，含 pretraining.json 口径自检，自检不过即报错退出）。
+- 产物：`runs/20260911_p1_corpus_stats/`（未提交，属 runs/ 大产物）。
