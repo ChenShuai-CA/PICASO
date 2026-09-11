@@ -10,6 +10,7 @@ import torch
 
 SEEDS = (7, 17, 27, 37, 47)
 DIMS = ('amplitude', 'start', 'duration')
+RIDGE_ALPHAS = (.01, .1, 1., 10., 100.)
 
 
 def load_npz(path):
@@ -54,6 +55,114 @@ def metrics(prediction, data, branch, split):
     }
 
 
+def spec_features(manifest):
+    fields = ('ego_speed', 'crossing_x', 'pedestrian_y', 'pedestrian_speed',
+              'pedestrian_delay', 'occluder_x', 'occluder_y', 'occluder_speed',
+              'horizon', 'controller_threshold', 'brake_deceleration',
+              'response_delay', 'action_delay_steps', 'target_accel_scale',
+              'observation_noise')
+    return np.asarray([[float(row['spec'][field]) for field in fields]
+                       + [float(row['branch'] == 'dual')] for row in manifest])
+
+
+def observable_features(data, role):
+    tokens = data['tokens'][:, :, role].reshape(len(data['tokens']), -1)
+    masks = data['token_mask'][:, :, role].reshape(len(data['tokens']), -1)
+    return np.concatenate((tokens, masks.astype(np.float32)), axis=1)
+
+
+def ridge_predict(train_x, train_y, test_x, alpha):
+    mean_x, scale_x = train_x.mean(0), train_x.std(0)
+    scale_x[scale_x < 1e-8] = 1.
+    x = (train_x - mean_x) / scale_x
+    test = (test_x - mean_x) / scale_x
+    mean_y = train_y.mean(0)
+    # Dual form stays well conditioned when observable history has more columns
+    # than the small number of teacher conditions.
+    weights = x.T @ np.linalg.solve(x @ x.T + alpha * np.eye(len(x)),
+                                    train_y - mean_y)
+    return np.clip(test @ weights + mean_y, -1., 1.)
+
+
+def linear_predictability(train, screen, train_manifest, screen_manifest):
+    results, screen_predictions = [], {}
+    for role in range(2):
+        active_train = train['actor_mask'][:, -1, role].astype(bool)
+        active_screen = screen['actor_mask'][:, -1, role].astype(bool)
+        fit = active_train & (train['split'] == 'train')
+        val = active_train & (train['split'] == 'val')
+        target = train['target'][:, role]
+        screen_target = screen['target'][active_screen, role]
+        for feature_kind, train_x, screen_x in (
+                ('actor_visible_history', observable_features(train, role),
+                 observable_features(screen, role)),
+                ('full_scenario_spec_diagnostic_ceiling', spec_features(train_manifest),
+                 spec_features(screen_manifest))):
+            validation = []
+            for alpha in RIDGE_ALPHAS:
+                prediction = ridge_predict(train_x[fit], target[fit], train_x[val], alpha)
+                validation.append((float(np.square(prediction - target[val]).sum(1).mean()),
+                                   alpha))
+            val_mse, alpha = min(validation)
+            # The independent screen remains untouched during alpha selection.
+            refit = active_train
+            prediction = ridge_predict(train_x[refit], target[refit],
+                                       screen_x[active_screen], alpha)
+            baseline = np.broadcast_to(target[refit].mean(0), screen_target.shape)
+            results.append({
+                'role': role, 'feature_kind': feature_kind,
+                'train_examples': int(fit.sum()), 'val_examples': int(val.sum()),
+                'screen_examples': int(active_screen.sum()), 'selected_alpha': alpha,
+                'validation_mse': val_mse,
+                'screen_mse': float(np.square(prediction - screen_target).sum(1).mean()),
+                'screen_train_mean_baseline_mse': float(
+                    np.square(baseline - screen_target).sum(1).mean()),
+            })
+            screen_predictions.setdefault(feature_kind, np.zeros_like(screen['target']))
+            screen_predictions[feature_kind][active_screen, role] = prediction
+    return results, screen_predictions
+
+
+def closed_loop_predictions(predictions, screen, screen_manifest, role_means):
+    from scenario_lab.pulse import PulsePolicy
+    from scenario_lab.evaluate import run_episode
+    from scenario_lab.schema import ScenarioSpec
+
+    predictions = {
+        **predictions,
+        'train_role_mean': np.broadcast_to(role_means, screen['target'].shape).copy(),
+        'selected_cem_teacher_oracle': screen['target'].copy(),
+    }
+    results = []
+
+    class FixedPredictor(torch.nn.Module):
+        def __init__(self, parameters):
+            super().__init__()
+            self.register_buffer('fixed_parameters', torch.as_tensor(parameters))
+
+        def forward(self, tokens, token_mask, actor_mask):
+            return self.fixed_parameters[None].expand(tokens.shape[0], -1, -1)
+
+    for method, values in predictions.items():
+        rows = []
+        for index, source in enumerate(screen_manifest):
+            spec = ScenarioSpec(**source['spec'])
+            spec.role_action_mode = 'lane_locked'
+            policy = PulsePolicy(FixedPredictor(values[index]), device='cpu')
+            outcome = run_episode(policy, spec, int(source['replay_seed']))
+            rows.append(outcome)
+        for branch in ('single', 'dual'):
+            subset = [row for row in rows if row['branch'] == branch]
+            results.append({
+                'method': method, 'branch': branch, 'conditions': len(subset),
+                'dangerous_rate': float(np.mean([row['dangerous'] for row in subset])),
+                'valid_rate': float(np.mean([row['valid'] for row in subset])),
+                'role_invalid': sum(reason in ('pedestrian_role', 'occluder_role')
+                                    for row in subset for reason in row['invalid_reasons']),
+            })
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
@@ -72,6 +181,10 @@ def main():
     torch.set_num_threads(1)
     train = load_npz(root / 'train_corpus' / 'pulse.npz')
     screen = load_npz(root / 'screen_corpus' / 'pulse.npz')
+    train_manifest = json.loads(
+        (root / 'train_corpus' / 'manifest.json').read_text(encoding='utf-8'))
+    screen_manifest = json.loads(
+        (root / 'screen_corpus' / 'manifest.json').read_text(encoding='utf-8'))
 
     train_active = train['actor_mask'][train['split'] == 'train', -1].astype(bool)
     train_targets = train['target'][train['split'] == 'train']
@@ -116,11 +229,16 @@ def main():
         consensus.append({'branch': branch, 'conditions': len(outcomes),
                           'dangerous_seed_count_histogram': counts})
 
+    predictability, ridge_predictions = linear_predictability(
+        train, screen, train_manifest, screen_manifest)
     result = {
         'kind': 'post_hoc_parameter_regression_diagnostic',
         'formal_gate_impact': 'none', 'dev_read': False, 'heldout_read': False,
         'train_role_parameter_means': role_means.tolist(),
         'regressions': regressions, 'screen_outcome_consensus': consensus,
+        'linear_predictability': predictability,
+        'post_hoc_closed_loop_predictions': closed_loop_predictions(
+            ridge_predictions, screen, screen_manifest, role_means),
     }
     diagnostics = root / 'diagnostics'
     diagnostics.mkdir(exist_ok=True)
@@ -149,6 +267,23 @@ def main():
         histogram = row['dangerous_seed_count_histogram']
         lines.append(f"| {row['branch']} | {row['conditions']} | "
                      f"{'/'.join(str(histogram[str(i)] if str(i) in histogram else histogram[i]) for i in range(6))} |")
+    lines += ['', '## Linear parameter predictability', '',
+              '| role | features | train/val/screen | selected alpha | val MSE | '
+              'screen MSE | screen mean baseline |',
+              '|---:|---|---:|---:|---:|---:|---:|']
+    for row in result['linear_predictability']:
+        lines.append(f"| {row['role']} | {row['feature_kind']} | "
+                     f"{row['train_examples']}/{row['val_examples']}/{row['screen_examples']} | "
+                     f"{row['selected_alpha']:.2g} | {row['validation_mse']:.4f} | "
+                     f"{row['screen_mse']:.4f} | "
+                     f"{row['screen_train_mean_baseline_mse']:.4f} |")
+    lines += ['', '## Post-hoc closed-loop parameter predictors', '',
+              '| method | branch | dangerous rate | valid | role invalid |',
+              '|---|---|---:|---:|---:|']
+    for row in result['post_hoc_closed_loop_predictions']:
+        lines.append(f"| {row['method']} | {row['branch']} | "
+                     f"{row['dangerous_rate']:.3f} | {row['valid_rate']:.3f} | "
+                     f"{row['role_invalid']} |")
     (diagnostics / 'REPORT.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     print(json.dumps({'output': str(diagnostics), 'dev_read': False,
                       'heldout_read': False}, indent=2))
