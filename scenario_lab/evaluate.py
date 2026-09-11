@@ -21,8 +21,12 @@ class ScriptPolicy:
 
 class ParamPolicy(ScriptPolicy):
     """Low-dimensional bounded acceleration pulses; steering stays role aligned."""
-    def __init__(self, parameters):
-        self.parameters = np.asarray(parameters).reshape(2, 3)
+    def __init__(self, parameters, active_actors=2):
+        values = np.asarray(parameters)
+        if values.size != active_actors * 3:
+            raise ValueError('parameter policy size does not match active actors')
+        self.parameters = np.zeros((2, 3))
+        self.parameters[:active_actors] = values.reshape(active_actors, 3)
         self.t = 0
 
     def reset(self):
@@ -39,8 +43,15 @@ class ParamPolicy(ScriptPolicy):
 
 class TrajectoryPolicy(ScriptPolicy):
     """Fixed action knots, independent of new observations (except presence mask)."""
-    def __init__(self, parameters, knots=8):
-        self.sequence = np.asarray(parameters).reshape(knots, 2, 2)
+    def __init__(self, parameters, knots=8, active_actors=2, longitudinal_only=False):
+        values = np.asarray(parameters)
+        if longitudinal_only:
+            if values.size != knots * active_actors:
+                raise ValueError('longitudinal trajectory size does not match active actors')
+            self.sequence = np.zeros((knots, 2, 2))
+            self.sequence[:, :active_actors, 0] = values.reshape(knots, active_actors)
+        else:
+            self.sequence = values.reshape(knots, 2, 2)
         self.knots = knots
         self.t = 0
 
@@ -66,18 +77,21 @@ class OneLearningPolicy:
         return action
 
 
-def run_episode(policy, spec, seed=0, record_path=None):
+def run_episode(policy, spec, seed=0, record_path=None, max_decision_steps=None):
+    if max_decision_steps is not None and max_decision_steps < 1:
+        raise ValueError('max_decision_steps must be positive')
     env = ScenarioEnv(record=record_path is not None)
     obs = env.reset(spec, seed)
     policy.reset()
     steps, total_reward = 0, 0.
     start = time.perf_counter()
-    while not env.done:
+    while not env.done and (max_decision_steps is None or steps < max_decision_steps):
         action = policy.act(obs)
         obs, reward, _, info = env.step(action)
         total_reward += reward
         steps += 1
     info.update(seed=seed, decision_steps=steps, reward=total_reward,
+                terminated=env.done, budget_truncated=not env.done,
                 wall_s=time.perf_counter() - start, spec=spec.to_dict())
     if record_path:
         record_path = Path(record_path)
@@ -182,43 +196,86 @@ def evaluate(policy, output, count=20, seed=1000, branches=('single', 'dual'), p
     return report
 
 
-def _cem(spec, budget, seed, population, kind):
+def _cem_policy(spec, kind, parameters):
+    active_actors = 1 if spec.branch == 'single' else 2
+    if kind == 'parameters':
+        searched_actors = active_actors if spec.role_action_mode == 'lane_locked' else 2
+        return ParamPolicy(parameters, active_actors=searched_actors)
+    return TrajectoryPolicy(parameters, active_actors=active_actors,
+                            longitudinal_only=spec.role_action_mode == 'lane_locked')
+
+
+def _cem_dimension(spec, kind):
+    active_actors = 1 if spec.branch == 'single' else 2
+    if kind == 'parameters':
+        return 3 * active_actors if spec.role_action_mode == 'lane_locked' else 6
+    if spec.role_action_mode == 'lane_locked':
+        return 8 * active_actors
+    return 32
+
+
+def _cem(spec, budget, seed, population, kind, interaction_budget=None):
     """One CEM run on one condition; every sampled episode is kept and counted."""
+    if interaction_budget is not None and interaction_budget < 2:
+        raise ValueError('CEM interaction budget must be >=2')
     rng = np.random.default_rng(seed)
-    dim = 6 if kind == 'parameters' else 32
-    cls = ParamPolicy if kind == 'parameters' else TrajectoryPolicy
+    dim = _cem_dimension(spec, kind)
     mean, std = np.zeros(dim), np.ones(dim) * .6
     attempts = []
+    interaction_steps = 0
     best = None
     best_params = None
-    while len(attempts) < budget:
-        n = min(population, budget - len(attempts))
+    while ((interaction_budget is not None and interaction_steps < interaction_budget)
+           or (interaction_budget is None and len(attempts) < budget)):
+        n = population if interaction_budget is not None else min(population, budget - len(attempts))
         candidates = np.clip(rng.normal(mean, std, (n, dim)), -1, 1)
         scored = []
-        for parameters in candidates:
-            row = run_episode(cls(parameters), spec, seed)
-            score = row['risk'] + row['collision_speed'] / spec.ego_speed if row['valid'] else -2.
-            row['score'] = score
+        executed = []
+        for candidate_index, parameters in enumerate(candidates):
+            remaining = (None if interaction_budget is None
+                         else interaction_budget - interaction_steps)
+            if remaining is not None and remaining <= 0:
+                break
+            row = run_episode(_cem_policy(spec, kind, parameters), spec, seed,
+                              max_decision_steps=remaining)
+            interaction_steps += row['decision_steps']
+            eligible = row['valid'] and not row['budget_truncated']
+            score = (row['risk'] + row['collision_speed'] / spec.ego_speed
+                     if eligible else (-3. if row['budget_truncated'] else -2.))
+            row.update(score=score, search_parameters=parameters.tolist(),
+                       cem_iteration=len(attempts) // population,
+                       cem_candidate=candidate_index)
             attempts.append(row)
             scored.append(score)
-            if best is None or score > best['score']:
+            executed.append(parameters)
+            if eligible and (best is None or score > best['score']):
                 best, best_params = row, parameters.copy()
-        elite = candidates[np.argsort(scored)[-max(1, n // 4):]]
+        executed = np.asarray(executed)
+        elite = executed[np.argsort(scored)[-max(1, len(executed) // 4):]]
         mean = .3 * mean + .7 * elite.mean(0)
         std = np.maximum(.1, .3 * std + .7 * elite.std(0))
     return attempts, best, best_params
 
 
-def search(spec, output, kind='parameters', budget=40, seed=0, population=8):
-    if budget < 2 or population < 2:
+def search(spec, output, kind='parameters', budget=40, seed=0, population=8,
+           interaction_budget=None, role_action_mode='none'):
+    if (interaction_budget is None and budget < 2) or population < 2:
         raise ValueError('CEM requires budget and population >=2')
     started = time.perf_counter()
-    attempts, best, best_params = _cem(spec, budget, seed, population, kind)
-    cls = ParamPolicy if kind == 'parameters' else TrajectoryPolicy
+    spec = deepcopy(spec)
+    spec.role_action_mode = role_action_mode
+    attempts, best, best_params = _cem(spec, budget, seed, population, kind,
+                                       interaction_budget=interaction_budget)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
-    run_episode(cls(best_params), spec, seed, output / 'best_trace.json')
-    result = dict(kind=kind, parameters=best_params.tolist(), best=best, budget=budget,
+    if best_params is not None:
+        run_episode(_cem_policy(spec, kind, best_params), spec, seed, output / 'best_trace.json')
+    result = dict(kind=kind,
+                  parameters=best_params.tolist() if best_params is not None else None,
+                  best=best, budget=budget if interaction_budget is None else None,
+                  interaction_budget=interaction_budget,
+                  role_action_mode=role_action_mode,
+                  search_dimension=_cem_dimension(spec, kind),
                   total_interaction_steps=sum(r['decision_steps'] for r in attempts),
                   elapsed_s=time.perf_counter() - started,
                   valid_attempts=sum(r['valid'] for r in attempts),
@@ -229,29 +286,37 @@ def search(spec, output, kind='parameters', budget=40, seed=0, population=8):
 
 
 def search_conditions(conditions, output, kind='parameters', budget=40, seed=0,
-                      population=8, branches=('dual',)):
+                      population=8, branches=('dual',), interaction_budget=None,
+                      role_action_mode='none', condition_set_version=None):
     """Per-condition CEM across a frozen condition manifest (P2 preregistration).
 
     Budget is per condition; invalid attempts count toward evaluations and the
     denominators. Best-of-search rows are never comparable to single-sample
     policies without matching search budgets.
     """
-    if budget < 2 or population < 2:
+    if (interaction_budget is None and budget < 2) or population < 2:
         raise ValueError('CEM requires budget and population >=2')
     specs = [c for c in conditions if c.branch in branches]
     if not specs:
         raise ValueError('no conditions match the requested branches')
     per_condition, all_attempts = [], []
     started = time.perf_counter()
-    for i, spec in enumerate(specs):
-        attempts, best, best_params = _cem(spec, budget, seed + i, population, kind)
+    for i, original_spec in enumerate(specs):
+        spec = deepcopy(original_spec)
+        spec.role_action_mode = role_action_mode
+        attempts, best, best_params = _cem(spec, budget, seed + i, population, kind,
+                                           interaction_budget=interaction_budget)
         for row in attempts:
             row['condition_index'] = i
         all_attempts.extend(attempts)
         per_condition.append(dict(condition_index=i, scenario_id=spec.scenario_id,
                                   branch=spec.branch, evaluations=len(attempts),
+                                  search_dimension=_cem_dimension(spec, kind),
                                   interaction_steps=sum(r['decision_steps'] for r in attempts),
                                   valid_attempts=sum(r['valid'] for r in attempts),
+                                  completed_attempts=sum(not r['budget_truncated'] for r in attempts),
+                                  completed_valid_attempts=sum(r['valid'] and not r['budget_truncated']
+                                                               for r in attempts),
                                   best_score=best['score'] if best else None,
                                   best_valid=best['valid'] if best else None,
                                   best_dangerous=best['dangerous'] if best else None,
@@ -259,7 +324,13 @@ def search_conditions(conditions, output, kind='parameters', budget=40, seed=0,
     steps = sum(r['decision_steps'] for r in all_attempts)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
-    result = dict(kind=kind, budget_per_condition=budget, branches=list(branches),
+    result = dict(kind=kind,
+                  budget_per_condition=budget if interaction_budget is None else None,
+                  interaction_budget_per_condition=interaction_budget,
+                  population=population, role_action_mode=role_action_mode,
+                  condition_set_version=condition_set_version,
+                  search_dimensions=sorted({row['search_dimension'] for row in per_condition}),
+                  branches=list(branches),
                   n_conditions=len(specs), total_evaluations=len(all_attempts),
                   total_interaction_steps=steps,
                   mean_steps_per_condition=steps / len(specs),

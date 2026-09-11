@@ -33,6 +33,55 @@ def test_search_conditions_budget_exact(tmp_path):
     assert saved['budget_per_condition'] == 4 and saved['n_conditions'] == 2
 
 
+def test_search_conditions_interaction_budget_exact_and_lane_locked(tmp_path):
+    specs = [ScenarioSpec(branch='single', scenario_id=f's{i}', horizon=.3)
+             for i in range(2)]
+    result = search_conditions(
+        specs, tmp_path, kind='trajectory', interaction_budget=7, seed=9,
+        population=2, branches=('single',), role_action_mode='lane_locked',
+        condition_set_version='test-dev')
+    assert result['total_interaction_steps'] == 14
+    assert result['mean_steps_per_condition'] == 7
+    assert result['interaction_budget_per_condition'] == 7
+    assert result['budget_per_condition'] is None
+    assert result['role_action_mode'] == 'lane_locked'
+    assert result['condition_set_version'] == 'test-dev'
+    assert result['search_dimensions'] == [8]
+    assert [row['interaction_steps'] for row in result['per_condition']] == [7, 7]
+    attempts = [json.loads(line) for line in (tmp_path / 'attempts.jsonl').read_text().splitlines()]
+    assert sum(row['budget_truncated'] for row in attempts) == 2
+    assert all(row['spec']['role_action_mode'] == 'lane_locked' for row in attempts)
+    assert all(row['role_projection_events'] == 0 for row in attempts)
+    assert all(len(row['search_parameters']) == 8 for row in attempts)
+
+
+def test_lane_locked_cem_uses_only_active_longitudinal_dimensions(tmp_path):
+    single = search(ScenarioSpec(branch='single', horizon=.3), tmp_path / 'single',
+                    kind='parameters', interaction_budget=7, seed=3,
+                    population=2, role_action_mode='lane_locked')
+    dual = search(ScenarioSpec(branch='dual', horizon=.3), tmp_path / 'dual',
+                  kind='trajectory', interaction_budget=7, seed=3,
+                  population=2, role_action_mode='lane_locked')
+    assert single['search_dimension'] == 3
+    assert dual['search_dimension'] == 16
+    assert single['total_interaction_steps'] == dual['total_interaction_steps'] == 7
+
+
+def test_truncated_episode_is_explicit():
+    row = run_episode(ScriptPolicy(), ScenarioSpec(branch='single'), 42,
+                      max_decision_steps=2)
+    assert row['decision_steps'] == 2
+    assert row['budget_truncated'] is True and row['terminated'] is False
+
+
+def test_budget_truncated_cem_candidate_cannot_be_selected(tmp_path):
+    result = search(ScenarioSpec(branch='single', horizon=1.0), tmp_path,
+                    kind='parameters', interaction_budget=2, seed=3,
+                    population=2, role_action_mode='lane_locked')
+    assert result['total_interaction_steps'] == 2
+    assert result['best'] is None and result['parameters'] is None
+
+
 def test_search_single_spec_mode_unchanged(tmp_path):
     result = search(ScenarioSpec(branch='single'), tmp_path, kind='parameters',
                     budget=4, seed=3, population=2)

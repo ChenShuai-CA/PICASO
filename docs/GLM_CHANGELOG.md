@@ -873,3 +873,72 @@ P2.2 的等总预算开发集非劣没有在等每分支预算下变得更稳；
 同时修正未来 P1 语料路径：INTERACTION 官方 `pedestrian/bicycle` 混合类现在映射为 `other` 并
 带明确原因，不再进入 pedestrian-only 监督。既有 v5 corpus/prior 产物保持不变并继续作为负结果
 证据，不以重建覆盖。
+
+---
+
+## 2026-09-11 · P2.4 受约束 CEM 可行性预注册（运行前）
+
+### 目的与边界
+
+本阶段只回答优化瓶颈问题：在与 P2.2/P2.3 相同的 sampler v2 / physics v2、角色约束和
+`lane_locked` 执行空间内，是否存在明显多于 script 和当前稳定 MAPPO 策略的有效危险解。
+CEM 是多次仿真的诊断 oracle，不作为与一次前向策略同成本的最终方法，也不据此声称方法优越。
+继续使用 80 条 `development_seed31000_samplerv2` 条件，single/dual 各 40 条；heldout 不读。
+
+### 搜索矩阵与预算
+
+- 搜索类型：低维 acceleration-pulse `parameters` 与 8-knot `trajectory`；
+- 分支：single、dual 分开运行和判定；
+- 搜索随机种子：7、17、27、37、47；population=8；
+- 每个 kind×branch×seed×condition **精确 2500 decision steps**，所有有效、无效及末尾预算截断
+  episode 都落盘并计入成本；末尾未自然终止的 episode 不得成为 best/success；
+- `lane_locked` 后只搜索实际生效的纵向动作：parameters 维度 single=3、dual=6，trajectory 维度
+  single=8、dual=16。旧 P2 CEM 未使用该执行投影且按 episode 数预算，只作历史线索，不进判定。
+
+### 指标与判据
+
+每个条件的成功定义为在预算内至少找到一个**完整、有效且 dangerous** 的 episode。对每种搜索、
+每个分支，将五个搜索种子的条件成功率与同条件 script 做 seed×scenario 双层配对 bootstrap
+（B=2000、seed=2026）。可行性 PASS 需同时满足：危险条件覆盖率差点估计 ≥0.10、95% CI 下界
+>0、角色违规总数为 0。另报相对 P2.3 12k mixed 的诊断差、搜索种子复现率、全尝试有效率、
+target-target collision、成功所需累计步数、动作 effort 与预算截断数。
+
+判定路径预先固定：parameters 在两个分支均 PASS，归为低维搜索可行且当前学习/优化信号受限；
+只有 trajectory 两分支均 PASS，归为低维参数化不足；trajectory 任一分支不 PASS，则按分支定位
+场景空间、目标或搜索预算不足。任何 CEM best-of-search 结果均不得直接写成同计算成本的方法
+superiority，heldout 继续封存。
+
+### P2.4 实施结果
+
+20/20 搜索任务通过（2 kind × 2 branch × 5 seed），每个任务覆盖 40 个开发条件，每条件精确
+2500 步，总计 2,000,000 decision steps；4 路并行墙钟约 690 s。全部任务的条件文件 SHA-256、
+condition set version、搜索维度、`lane_locked` 和逐条件预算均经运行器复核，heldout 未读。
+
+| 搜索 | 分支 | 成功率（5 seed×40 条件） | 相对 script 覆盖差 [95% CI] | 角色违规 | 判定 |
+|---|---|---:|---|---:|---:|
+| parameters | single | 0.690 | +0.440 [+0.305,+0.575] | 0 | **PASS** |
+| parameters | dual | 0.685 | +0.335 [+0.225,+0.450] | 0 | **PASS** |
+| trajectory | single | 0.845 | +0.595 [+0.450,+0.735] | 0 | **PASS** |
+| trajectory | dual | 0.880 | +0.530 [+0.375,+0.690] | 0 | **PASS** |
+
+parameters 各种子成功率为 single 0.650–0.725、dual 0.650–0.700；trajectory 为 single
+0.825–0.875、dual 0.800–0.925。五个搜索种子全部成功的条件比例依次为 0.500、0.375、0.750、
+0.675。各 run 成功条件中的首次成功中位累计成本为 92–640 步，说明 2500 步上限足以诊断可行性，
+但仍比策略单次前向贵得多。
+
+`lane_locked` 将 pedestrian/occluder 角色轴违规降为 0；dual 搜索仍产生 target-target collision：
+parameters 274/9726 attempts，trajectory 699/10238 attempts。它们全部保留在成本和分母中，且
+无效 episode 不可能成为成功解。完整有效 attempt 占比按种子为 parameters-dual 0.946–0.957、
+trajectory-dual 0.898–0.922，结果不是通过删除无效尝试得到。
+
+trajectory 相对 parameters 的条件覆盖差为 single +0.155 [+0.050,+0.265]、dual +0.195
+[+0.075,+0.315]。因此更丰富的时序动作仍有额外价值，但低维 pulse 参数搜索本身已在两个正式
+分支通过预注册可行性判据。按预注册决策树，诊断为
+`low_dimensional_search_feasible_learning_or_optimization_bottleneck`：当前主要瓶颈位于 MAPPO 的
+探索、目标塑形或从搜索解到闭环策略的学习过程，而不是 `lane_locked` 场景空间没有危险解。
+
+下一步不继续增加同配置 PPO 步数，也不读取 heldout。P2.4 解来自当前 dev80，只能用于诊断和
+teacher schema 验证，禁止把它们用于训练后再在同一 dev80 评价。P2.5 必须先冻结现有 dev80 为
+验证集，再从独立 training-only 条件种子运行 parameter-CEM，建立带 provenance 的 teacher corpus；
+随后以固定总交互预算比较 script、纯 MAPPO、BC-only 和 BC→MAPPO。trajectory 解只作为可达
+上界和后续残差动作扩展依据。

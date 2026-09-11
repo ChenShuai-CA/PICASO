@@ -54,6 +54,11 @@ def main():
                         help='frozen condition manifest: per-condition CEM over matching branches')
     search.add_argument('--kind', choices=['parameters', 'trajectory'], default='parameters')
     search.add_argument('--budget', type=int, default=40)
+    search.add_argument('--interaction-budget', type=int,
+                        help='exact decision-step budget per condition; final partial episode '
+                             'is logged but cannot be selected as a solution')
+    search.add_argument('--population', type=int, default=8)
+    search.add_argument('--role-action-mode', choices=['none', 'lane_locked'], default='none')
     search.add_argument('--seed', type=int, default=7)
     search.add_argument('--output', required=True)
     rep = sub.add_parser('replay')
@@ -130,11 +135,17 @@ def main():
         from .schema import ScenarioSpec
         if a.conditions:
             from .sampling import load_conditions
-            conditions, _ = load_conditions(a.conditions)
+            conditions, manifest = load_conditions(a.conditions)
             result = search_conditions(conditions, a.output, a.kind, a.budget, a.seed,
-                                       branches=(a.branch,))
+                                       population=a.population, branches=(a.branch,),
+                                       interaction_budget=a.interaction_budget,
+                                       role_action_mode=a.role_action_mode,
+                                       condition_set_version=manifest['condition_set_version'])
         else:
-            result = search(ScenarioSpec(branch=a.branch), a.output, a.kind, a.budget, a.seed)
+            result = search(ScenarioSpec(branch=a.branch), a.output, a.kind, a.budget, a.seed,
+                            population=a.population,
+                            interaction_budget=a.interaction_budget,
+                            role_action_mode=a.role_action_mode)
     elif a.command == 'replay':
         from .evaluate import replay
         result = replay(a.trace)
