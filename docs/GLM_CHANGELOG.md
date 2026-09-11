@@ -1295,3 +1295,16 @@ distributions.json, verification.json, REPORT.md}。
 **未解决/边界**：n=10 跨 8 车型，per-vehicle 分布不可辨识；归因仍为消除法（无直接 AEB CAN 通道，
 驾驶员违规踩踏板不可区分）；用户 Robot Controller 抽查未做（reviewer 列已注明 pending）；
 margin-time 为代理量非直接时延测量。C-NCAP C2C 无 ABD 专册，引 Euro NCAP 2020 为最近同构配方。
+
+## 2026-09-12 · P3 补充：BR 硬件存在性证据链（MANUAL_EVIDENCE.md E8）
+
+用户质询"若未装 BR，txt 通道是否可信"后补充核查。手册侧：BR Position 数据源仅两种
+（外置编码器/执行器电机编码器，RC p.107），Brake force 为载荷计 "if connected"，
+BR Command 为实际指令信号——不存在"无硬件仍输出"的路径。数据侧（audit evidence.json
+全 run 统计）：24/24 条 BR Position nonzero=1.000 且静息位各车互异（−16.6~−114.3 mm）、
+BR Velocity/载荷计全程活跃、BR Command 全部有非零指令历史；7/8 车型同车存在 BR 主动
+制动闭环联动（cmd→pos→force 三方一致，如 V14_T503 55.5 EU/61.2 mm/149 N；唯一例外
+8-huajingS 亦有编码器全程读数+载荷计 65 N）；run 目录 .spec 含 BR 专属选项字段
+（CorrectForBrakeNonLinearity）。结论：装了 BR 使"事件窗内 cmd≡0"成为有效检验；
+若未装 BR 则 AEB 归因仍成立（−9~−11 m/s² 减速只能来自车辆自身或驾驶员违规）。
+仪表级确认途径（RC Setup > Transducer Connections）已列入用户抽查清单。
