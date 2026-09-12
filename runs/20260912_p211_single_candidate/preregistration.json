@@ -1,0 +1,84 @@
+{
+  "protocol": "P2.11 frozen single-candidate conditional-router confirmation",
+  "created_before_p211_conditions_and_outcomes": true,
+  "paper_scope": "conditional safety-critical scenario generation and budgeted candidate selection",
+  "scientific_scope": "one condition-adaptive prototype selection followed by one episode; not a continuously reactive actor and not AEB-calibrated validation",
+  "frozen_inputs": {
+    "prototype_library": {
+      "path": "runs/20260912_p28_conditional_router/frozen_library.json",
+      "sha256": "d4303d5eb7324de304825322a5f64d2e78c0451057826ff9b6aa99a1be34e5e7"
+    },
+    "single_ridge": {
+      "path": "runs/20260912_p28_conditional_router/router_single.npz",
+      "sha256": "d66de2683f49094c281290af98f2e7b17fc26854f9ca5506f99527829702c08b"
+    },
+    "dual_ridge": {
+      "path": "runs/20260912_p28_conditional_router/router_dual.npz",
+      "sha256": "cfa7a215dbea3598737f3cc5f68038df98cd47eaab4281fb1731a0d3af01e9ab"
+    },
+    "perturbation_config": {
+      "path": "runs/20260912_abd_calibration/abd_supported_v1.json",
+      "sha256": "051e304a0d8ec2db4e3fcfd9dae802f06f5ec18a23064b9ff38bfe395a0d2290",
+      "interpretation": "historically reproducible numerical sensitivity envelope; AEB calibration attribution withdrawn"
+    },
+    "p210_preregistration_sha256": "867e668e04652cae1b6c40e4c819c06e953576d51a55ed052e4af65bbba0ddc6",
+    "p210_summary_sha256": "8999bcab0b4e4a2009ac95d67a9d10a536802b07c45ff69950dd53dd1f1c2680",
+    "p210_completed_sha256": "7a89e6e6919f9ea88884f980a52a3654a1b1c04925a42264eae4a10c7e56e2e2",
+    "p210_fingerprint_audit_sha256": "653dea3d5506ac51df97344da231332844cfe7ef2d87c559317da75693e21e51"
+  },
+  "frozen_method": {
+    "router": "P2.8 branch-specific ridge models with no refit or recalibration",
+    "router_input": "first five actor-visible history frames with visibility and presence masks; no hidden-target truth-fill",
+    "candidate_budget": 1,
+    "fixed_single_prototype": {
+      "single": 1,
+      "dual": 1
+    },
+    "role_action_mode": "lane_locked"
+  },
+  "independent_screen": {
+    "seed": 76000,
+    "generated_count_per_branch": 360,
+    "minimum_eligible_conditions_per_branch": 220,
+    "sample_size_rationale": "P2.10 dual router1-fixed1 point effect was about 0.046 with confidence intervals crossing zero at 104-116 conditions; 360 generated conditions targets about 220-250 nominal-script-safe conditions per branch without outcome-based retry",
+    "purpose": "training",
+    "sampler_version": 2,
+    "perturbations_per_condition": 5,
+    "eligibility": "nominal script episode is complete, valid, and safe; router, fixed-prototype, and perturbed-script outcomes never filter conditions",
+    "must_have_zero_fingerprint_overlap_with": [
+      "P2.8 training seed 72000",
+      "P2.8 screen seed 73000",
+      "P2.10 screen seed 75000",
+      "fresh development seed 74000"
+    ]
+  },
+  "comparators": {
+    "primary_equal_budget": "strongest frozen training-rate fixed single prototype, head 1",
+    "secondary": "zero-action script under the same perturbation draw",
+    "negative_control": "5000 branch-wise permutations of frozen router top-1 assignments across conditions"
+  },
+  "inference": {
+    "condition_bootstrap_rounds": 5000,
+    "permutation_rounds": 5000,
+    "seed": 2031,
+    "alpha": 0.05,
+    "minimum_practical_alignment_delta": 0.05
+  },
+  "gate_each_branch": {
+    "minimum_eligible_conditions": 220,
+    "router1_minus_fixed1_condition_bootstrap_ci95_lower_strictly_above": 0,
+    "router1_minus_script_condition_bootstrap_ci95_lower_strictly_above": 0,
+    "router1_minus_permutation_mean_at_least": 0.05,
+    "permutation_p_one_sided_at_most": 0.05,
+    "router_candidate_valid_rate_at_least": 0.8,
+    "router_role_invalid_equals": 0,
+    "distinct_router_top1_heads_at_least": 2,
+    "modal_router_top1_share_at_most": 0.9
+  },
+  "decision": {
+    "both_branches_pass": "designate the frozen one-candidate router as the preferred final method and make it eligible for a later user-authorized one-time heldout evaluation",
+    "either_branch_fails": "retain the already-qualified P2.10 two-candidate router as the final method; record P2.11 as a negative budget-ablation result and do not tune on this screen",
+    "heldout": "never read during P2.11"
+  },
+  "heldout_read": false
+}

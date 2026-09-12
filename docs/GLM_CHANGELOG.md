@@ -1423,3 +1423,24 @@ router-2 相对扰动下 script 的 bootstrap CI 下界在四个分支×阶段�
 因此冻结的两候选 ridge router 通过 P2.10 双阶段判据，具备之后一次性 heldout 评价资格。本结论限定为
 每条件最多两次候选 rollout 的 dangerous-and-valid 覆盖率，并且当前数值扰动只作为可复现敏感性域，
 不是 AEB 校准分布；不能表述为单次闭环策略优于脚本。P2.10 本身不执行 heldout。
+
+## 2026-09-12 · P2.11 冻结单候选路由独立确认
+
+在生成新条件与 outcome 前，冻结 P2.7 四原型库、P2.8 branch-specific ridge、训练域最强单原型
+head 1、seed76000、5 个配对数值扰动以及全部判据。每分支一次性生成 360 个条件，只按 nominal
+script 的 complete、valid、safe 状态筛选；得到 single 239、dual 232 个合格条件。新 screen 与
+P2.8 training/screen、P2.10 confirmatory screen 和 fresh development 的物理条件指纹交集为 0。
+
+正式方法每条件只执行 router 排名第一的一个原型。为实施预注册的条件置换负控，实验后端评估了完整
+四原型 outcome 矩阵；其余三个 outcome 仅用于统计负控，不计入正式方法覆盖率或候选预算。single 的
+router-1 / fixed-1 / script 为 0.352 / 0.308 / 0.000，router-1 相对 fixed-1 的配对差为 0.044
+[0.012, 0.078]，相对 script 的差为 0.352 [0.295, 0.410]；相对 5000 次条件置换均值的差为
+0.110，单侧 p=0.0002。dual 分别为 0.253 / 0.216 / 0.023，相对 fixed-1 的差为 0.037
+[0.003, 0.073]，相对 script 的差为 0.230 [0.178, 0.284]；相对置换均值的差为 0.068，
+单侧 p=0.0002。
+
+候选有效率 single/dual 为 1.000/0.959，角色违规均为 0；top-1 原型众数占比为 0.653/0.608，
+满足条件依赖多样性门槛。P2.11 因此双分支 PASS，按预注册决策以 router-1 取代 router-2，成为首选
+最终方法并具备之后一次性 heldout 评价资格。该结论仍限定为一次场景级条件选择加一次 rollout 的
+dangerous-and-valid 覆盖率；router 不是持续反应式 actor，当前扰动是数值敏感性域而非 AEB 校准分布。
+heldout 在 P2.11 中未检查、未读取。

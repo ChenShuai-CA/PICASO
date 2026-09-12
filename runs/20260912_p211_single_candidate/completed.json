@@ -1,0 +1,7 @@
+{
+  "protocol": "P2.11 frozen single-candidate conditional-router confirmation",
+  "both_branch_pass": true,
+  "preferred_final_budget": 1,
+  "heldout_method": "P2.11 router-1",
+  "heldout_read": false
+}

@@ -1,0 +1,30 @@
+{
+  "raw_artifacts": [
+    {
+      "path": "runs/20260912_p211_single_candidate/conditions/single_candidate_screen_seed76000.json",
+      "bytes": 752605,
+      "sha256": "f88082f136e4e405be9f0bfcc15f4f89b6765f2431e9be8772534630f84daa0a"
+    },
+    {
+      "path": "runs/20260912_p211_single_candidate/screen_dataset.npz",
+      "bytes": 44257,
+      "sha256": "ba3aa7e47be2060f357995b9a50d79982839f1a720444aaf37a2cac4faa3c4c3"
+    },
+    {
+      "path": "runs/20260912_p211_single_candidate/screen_eligible.json",
+      "bytes": 539245,
+      "sha256": "c7924e6709a30bf05e9f164704f0b8e56077bbe75e6d4de24263af30ea1e6a90"
+    },
+    {
+      "path": "runs/20260912_p211_single_candidate/candidate_attempts.jsonl",
+      "bytes": 16966553,
+      "sha256": "1fb92acc6f8dc87ac5f0a5c679d21e30a13de75ce33f75294ae2c05fffdd9355"
+    },
+    {
+      "path": "runs/20260912_p211_single_candidate/script_attempts.jsonl",
+      "bytes": 3706064,
+      "sha256": "47a91b9481128aee2a55dbc43b81d6b9572324405f3d6db074b8877598fa4fb8"
+    }
+  ],
+  "large_attempt_jsonl_committed": false
+}

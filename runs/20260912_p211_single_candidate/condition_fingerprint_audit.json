@@ -1,0 +1,12 @@
+{
+  "prior_condition_counts": {
+    "training_seed72000.json": 320,
+    "screen_seed73000.json": 320,
+    "development_seed74000.json": 320,
+    "confirmatory_screen_seed75000.json": 320
+  },
+  "screen_condition_set_version": "training_seed76000_samplerv2",
+  "screen_conditions": 720,
+  "overlap_with_all_prior_nonheldout_conditions": 0,
+  "heldout_checked_or_read": false
+}
