@@ -1547,3 +1547,36 @@ braking_source_analysis 提取了 br_position_travel_mm/brake_force_max_n 但 RE
 2) 在 892 条中寻找 AEB 测试速度档的疑似人工接管样本，补齐 matched-speed manual 类
 （现有 33 条 manual 全来自高速 FCW 测试，是自动判别器标定的真实瓶颈）；3) 本段四个目录
 的原始工作应补 CHANGELOG 留痕（本轮只补核验记录）。
+
+## 2026-09-12 · AEB 踏板签名判据：操作员力学模型 → 已标注 run 验证（43/44 通过，manual 标签被推翻）
+
+**用户补充的力学事实**：1) BR 与踏板刚性连接，载荷计仅在机器人主动施力或人脚主动下踩时
+读大值（压缩）；2) 耦合车型 AEB 拖踏板下压、载荷计被拉着走（力小，可为负=张力），解耦
+车型踏板不动；3) C-NCAP 2024 D4F4 = BR 先轻踩（cmd 小脉冲）再 AEB 刮停（主段 cmd≡0）；
+4) FCW 场景有时驾驶员踩刹车、有时让 AEB 制动，且 FCW 场景不进本项目范围。
+
+**产物**：`scripts/validate_abd_pedal_signature.py` +
+`runs/20260912_abd_pedal_signature_validation/{per_run_signature.csv, REPORT.md}`。
+
+**验证结果（77 条已标注 run，事件窗 + 窗前 2 s 基线，带符号载荷计）**：
+- 44 条 operator 确认 AEB：42 `aeb_pedal_dragged`（行程 14–50 mm + 力小/张力）+
+  1 `aeb_pedal_static`（解耦型）= **43/44 签名一致**；1 `drag_then_foot_adjudicate`
+  （V13_T332_R2，张力 −84.5 N 与 75 N 压缩同窗，疑 AEB 先作动驾驶员后补脚）；
+  张力 19/44 且车型相关（13-G9 −73~−84 / 14-BZ3X −16.7 / E8 −4.7 / 9-BZ7 无）；
+  foot_pre_event 0/44。
+- 33 条 FCW 后"manual"（规程推定标签）：仅 3 条 `foot_compression`（V9_T69_R3
+  0.04 mm+51.5 N；V2_T60_R1/R2 306.7/117 N）；**30 条呈 AEB 签名**（18 dragged +
+  12 static）；张力 0；foot_pre_event 14/33。
+- **9-BZ7 同车对比**：30 manual vs 9 AEB 的 travel 25.8/25.2 mm、fmin +1.1/+0.7、
+  fmax 17.7/17.7 N——同车同签名，支持 30 条实际为 AEB 制动。
+- 由此**推翻上一段"特征无分离"结论**：根因是 manual 标签污染（规程推定 ≠ 力学事实），
+  并非通道无判别力。
+
+**AEB 筛选规则（回答"怎么筛"）**：BR Command≡0 前提下，(a) 窗内踏板行程≤2 mm →
+解耦型 AEB；(b) 行程>2 mm 且压缩力≤50 N（负值张力加分）→ 耦合型 AEB；(c) 压缩力
+>50 N 且无张力 → 人脚；(d) 张力+大压缩同窗 → 裁决；辅证：窗前 2 s 踏板>5 mm 活动=
+脚在踏板上。D4F4 识别（待扫）：轻踩脉冲 + 主段 cmd≡0 + 主段 AEB 签名。
+
+**未解决**：阈值暂定未跨速度档标定；载荷计几何因车而异；test_id 非唯一（15 个同名
+不同路径，去重须 sha256+test_id）；892 条 BR-zero 全量扫描与 D4F4 扫描待用户确认后
+执行；V13_T332_R2 与 9-BZ7 30 条待操作员复核。
