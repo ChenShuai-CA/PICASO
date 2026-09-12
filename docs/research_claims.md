@@ -83,6 +83,8 @@ ABD 不再承担当前论文的核心 RQ 或成功门槛。现有数据可以支
 
 - 历史数据解析和通道审计；
 - `observed_braking_onset`、等效减速度和停车响应的有限案例分析；
+- 通过 `.spec` 中 CAN User Defined→Time Tolerance Trigger 映射恢复的
+  `T_FCW_audio_observed`，以及经过制动来源/人工介入筛选后的 FCW→制动间隔；
 - 数值敏感性范围的动机与量级检查。
 
 现有数据不能支持：

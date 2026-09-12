@@ -29,7 +29,11 @@
    文件，但不能生成当时未采集的低层信号。
 
 车辆未连接 CAN 时，TXT 中不会出现车辆 ECU 的 AEB request/active/state。当前目录的 4,121 份数据
-导出中也没有列名直接标识 AEB/FCW 或 `CAN User Defined`。因此历史数据不能恢复 ECU AEB 触发时刻。
+导出中没有原始列名直接标识 AEB/FCW 或 `CAN User Defined`，但 companion `.spec` 中存在 201 条
+Time Tolerance Trigger 到 `CAN User Defined 1/2` 的映射。结合测试团队关于 AVAD3 的通道约定，
+可从对应的 `Time tolerance X (within tolerances)` 首次 0→1 恢复
+`T_FCW_audio_observed`；全目录有 188 条有效上升沿，覆盖 10 个车型目录。这个时刻是 AVAD3 对车内
+声音报警的外部观测，不是 ECU 内部 FCW request。历史数据仍不能恢复 ECU AEB 触发时刻。
 
 ## 3. 无接管候选筛选算法
 

@@ -1,0 +1,50 @@
+{
+  "spec_mappings_to_can_user_defined_1_or_2": 201,
+  "fcw_audio_semantic_mappings": 201,
+  "fcw_audio_observed_rising_edges": 188,
+  "vehicles_with_observed_fcw_audio": 10,
+  "fcw_audio_with_observed_braking_pair": 186,
+  "fcw_audio_to_observed_braking_s": {
+    "n": 186,
+    "min": -0.2700004577637003,
+    "median": 1.0000495910644496,
+    "max": 2.209999084472699
+  },
+  "braking_source_status_counts": {
+    "robot_channel_active": 153,
+    "br_zero_braking_source_unconfirmed": 33,
+    "no_observed_braking": 2
+  },
+  "br_zero_fcw_audio_to_observed_braking_s": {
+    "n": 33,
+    "min": -0.2399997711181001,
+    "median": 0.9099998474121023,
+    "max": 2.1899986267089986
+  },
+  "manual_intervention_review_queue_runs": 33,
+  "trace_status_counts": {
+    "fcw_audio_rising_edge_found": 188,
+    "no_within_tolerance_rising_edge": 13
+  },
+  "semantic_status_counts": {
+    "avad3_fcw_audio_by_operator_convention_in_fcw_context": 17,
+    "avad3_fcw_audio_explicit_sound_label": 184
+  },
+  "configured_label_counts": {
+    "BBB": 7,
+    "SoundAlarm1": 35,
+    "Module1_SoundAlarm1": 3,
+    "SoundAlarm": 146,
+    "bbb": 10
+  },
+  "qualified_to_final_delay_s": {
+    "n": 185,
+    "min": 0.7999992370605007,
+    "median": 1.0,
+    "max": 1.0004005432129013
+  },
+  "interpretation": {
+    "t_fcw_audio_observed_s": "First 0-to-1 edge of the mapped TTT within-tolerances channel. This is AVAD3-observed audible FCW onset under the operator-provided channel convention, not an ECU internal FCW request time.",
+    "time_tolerance_final": "Includes configured TTT true time and delay; do not use as audible-onset time when the within-tolerances trace is available."
+  }
+}

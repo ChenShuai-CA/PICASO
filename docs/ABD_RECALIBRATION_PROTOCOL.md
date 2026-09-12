@@ -14,6 +14,10 @@
    C-NCAP Special Group 用 TTT3 检测 FCW；从 Bus 0 导入 DBC，将相应二值消息设为
    `CAN User Defined 1` 并设为 Live。第 27 页说明 VUT 与 LaunchPad 应在同一无线网络上分别
    Activate/Connect Synchro。
+4. 历史数据的原始 TXT 表头没有 `CAN User Defined 1/2`，但 201 份 companion `.spec` 明确将
+   Time Tolerance Trigger 映射到这两个输入；184 条标签直接包含 `SoundAlarm`，其余 17 条位于
+   FCW 场景并按测试团队 AVAD3 约定解释。`Time tolerance X (within tolerances)` 的首次 0→1 是
+   AVAD3 声音检测时刻；最终 `Time tolerance X` 还包含 True Time 和配置 delay，不能作为报警起点。
 
 ## 2. 当前历史数据状态
 
@@ -52,6 +56,9 @@ RC group/spec 和最终导出表。
 3. 只对确认没有人工/BR 接管的完整减速事件，或 `T_driver` 之前足够长的未污染窗口，拟合响应曲线；
 4. 若可增加外置 AVAD audio/light receiver，可独立记录 FCW 并计算 FCW-to-braking interval，
    但仍不得将其命名为 AEB request delay。
+
+现有历史数据已经通过上述 TTT 映射恢复 188 条 `T_FCW_audio_observed`，因此第 4 项不再只是假设性的
+未来补采路径。FCW→制动间隔仍需排除 BR Command、人工介入和无关减速事件后才能进入响应分析。
 
 测试团队基于现场经验给出 ECU AEB request/active 到组合惯导检测到 −0.3 m/s²响应起点的工程先验
 区间 0.15–0.35 s（名义值 0.25 s）。历史 run 可据此记录：
