@@ -1,0 +1,12 @@
+# Mechanism ablation and failed-route audit
+
+| stage | tested mechanism | single result | dual result | gate | inference |
+|---|---|---|---|---|---|
+| P2/P2.1 | PPO/MAPPO with prior and robust variants | no reliable gain; best stable no-prior variant Δ=0.000 | prior variants unstable; best stable no-prior variant Δ≈0 | FAIL | More training under the same recipe was unsupported. |
+| P2.2/P2.3 | Shared/specialized networks and equal branch budget | Δ=0.000 to 0.040; CIs include zero | Δ=-0.005 to 0.005; CIs include zero | FAIL superiority | Architecture and exposure were not the main bottleneck. |
+| P2.4 | Lane-locked per-condition CEM feasibility | parameter Δ=0.440; trajectory Δ=0.595 | parameter Δ=0.335; trajectory Δ=0.530 | PASS feasibility | Solutions existed, but required many simulator interactions. |
+| P2.5 | Single-teacher BC followed by MAPPO | Δ=0.055 [-0.110, 0.205] | Δ=-0.010 [-0.110, 0.090] | FAIL | Open-loop teachers did not transfer reliably to closed-loop execution. |
+| P2.6 | Direct condition-to-pulse parameter prediction | rate 0.269; required >0.50 | rate 0.358; required >0.25 | FAIL both-branch | Single-output regression discarded solution multimodality. |
+| P2.7 | Multi-success set supervision, K=4 | dev 0.520 vs script 0.250 | dev 0.550 vs script 0.350 | PASS | A compact executable solution set restored coverage at higher cost. |
+| P2.8 | Conditional ridge routing, K=2 | router-fixed Δ=0.041 [0.012, 0.078] | router-fixed passed; shuffled-control CI crossed zero | FAIL mechanism | Weak alignment required an independent confirmation set. |
+| P2.10–P2.12 | Frozen conditional router, then K=1 confirmation | heldout Δ=0.041 [0.012, 0.071] | heldout Δ=0.029 [0.001, 0.058] | PASS | Condition-dependent top-1 selection was sufficient. |

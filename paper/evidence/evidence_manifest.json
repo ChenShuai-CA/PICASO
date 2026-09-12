@@ -1,0 +1,150 @@
+{
+  "protocol": "paper evidence freeze v1",
+  "scope": "read-only synthesis of completed P2 artifacts; no training or simulation",
+  "rq3_primary_split": "P2.11 independent screen",
+  "p212_k2_policy": "not computed as confirmatory evidence after heldout unblinding",
+  "inputs": [
+    {
+      "path": "runs/20260912_p211_single_candidate/summary.json",
+      "sha256": "67349bcc1b5338c0136ddc437cc82b53278273b0973a0c426fa132cd17c97fa0"
+    },
+    {
+      "path": "runs/20260912_p211_single_candidate/screen_dataset.npz",
+      "sha256": "ba3aa7e47be2060f357995b9a50d79982839f1a720444aaf37a2cac4faa3c4c3"
+    },
+    {
+      "path": "runs/20260912_p211_single_candidate/candidate_attempts.jsonl",
+      "sha256": "1fb92acc6f8dc87ac5f0a5c679d21e30a13de75ce33f75294ae2c05fffdd9355"
+    },
+    {
+      "path": "runs/20260912_p212_final_confirmation/summary.json",
+      "sha256": "8777a869b136a2d633c8a371ac530c6946f4794b25f0021c0ac6ebbf9e68bd5d"
+    },
+    {
+      "path": "runs/20260912_p210_confirmatory_router/summary.json",
+      "sha256": "8999bcab0b4e4a2009ac95d67a9d10a536802b07c45ff69950dd53dd1f1c2680"
+    },
+    {
+      "path": "runs/20260912_p28_conditional_router/summary.json",
+      "sha256": "5b63d8982aa209f8bb32f116cd72224227c1a22c2d110e12811417ff159ee8e1"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "paper/evidence/budget_curve.csv",
+      "bytes": 1193,
+      "sha256": "4bdb1160464efa79777f0cc2986d7694eb0d97c743bee12ca1a4931f8d1154e6"
+    },
+    {
+      "path": "paper/evidence/budget_increments.csv",
+      "bytes": 645,
+      "sha256": "5062e7a78494c5211ade03305b247f2cd9c1aae87075cd36e0cdf695b4fb3245"
+    },
+    {
+      "path": "paper/evidence/failed_route_audit.csv",
+      "bytes": 1596,
+      "sha256": "a964bedcf2ed2089c24ff0f45dd5409238d035026919d04ab84650b08e58a403"
+    },
+    {
+      "path": "paper/evidence/k2_development_confirmation.csv",
+      "bytes": 981,
+      "sha256": "5161302a9762ec1ab7366618d1f62f2207efd725ddfb218ccbde785b82c86015"
+    },
+    {
+      "path": "paper/evidence/main_results.csv",
+      "bytes": 1248,
+      "sha256": "943ee65e50dd0e143735ed0d62e51812729870cf6da51a64a8d2f713664c5918"
+    },
+    {
+      "path": "paper/figures/fig1_method_overview.pdf",
+      "bytes": 32144,
+      "sha256": "f057ee61bb11e7a4ee95b9ae34326ab0651718b61ea265fbf2c8332edfca34ec"
+    },
+    {
+      "path": "paper/figures/fig1_method_overview.png",
+      "bytes": 211981,
+      "sha256": "ad08eec5a5a6b1c763b52bf23a2884965f0e9841c13abd6bb73377094ddebdee"
+    },
+    {
+      "path": "paper/figures/fig1_method_overview.svg",
+      "bytes": 72790,
+      "sha256": "43136c87b2e4ea206db3408fecfb9fcd56bbd47d8adebe0c57faef72c0164f23"
+    },
+    {
+      "path": "paper/figures/fig2_budget_curve.pdf",
+      "bytes": 16987,
+      "sha256": "3b97587c9eb10265e7ee6289ae8c5f9defb24467351240b8b550cb7a5cdd3f76"
+    },
+    {
+      "path": "paper/figures/fig2_budget_curve.png",
+      "bytes": 218583,
+      "sha256": "c892314fcd97498b461b8c548a4d681ecde590480e86da38dd46086009153fd0"
+    },
+    {
+      "path": "paper/figures/fig2_budget_curve.svg",
+      "bytes": 75249,
+      "sha256": "6b2d6f823d6e8de66d2480046d1453d9ada40c90f29f453264d4b08fa89d8d5a"
+    },
+    {
+      "path": "paper/figures/fig3_main_effects.pdf",
+      "bytes": 17305,
+      "sha256": "fd7f5083d87ea0b79e69f7593ee7101987b10cfadc178416682dbffc064bb255"
+    },
+    {
+      "path": "paper/figures/fig3_main_effects.png",
+      "bytes": 104201,
+      "sha256": "1dd02fdf77e38025a03cf1c6ceb8fe948b146259991b0aba338f89e3712628be"
+    },
+    {
+      "path": "paper/figures/fig3_main_effects.svg",
+      "bytes": 45573,
+      "sha256": "3a5803865696b1c4762cf553c8dae7e675c9679a88336b31adebad9d5ec5759c"
+    },
+    {
+      "path": "paper/figures/fig4_failed_route_audit.pdf",
+      "bytes": 19448,
+      "sha256": "5fca1b07b311d6ec62e0dc60925d35620e632697b1ea3d908f424d076b8fe35f"
+    },
+    {
+      "path": "paper/figures/fig4_failed_route_audit.png",
+      "bytes": 141920,
+      "sha256": "9cc0a2eb58cb22d01b7330073946bdb1910134a95171440658bc573159508ff3"
+    },
+    {
+      "path": "paper/figures/fig4_failed_route_audit.svg",
+      "bytes": 56487,
+      "sha256": "5800dbc0d6b5157d6b71c3741a447d62a0e29b4ad0060307ee24217f08a7a8fc"
+    },
+    {
+      "path": "paper/figures/graphical_abstract.pdf",
+      "bytes": 32514,
+      "sha256": "14414053eac200796b0367cdbe8e6bb6eda234bb20d7ed5c97ff18630b23b8ed"
+    },
+    {
+      "path": "paper/figures/graphical_abstract.png",
+      "bytes": 161409,
+      "sha256": "e422d8087f6923437be20b60ac4f827829faa36487ce0d5851a1dd15e714553c"
+    },
+    {
+      "path": "paper/figures/graphical_abstract.svg",
+      "bytes": 70177,
+      "sha256": "279217a3f1ba766c255bab1763d2c4f078f30a4847be7c07708faf8b07d43fd4"
+    },
+    {
+      "path": "paper/tables/table1_main_results.md",
+      "bytes": 706,
+      "sha256": "85fbd6ccc8f968bc93a6d7dc299158874b42694d3fe7066327547b0b2384803a"
+    },
+    {
+      "path": "paper/tables/table2_budget_curve.md",
+      "bytes": 1157,
+      "sha256": "de1c8fdcbd7823d40a6492287df8835639b42f040dd708840ea2de4a8083f198"
+    },
+    {
+      "path": "paper/tables/table3_failed_routes.md",
+      "bytes": 1796,
+      "sha256": "4b5ea1340fc4479cfd88771c61e888af411017d1fb3d1e2e5d4d725f069ebed5"
+    }
+  ],
+  "heldout_rerun": false
+}
