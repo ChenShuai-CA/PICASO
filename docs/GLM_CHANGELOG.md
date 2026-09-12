@@ -1580,3 +1580,55 @@ braking_source_analysis 提取了 br_position_travel_mm/brake_force_max_n 但 RE
 **未解决**：阈值暂定未跨速度档标定；载荷计几何因车而异；test_id 非唯一（15 个同名
 不同路径，去重须 sha256+test_id）；892 条 BR-zero 全量扫描与 D4F4 扫描待用户确认后
 执行；V13_T332_R2 与 9-BZ7 30 条待操作员复核。
+
+## 2026-09-12 · AEB 踏板签名全量筛选：897/1160 AEB 签名、去重后 707 条 aeb_dataset_v0、D4F4 零命中
+
+**执行**（用户批准"开始下一步工作"）：`scripts/screen_abd_aeb_pedal_signature.py`
+（新；classify 与阈值从 validate 脚本 import，单一来源）×
+`runs/20260912_abd_no_takeover_screen/screening.csv` 的 892 条 BR-zero +
+268 条 robot_channel_active（98 条无事件跳过），4 进程 165 s，逐 run 流式解析 +
+sha256 + 事件窗重算。产物：`runs/20260912_abd_aeb_pedal_screen/`
+（per_run_signature.csv 1,160 行、summary.json、REVIEW_QUEUE.csv 46 行、
+aeb_dataset_v0.csv 707 行 + duplicates 明细、REPORT.md）。
+
+**总分类**：aeb_pedal_dragged 881 + aeb_pedal_static 16 = **AEB 签名 897**（77.3%）；
+foot_compression 33；drag_then_foot_adjudicate 6；robot_braked_main_window 217；
+robot_joined_mid_window 7。operator 44 条复核 run 与签名**零矛盾**
+（41 dragged + 1 static + 1 已知裁决 + 1 截尾 run 的 AEB 段签名）。
+
+**两项对 Codex screen 分类的实证修正**：
+1. robot_channel_active 有 44 条系 **BR Command 噪声 0.01–0.06 EU 触发零阈值误标**
+   （事件窗+前 5 s cmd 实际≤0.5 EU）；已按 BR-quiet 规则重分类（screen_flag_noisy=1
+   留痕：25 dragged + 3 static + 15 foot + 1 裁决）。**下游判 BR 活跃须 |cmd|≥0.5 EU**。
+2. 217 条主段 cmd 活跃中拆出 7 条 cmd 于 onset +0.5 s 后才出现者
+   （robot_joined_mid_window），逐条 0.1 s 时序核验：**5 条为 AEB 主减速在先、
+   机器人尾部 −2.4~−3.9 EU 小指令收尾**（V3_T116/119/140/143、V14_T494；
+   截尾到 cmd 起点后可用，待操作员确认）；2 条为机器人制动
+   （V15_T5258 cmd −51+98 N 压缩；V14_T1804 前相异常单独裁决）。
+
+**D4F4 扫描结论：全语料 0 命中**（判据：前 5 s 内 0.5<|cmd|≤30 EU 轻踩脉冲 +
+主段 cmd≡0 + 主段 AEB 签名）。历史数据不含 BR 轻踩→AEB 模式；规则保留在脚本中
+供 C-NCAP 2024 补测复用。注：D4F4 字面量在路径中本就 0 命中，此为模式级扫描。
+
+**车型踏板架构**（AEB 签名集）：张力出现按车型二值化清晰——13-G9 25/29、
+14-BZ3X 217/240、A66 13/35 有张力；9-BZ7、15-TANG、S9 为 0；static（解耦型）全队
+仅 16 条 → 本车队以耦合型为主。onset 速度 8.4–80.5 kph（中位 30.5）；
+场景 AEB 314 / CCRS 111 / CPTA 111 / CPLA 79 / CCFT 46 / SCP 45 / CBLA 44 /
+CPNCO 44 / CBNA·CPNA·CCRM 各 30 / CPFA 6 / CBFA 5 / OTHER 2（去重前）。
+
+**去重**：1,160 → 914 unique（246 组 sha256 完全重复）；AEB 签名 897 → **707
+unique**（9-BZ7 冗余最重 360→183）。**所有下游消费必须 sha256 去重**。
+
+**aeb_dataset_v0**（707 unique，10 车型）：screen_class ∈ {dragged, static} 按
+sha256 去重（同组留字典序第一条，190 条冗余副本在 aeb_dataset_v0_duplicates.csv）。
+边界不变：签名是力学事实非 AEB ECU 观测；foot/裁决/中途接管未入集；
+response_delay 拆分前不进仿真。
+
+**操作员队列（46 条，机器不改标签）**：foot 33（24 条 9-BZ7，压缩 50–301 N，
+foot_pre_event 全 0——事件中突然补脚，符合"AEB 过晚驾驶员接管"形态；其中 15 条
+来自噪声误标组）+ 裁决 6（13-G9 ×5 张力 −66~−85 与压缩 66~290 同窗 +
+V15_T5222 阈值边缘）+ 中途接管 7（§上）。
+
+**本轮文件**：新增 scripts/screen_abd_aeb_pedal_signature.py；产物
+runs/20260912_abd_aeb_pedal_screen/（CSV 与 REPORT 提交，大文件不提交）；
+诊断用 scripts/tmp_d4f4_detail.py 用后删除（证据数字已录入 REPORT §5）。
