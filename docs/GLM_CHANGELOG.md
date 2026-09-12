@@ -1632,3 +1632,48 @@ V15_T5222 阈值边缘）+ 中途接管 7（§上）。
 **本轮文件**：新增 scripts/screen_abd_aeb_pedal_signature.py；产物
 runs/20260912_abd_aeb_pedal_screen/（CSV 与 REPORT 提交，大文件不提交）；
 诊断用 scripts/tmp_d4f4_detail.py 用后删除（证据数字已录入 REPORT §5）。
+
+## 2026-09-12 · 修正：V3_T140/T143"机器人尾部收尾"解释错误（操作员质询触发）+ 碰撞结局全量扫描
+
+**触发**：操作员指出"机器人不会在 AEB 释放后接手刹停，只有司机会接手"，
+质疑 T140/T143 两条的定性。
+
+**复核证据**（scripts/tmp_v3t140_probe.py 全通道时间轴 + .spec，用后删除，
+数字录入 REPORT §5）：
+1. 力学：cmd −3.05/−3.94 EU 期间踏板行程恒定（40.75/45.27 mm）、载荷计
+   −0.66~+1.09 N ≈0——机器人真推踏板必有压缩+行程（同日对照 V15_T5258_R1：
+   cmd −51 + 106 N 压缩）；驾驶员踩踏同样会显示压缩力，亦为 ≈0。
+2. RC 状态：两条 .spec 均 `UseBrakeRobot=False`，全程 Motion Going BR=0 /
+   BR start=0 / BR test=0，AR Command 同期归零。
+3. 结局：相对纵向距离过零——T140 +2.81 s（接触时 6.0 kph，压入 −0.339 m）、
+   T143 +1.91 s（接触时 19.8 kph，压入 −1.394 m）；T143 二段 −12 m/s² 与距离
+   转负严格同步 = 碰撞动力学。
+
+**结论**：机器人未接手（用户判断正确），驾驶员也未踩——把车停住的是碰撞。
+两条的真实形态 = AEB 触发→制动→**完全释放**（减速 ≈0 滑行逼近）→接触：
+这是 **AEB 中途释放致碰撞的直接观测**（A66 CBNAO/CSFAO 60 kph 各一）。
+初版 REPORT §5/CHANGELOG"5 条 AEB 主减速在先、机器人尾部小指令收尾（截尾后
+可用）"中的"机器人收尾"解释作废；5 条（T116/T119/T140/T143/T494）的尾部
+−2.4~−3.9 EU cmd 均无力学效应，为运行收尾段伺服空闲/保持 trim 信号。截尾规则
+本身不变（保守处理，待操作员确认）。另修正一处笔误：mid-window 第 7 条按
+per_run_signature.csv 实为 **V15_T5261_R9**（cmd 43.3+压缩 17–70 N，机器人施力/
+tracker 疑换目标，交裁决）；V15_T5258_R1 属 robot_braked_main_window
+（cmd +0.2 s 即活跃），初版 §5 误列。
+
+**碰撞结局全量扫描**（新增 scripts/scan_abd_contact_outcome.py，1,160 run，
+87 s；产物 runs/20260912_abd_aeb_pedal_screen/contact_outcome.csv）：事件窗 ±2 s
+内 Relative longitudinal distance 最小值分类；过零类按"过零时车速 ≤25 kph 且
+|min|≤3 m"再分（纵向代理，横向几何未查）：
+- AEB 签名 897 = **contact_and_stopped 66（7.4%）** + passed_or_swept 105 +
+  near≤0.5 m 30 + clear 696；foot 33 中 contact 8；robot_braked 217 中 7；
+  mid_window 7 中 3（T140/T143/T1804）。
+- contact_and_stopped 压入深度 −0.018~−2.683 m（物理量级）；passed_or_swept
+  |min| 3.1~632 m、过零时车速中位 0.1 kph = 目标被甩到车后/走过停住的车，
+  **非压溃**。初版把全部过零当 contact（171 条、19.1%）属高估，已修正。
+- 深度分布双峰（−0.5 m 与 −6 m 两个量级）是过零二分判据的依据；边界与限制
+  已写入脚本 docstring 与 REPORT §8/§10。
+
+**对下游的影响**：per_run_signature.csv 分类不变（踏板签名是力学事实，碰撞结局
+是独立维度列于 contact_outcome.csv）；aeb_dataset_v0 不变。AEB 签名集中 66 条
+真接触 + 30 条近接触构成"签名成立但未能避免接触"难例子集，供 observed-braking-
+response 分析优先使用（须 sha256 去重）。
