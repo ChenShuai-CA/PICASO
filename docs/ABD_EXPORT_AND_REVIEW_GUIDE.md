@@ -61,4 +61,6 @@
 
 `none_confirmed` 仍表示“没有观察到人工接管特征”。在没有独立踏板/压力通道的情况下，直线人工制动
 可能与 AEB 刹停相似，因此不能把该值升级为 ECU AEB 真值。人工确认后，可以把
-`observed_braking_onset` 用作实测制动响应起点；不能命名为 `T_AEB_req`。
+`observed_braking_onset` 用作实测制动响应起点。按测试团队提供的 0.15–0.35 s 工程先验，算法同时
+给出 `T_AEB_proxy ∈ [T_dec_03-0.35, T_dec_03-0.15]` 和名义值 `T_dec_03-0.25`。这些列是倒算的
+代理时刻，不能命名为实测 `T_AEB_req`。

@@ -24,7 +24,8 @@
   "interpretation": {
     "prototype_similarity": "Unvalidated ranking against four operator-reviewed kinematic prototypes; it is not a no-takeover probability or classifier accuracy.",
     "observed_braking_onset": "First sustained -1 m/s2 response backtracked to -0.3 m/s2; it is not the unavailable ECU AEB request time.",
-    "target_reference_actual": "Synchronized object/head-tracker reference and actual position channels from the same exported Time rows; low-level actuator commands are separate."
+    "target_reference_actual": "Synchronized object/head-tracker reference and actual position channels from the same exported Time rows; low-level actuator commands are separate.",
+    "aeb_request_proxy": "Observed braking onset minus a 0.15-0.35 s test-team engineering-prior interval (nominal 0.25 s); it is inferred, not an observed ECU state."
   },
   "br_zero_dynamic_target_runs": 781,
   "aligned_target_position_residual_p95_m_quantiles": {

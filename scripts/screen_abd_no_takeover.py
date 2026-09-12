@@ -65,6 +65,13 @@ FEATURE_SCALES = {
     'jerk_p95_mps3': 12.0,
 }
 
+# Test-team engineering prior supplied on 2026-09-12.  This is an elicited
+# interval for ECU request/active to measured -0.3 m/s2 response, not a channel
+# observed in the historical exports.
+AEB_PROXY_DELAY_LOW_S = 0.15
+AEB_PROXY_DELAY_HIGH_S = 0.35
+AEB_PROXY_DELAY_NOMINAL_S = 0.25
+
 
 def infer_scenario(path: Path) -> str:
     upper = str(path).upper()
@@ -72,6 +79,18 @@ def infer_scenario(path: Path) -> str:
         if re.search(rf'(?<![A-Z]){re.escape(name)}(?![A-Z])', upper):
             return name
     return 'OTHER'
+
+
+def aeb_request_proxy(observed_braking_onset_s: float) -> dict:
+    onset = float(observed_braking_onset_s)
+    return {
+        'aeb_request_proxy_earliest_s': onset - AEB_PROXY_DELAY_HIGH_S,
+        'aeb_request_proxy_nominal_s': onset - AEB_PROXY_DELAY_NOMINAL_S,
+        'aeb_request_proxy_latest_s': onset - AEB_PROXY_DELAY_LOW_S,
+        'aeb_request_to_onset_prior_low_s': AEB_PROXY_DELAY_LOW_S,
+        'aeb_request_to_onset_prior_high_s': AEB_PROXY_DELAY_HIGH_S,
+        'aeb_request_proxy_status': 'operator_engineering_prior_not_observed_ecu_signal',
+    }
 
 
 def channel_capabilities(names: list[str]) -> dict:
@@ -294,6 +313,7 @@ def analyze_candidate(path: Path, root: Path) -> dict:
         robot_activity=activity,
         target_tracking=target_tracking(arrays),
         **extract_features(arrays, event),
+        **aeb_request_proxy(event['onset_time_s']),
     )
     if 'Time to collision (longitudinal)' in arrays:
         result['observed_braking_onset_ttc_s'] = float(
@@ -368,11 +388,15 @@ def build_review_queue(rows: list[dict], limit: int) -> list[dict]:
         chosen.append(row)
     queue = []
     for row in chosen:
+        proxy = aeb_request_proxy(row['observed_braking_onset_s'])
         queue.append({
             'run': row['run'], 'vehicle': row['vehicle'], 'scenario': row['scenario'],
             'prototype_similarity_0_1': round(row['prototype_similarity_0_1'], 6),
             'prototype_scope': row['prototype_scope'],
             'observed_braking_onset_s': round(row['observed_braking_onset_s'], 4),
+            'aeb_request_proxy_earliest_s': round(proxy['aeb_request_proxy_earliest_s'], 4),
+            'aeb_request_proxy_nominal_s': round(proxy['aeb_request_proxy_nominal_s'], 4),
+            'aeb_request_proxy_latest_s': round(proxy['aeb_request_proxy_latest_s'], 4),
             'peak_deceleration_mps2': round(row['peak_deceleration_mps2'], 4),
             'lateral_velocity_delta_peak_mps': round(
                 row['lateral_velocity_delta_peak_mps'], 4),
@@ -490,6 +514,9 @@ def main(argv=None):
             'observed_braking_onset': (
                 'First sustained -1 m/s2 response backtracked to -0.3 m/s2; it is not '
                 'the unavailable ECU AEB request time.'),
+            'aeb_request_proxy': (
+                'Observed braking onset minus a 0.15-0.35 s test-team engineering-prior '
+                'interval (nominal 0.25 s); it is inferred, not an observed ECU state.'),
             'target_reference_actual': (
                 'Synchronized object/head-tracker reference and actual position channels '
                 'from the same exported Time rows; low-level actuator commands are separate.'),
@@ -520,7 +547,9 @@ def main(argv=None):
         '`driver_intervention` from `unknown`.', '',
         'The detected time is `observed_braking_onset`: a sustained measured deceleration '
         'threshold backtracked to -0.3 m/s2. It cannot establish ECU AEB request time without '
-        'vehicle CAN or another authoritative trigger channel.', '',
+        'vehicle CAN or another authoritative trigger channel. The reported AEB request '
+        'proxy subtracts the test-team engineering-prior interval 0.15-0.35 s (nominal '
+        '0.25 s); it is an inferred interval rather than a measured ECU transition.', '',
         'Target `reference` and `actual` X/Y channels share the exported `Time` rows. Their '
         'tracking errors are reported where the target trajectory is dynamic. This supports '
         'target execution-error analysis, while LaunchPad low-level actuator channels remain '

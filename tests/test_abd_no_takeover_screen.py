@@ -1,6 +1,7 @@
 import numpy as np
 
 from scripts.screen_abd_no_takeover import (
+    aeb_request_proxy,
     build_review_queue,
     channel_capabilities,
     extract_features,
@@ -21,6 +22,14 @@ def test_channel_capabilities_finds_synchronised_object_reference_actual():
     result = channel_capabilities(names)
     assert result['object_reference_actual_xy'] is True
     assert result['explicit_aeb_fcw_channels'] == ['Calculated AEB state']
+
+
+def test_aeb_request_proxy_back_calculates_interval_without_false_precision():
+    result = aeb_request_proxy(10.0)
+    assert result['aeb_request_proxy_earliest_s'] == 9.65
+    assert result['aeb_request_proxy_nominal_s'] == 9.75
+    assert result['aeb_request_proxy_latest_s'] == 9.85
+    assert result['aeb_request_proxy_status'].endswith('not_observed_ecu_signal')
 
 
 def test_target_tracking_reports_dynamic_position_error():

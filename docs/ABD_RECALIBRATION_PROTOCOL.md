@@ -53,6 +53,15 @@ RC group/spec 和最终导出表。
 4. 若可增加外置 AVAD audio/light receiver，可独立记录 FCW 并计算 FCW-to-braking interval，
    但仍不得将其命名为 AEB request delay。
 
+测试团队基于现场经验给出 ECU AEB request/active 到组合惯导检测到 −0.3 m/s²响应起点的工程先验
+区间 0.15–0.35 s（名义值 0.25 s）。历史 run 可据此记录：
+
+`T_AEB_proxy ∈ [T_dec_03 - 0.35, T_dec_03 - 0.15]`，名义值为 `T_dec_03 - 0.25`。
+
+该量用于敏感性分析和事件对齐，证据标签必须为
+`operator_engineering_prior_not_observed_ecu_signal`；它不是实测 ECU 时刻，也不能用于报告 ECU 时延
+估计误差或车型级 request-to-response 分布。
+
 在该条件下，“完整校准”应重新定义为**观测制动响应 + 人工接管删失 + 目标平台执行误差校准**，
 而不是 ECU AEB 内部请求时延校准。
 

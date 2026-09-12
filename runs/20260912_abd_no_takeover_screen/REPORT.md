@@ -9,6 +9,6 @@ Dynamic target reference/actual channels are usable in **781** BR-zero braking r
 
 The queue is ranked from four operator-reviewed 14-BZ3X examples. With only four positive examples and no independently instrumented manual-braking negatives, the score is a review-priority measure. Only the operator may change `driver_intervention` from `unknown`.
 
-The detected time is `observed_braking_onset`: a sustained measured deceleration threshold backtracked to -0.3 m/s2. It cannot establish ECU AEB request time without vehicle CAN or another authoritative trigger channel.
+The detected time is `observed_braking_onset`: a sustained measured deceleration threshold backtracked to -0.3 m/s2. It cannot establish ECU AEB request time without vehicle CAN or another authoritative trigger channel. The reported AEB request proxy subtracts the test-team engineering-prior interval 0.15-0.35 s (nominal 0.25 s); it is an inferred interval rather than a measured ECU transition.
 
 Target `reference` and `actual` X/Y channels share the exported `Time` rows. Their tracking errors are reported where the target trajectory is dynamic. This supports target execution-error analysis, while LaunchPad low-level actuator channels remain available only when captured by the corresponding target system.

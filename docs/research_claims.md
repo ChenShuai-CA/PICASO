@@ -87,19 +87,24 @@ ABD 不再承担当前论文的核心 RQ 或成功门槛。现有数据可以支
 
 现有数据不能支持：
 
-- ECU AEB request/active 时刻或 request-to-response delay；
+- 实测 ECU AEB request/active 时刻或由历史数据拟合的 request-to-response delay；
 - AEB 校准概率分布；
 - 车辆或车型级保留验证；
 - “ABD 校准降低 sim-real 偏差”的主张；
 - AEB 触发时刻 MAE、NCAP 合规或实车闭环部署结论。
 
-原因是测试没有连接车辆 CAN，且缺少独立踏板/压力与同步目标平台 command/actual 通道。四条
+测试团队可提供 0.15–0.35 s（名义 0.25 s）的 request-to-−0.3 m/s²响应工程先验，并据此报告
+`T_AEB_proxy` 区间；该量只能标记为专家/工程先验，不能写成历史 TXT 实测 ECU 时刻。
+
+原因是测试没有连接车辆 CAN，且缺少独立踏板/压力通道。全目录复核已经确认大量运行具有同步的
+Object/Head tracker reference/actual 通道，可用于目标执行误差分析，但仍需剔除固定参考点偏置和
+异常残差。四条
 14-BZ3X BR-zero smoke run 只表示未观察到人工接管运动学特征，不能升级为直接 AEB 触发证据。
 当前 `abd_supported_v1` 数值仅保留为历史可复现的 sensitivity envelope，论文统一称为
 “numerical sensitivity domain”。
 
-未来若能补采数据，可另行研究 observed braking response 与目标平台执行误差；这不是当前论文提交的
-前置条件。
+当前可继续扩展 observed braking response 与目标平台执行误差分析；车辆 ECU 时延的直接校准仍需
+新增 CAN 或权威外部触发通道。这不是当前论文提交的前置条件。
 
 ## 7. 正式评价状态
 
