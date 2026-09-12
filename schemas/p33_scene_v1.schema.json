@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scenario-lab.local/schemas/p33_scene_v1.schema.json",
+  "title": "P3.3 scene shard index record",
+  "description": "Metadata for one tensor sample in scene-shard-v1. Tensor shapes are frozen in configs/p33/ar_scene_v1.json and repeated here as x-shape annotations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sample_id",
+    "source",
+    "split",
+    "group_id",
+    "anchor_track_id",
+    "source_file",
+    "source_content_sha256",
+    "coordinate_transform",
+    "visibility_source",
+    "truncation",
+    "arrays"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "scene-shard-v1"
+    },
+    "sample_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "enum": [
+        "waymo",
+        "interaction"
+      ]
+    },
+    "split": {
+      "enum": [
+        "train",
+        "dev",
+        "final_confirmation"
+      ]
+    },
+    "group_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "anchor_track_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "coordinate_transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin_x_m",
+        "origin_y_m",
+        "yaw_rad"
+      ],
+      "properties": {
+        "origin_x_m": {
+          "type": "number"
+        },
+        "origin_y_m": {
+          "type": "number"
+        },
+        "yaw_rad": {
+          "type": "number"
+        }
+      }
+    },
+    "visibility_source": {
+      "enum": [
+        "geometric_proxy_version_1",
+        "environment_actor_visible"
+      ]
+    },
+    "truncation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agents_available",
+        "agents_kept",
+        "map_polylines_available",
+        "map_polylines_kept"
+      ],
+      "properties": {
+        "agents_available": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "agents_kept": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "map_polylines_available": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "map_polylines_kept": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        }
+      }
+    },
+    "arrays": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent_history",
+        "state_valid_mask",
+        "pairwise_visibility_mask",
+        "agent_present_mask",
+        "agent_type",
+        "agent_role",
+        "map_polylines",
+        "map_point_mask",
+        "map_type",
+        "future_xy",
+        "future_valid_mask",
+        "motion_token_target",
+        "motion_token_valid_mask"
+      ],
+      "properties": {
+        "agent_history": {
+          "type": "string",
+          "description": "NPZ key",
+          "x-dtype": "float32",
+          "x-shape": [
+            16,
+            11,
+            8
+          ]
+        },
+        "state_valid_mask": {
+          "type": "string",
+          "x-dtype": "bool",
+          "x-shape": [
+            16,
+            11
+          ]
+        },
+        "pairwise_visibility_mask": {
+          "type": "string",
+          "x-dtype": "bool",
+          "x-shape": [
+            16,
+            11,
+            16
+          ]
+        },
+        "agent_present_mask": {
+          "type": "string",
+          "x-dtype": "bool",
+          "x-shape": [
+            16
+          ]
+        },
+        "agent_type": {
+          "type": "string",
+          "x-dtype": "uint8",
+          "x-shape": [
+            16
+          ]
+        },
+        "agent_role": {
+          "type": "string",
+          "x-dtype": "uint8",
+          "x-shape": [
+            16
+          ]
+        },
+        "map_polylines": {
+          "type": "string",
+          "x-dtype": "float32",
+          "x-shape": [
+            64,
+            20,
+            6
+          ]
+        },
+        "map_point_mask": {
+          "type": "string",
+          "x-dtype": "bool",
+          "x-shape": [
+            64,
+            20
+          ]
+        },
+        "map_type": {
+          "type": "string",
+          "x-dtype": "uint8",
+          "x-shape": [
+            64
+          ]
+        },
+        "future_xy": {
+          "type": "string",
+          "x-dtype": "float32",
+          "x-shape": [
+            16,
+            50,
+            2
+          ]
+        },
+        "future_valid_mask": {
+          "type": "string",
+          "x-dtype": "bool",
+          "x-shape": [
+            16,
+            50
+          ]
+        },
+        "motion_token_target": {
+          "type": "string",
+          "x-dtype": "uint8",
+          "x-shape": [
+            16,
+            10
+          ]
+        },
+        "motion_token_valid_mask": {
+          "type": "string",
+          "x-dtype": "bool",
+          "x-shape": [
+            16,
+            10
+          ]
+        }
+      }
+    }
+  }
+}

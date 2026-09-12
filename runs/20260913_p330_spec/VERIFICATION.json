@@ -1,0 +1,21 @@
+{
+  "phase": "P3.3.0",
+  "spec_version": "p33.0-v1",
+  "status": "pass",
+  "environment": "WSL2 Ubuntu 24.04",
+  "python": "/home/shuai/.venvs/scenario-gpu/bin/python",
+  "checks": [
+    {
+      "command": "python -m pytest tests/test_p33_spec.py -q",
+      "result": "5 passed",
+      "elapsed_seconds": 0.41
+    },
+    {
+      "command": "python -m pytest -q",
+      "result": "138 passed",
+      "elapsed_seconds": 16.49
+    }
+  ],
+  "heldout_trajectory_content_read": false,
+  "training_started": false
+}

@@ -1,0 +1,373 @@
+{
+  "spec_version": "p33.0-v1",
+  "status": "design_frozen_not_trained",
+  "frozen_date": "2026-09-13",
+  "task": {
+    "name": "conditional_safety_critical_scenario_generation",
+    "subtasks": [
+      "t1_nominal_multiagent_modeling",
+      "t2_safety_guided_generation",
+      "t3_budgeted_candidate_selection"
+    ],
+    "formal_branches": [
+      "single",
+      "dual"
+    ],
+    "role_action_mode": "lane_locked",
+    "candidate_pool_size": 16,
+    "rollout_budgets": [
+      1,
+      2
+    ],
+    "forbidden_online_inputs": [
+      "scenario_id",
+      "future_ground_truth",
+      "candidate_outcome",
+      "perturbation_realization",
+      "hidden_actor_ground_truth"
+    ]
+  },
+  "data": {
+    "schema_version": "scene-shard-v1",
+    "sample_rate_hz": 10,
+    "history_steps": 11,
+    "history_seconds": 1.0,
+    "future_steps": 50,
+    "future_seconds": 5.0,
+    "max_agents": 16,
+    "max_map_polylines": 64,
+    "max_points_per_polyline": 20,
+    "agent_feature_order": [
+      "x_m",
+      "y_m",
+      "vx_mps",
+      "vy_mps",
+      "cos_heading",
+      "sin_heading",
+      "length_m",
+      "width_m"
+    ],
+    "agent_type_vocabulary": {
+      "pad": 0,
+      "vehicle": 1,
+      "pedestrian": 2,
+      "cyclist": 3,
+      "other": 4
+    },
+    "agent_role_vocabulary": {
+      "pad": 0,
+      "anchor": 1,
+      "prediction_target": 2,
+      "context": 3
+    },
+    "map_feature_order": [
+      "x_m",
+      "y_m",
+      "dir_x",
+      "dir_y",
+      "curvature_inv_m",
+      "speed_limit_mps"
+    ],
+    "map_type_vocabulary": {
+      "pad": 0,
+      "lane_center": 1,
+      "lane_boundary": 2,
+      "road_boundary": 3,
+      "crosswalk": 4,
+      "stop_line": 5,
+      "speed_bump": 6,
+      "other": 7
+    },
+    "coordinate_frame": {
+      "name": "anchor_at_current_time",
+      "origin": "anchor_center_at_t0",
+      "x_axis": "anchor_heading_at_t0",
+      "y_axis": "left_of_anchor",
+      "distance_unit": "m",
+      "time_unit": "s",
+      "angle_unit": "rad",
+      "stored_inverse_transform": true
+    },
+    "masks": {
+      "state_valid_mask": "dataset state exists and is numerically valid",
+      "pairwise_visibility_mask": "query-agent by time by source-agent; hidden source tokens are zeroed before attention",
+      "agent_present_mask": "agent slot is assigned",
+      "map_point_mask": "map point exists",
+      "future_valid_mask": "future supervision exists",
+      "public_visibility_source": "geometric_proxy_version_1",
+      "scenario_lab_visibility_source": "environment_actor_visible"
+    },
+    "agent_selection": {
+      "anchor_slot": 0,
+      "anchor_policy": {
+        "waymo": "sdc_track_index",
+        "interaction": "up_to_8_eligible_vehicle_anchors_per_case",
+        "interaction_anchor_order": [
+          "nearest_nonvehicle_at_t0_ascending",
+          "nearest_vehicle_at_t0_ascending",
+          "stable_track_id"
+        ]
+      },
+      "required_first": [
+        "anchor",
+        "objects_of_interest",
+        "tracks_to_predict"
+      ],
+      "remaining_order": [
+        "current_distance_ascending",
+        "closing_speed_descending",
+        "stable_track_id"
+      ],
+      "future_information_allowed": false,
+      "record_truncation_counts": true
+    },
+    "map_selection": {
+      "radius_m": 80.0,
+      "order": [
+        "minimum_point_distance_to_anchor_ascending",
+        "map_type_id_ascending",
+        "stable_feature_id"
+      ],
+      "future_information_allowed": false
+    },
+    "visibility_proxy": {
+      "version": "geometric_proxy_version_1",
+      "maximum_range_m": 80.0,
+      "dynamic_actor_box_inflation_m": 0.2,
+      "occluded_if_query_source_segment_intersects_third_actor_box": true,
+      "static_building_occlusion_supported": false,
+      "limitations_must_be_reported": true
+    },
+    "normalization": {
+      "position_m": 80.0,
+      "velocity_mps": 30.0,
+      "length_m": 10.0,
+      "width_m": 4.0,
+      "curvature_inv_m": 0.2,
+      "speed_limit_mps": 40.0,
+      "clip_absolute_value": 5.0
+    },
+    "storage": {
+      "format": "npz_shards_v1",
+      "examples_per_shard": 4096,
+      "compression": "numpy_savez_compressed",
+      "streaming_required": true,
+      "global_example_list_forbidden": true,
+      "content_sha256_required_before_training": true
+    }
+  },
+  "motion_tokens": {
+    "version": "motion-codebook-v1",
+    "vocabulary_size": 128,
+    "chunk_steps": 5,
+    "chunk_seconds": 0.5,
+    "vector": "five anchor-local delta_xy points",
+    "vector_dimension": 10,
+    "fit_split": "train_only",
+    "fit_weighting": "source_and_agent_type_balanced",
+    "algorithm": "minibatch_kmeans",
+    "random_seed": 7,
+    "ignore_index": 255,
+    "continuous_residual": true
+  },
+  "model": {
+    "name": "AR-Scene-v1",
+    "autoregressive_axis": "time_chunk",
+    "agents_generated_in_parallel_within_chunk": true,
+    "d_model": 256,
+    "num_layers": 6,
+    "num_attention_heads": 8,
+    "ffn_dimension": 1024,
+    "dropout": 0.1,
+    "activation": "gelu",
+    "normalization": "pre_layer_norm",
+    "source_embedding": true,
+    "agent_type_embedding": true,
+    "agent_role_embedding": true,
+    "map_encoder": "polyline_point_mlp_then_masked_pool",
+    "interaction": "agent_agent_and_agent_map_attention",
+    "decoder_outputs": [
+      "motion_token_logits",
+      "continuous_delta_xy_residual"
+    ],
+    "parameter_count_range": [
+      10000000,
+      25000000
+    ],
+    "parameter_count_must_be_recorded": true
+  },
+  "training": {
+    "formal_seeds": [
+      7,
+      17,
+      27
+    ],
+    "precision": "amp_fp16_or_bf16",
+    "optimizer": "adamw",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.01,
+    "warmup_fraction": 0.05,
+    "gradient_clip_norm": 1.0,
+    "micro_batch_size": 16,
+    "target_effective_batch_size": 256,
+    "max_epochs": 30,
+    "early_stopping_metric": "source_macro_minade_at_6",
+    "early_stopping_patience": 5,
+    "teacher_forcing": true,
+    "source_balanced_minibatches": true,
+    "loss": {
+      "motion_token_cross_entropy": 1.0,
+      "decoded_trajectory_huber": 0.5,
+      "endpoint_huber": 0.2
+    },
+    "t1_sampling": {
+      "num_samples": 6,
+      "temperature": 1.0,
+      "top_p": 0.95
+    },
+    "safety_guidance": {
+      "risk_weight_grid": [
+        0.0,
+        0.25,
+        0.5,
+        1.0,
+        2.0
+      ],
+      "realism_floor_train_quantile": 0.05,
+      "realism_degradation_limit_fraction": 0.05,
+      "nominal_model_update": "frozen_or_learning_rate_at_most_0.1x",
+      "ppo_enabled": false
+    }
+  },
+  "split_policy": {
+    "version": "p33-public-split-v1",
+    "selection_salt": "p33.0-file-selection-v1",
+    "waymo": {
+      "training_glob": "Waymo/training/*.tfrecord-*",
+      "validation_glob": "Waymo/validation/*.tfrecord-*",
+      "expected_training_shards": 1000,
+      "expected_validation_shards": 150,
+      "training_scenario_split": {
+        "hash": "sha256('p33-waymo-v1\\x1f' + scenario_id)",
+        "buckets": 100,
+        "train_buckets": [
+          0,
+          89
+        ],
+        "dev_buckets": [
+          90,
+          99
+        ]
+      },
+      "previously_read_validation_indices": [
+        0,
+        1
+      ],
+      "final_confirmation_validation_indices": [
+        2,
+        149
+      ]
+    },
+    "interaction": {
+      "root": "INTERACTION/INTERACTION/recorded_trackfiles",
+      "expected_csv_files": 373,
+      "train_locations": [
+        "DR_USA_Roundabout_EP",
+        "DR_USA_Intersection_EP1",
+        "DR_USA_Intersection_GL",
+        "DR_USA_Roundabout_FT",
+        "DR_USA_Intersection_MA",
+        "DR_USA_Intersection_EP0"
+      ],
+      "dev_locations": [
+        "DR_USA_Roundabout_SR",
+        "DR_DEU_Roundabout_OF"
+      ],
+      "location_heldout": [
+        "DR_CHN_Merging_ZS",
+        "DR_CHN_Roundabout_LN",
+        "DR_DEU_Merging_MT",
+        "TC_BGR_Intersection_VA"
+      ],
+      "expected_development_files": 338,
+      "expected_heldout_files": 35
+    }
+  },
+  "scale_ladder": [
+    {
+      "name": "smoke",
+      "waymo_training_shards": 10,
+      "interaction_fraction_per_development_location": null,
+      "interaction_cap_per_development_location": 2,
+      "purpose": "engineering_only"
+    },
+    {
+      "name": "architecture",
+      "waymo_training_shards": 100,
+      "interaction_fraction_per_development_location": 0.25,
+      "interaction_cap_per_development_location": null,
+      "purpose": "model_and_representation_selection"
+    },
+    {
+      "name": "scale",
+      "waymo_training_shards": 500,
+      "interaction_fraction_per_development_location": 1.0,
+      "interaction_cap_per_development_location": null,
+      "purpose": "scaling_and_hyperparameter_freeze"
+    },
+    {
+      "name": "full",
+      "waymo_training_shards": 1000,
+      "interaction_fraction_per_development_location": 1.0,
+      "interaction_cap_per_development_location": null,
+      "purpose": "three_seed_formal_training"
+    }
+  ],
+  "evaluation": {
+    "t1_primary_metric": "minADE_at_6",
+    "t1_secondary_metrics": [
+      "minFDE_at_6",
+      "motion_token_nll",
+      "closed_loop_collision_rate",
+      "offroad_rate",
+      "acceleration_violation_rate",
+      "jerk_violation_rate"
+    ],
+    "t2_primary_metric": "condition_has_valid_dangerous_candidate_at_M16",
+    "t3_primary_metric": "condition_level_valid_dangerous_coverage",
+    "bootstrap": {
+      "rounds": 5000,
+      "confidence": 0.95,
+      "unit_waymo": "scenario_id",
+      "unit_interaction": "location_and_case_id",
+      "unit_simulation": "initial_condition"
+    },
+    "minimum_samples": {
+      "waymo_dev_scenarios": 5000,
+      "interaction_dev_groups": 100,
+      "simulation_development_conditions_per_branch": 400,
+      "simulation_confirmation_conditions_per_branch": 400
+    },
+    "gates": {
+      "g0": "streaming, hashes, finite arrays, reversible coordinates, zero cross_split groups",
+      "g1": "both sources: minADE@6 at least 5 percent below best baseline and paired cluster-bootstrap lower bound above zero; minFDE non-worse; kinematic violation increase at most 1 percentage point",
+      "g2": "guided M16 coverage exceeds nominal with paired cluster-bootstrap lower bound above zero; realism degradation at most 5 percent; zero role violations",
+      "g3": "K1 and K2 reported separately against strongest equal-budget fixed/random baseline for single and dual",
+      "g4": "three seeds, complete manifests, hashes, commands, runtime and dispersion"
+    }
+  },
+  "confirmation": {
+    "new_confirmation_required": true,
+    "p212_seed77000_forbidden_for_model_selection": true,
+    "heldout_read_before_gate": false,
+    "rerun_after_result": false,
+    "changes_require_new_spec_version": true
+  },
+  "visualization": {
+    "all_final_selected_scenarios_require_2d_animation": true,
+    "all_final_selected_scenarios_require_carla_replay": true,
+    "first_carla_mode": "deterministic_kinematic_replay",
+    "carla_physics_results_are_separate_validation": true,
+    "confirmation_visualization_cannot_filter_results": true
+  }
+}
