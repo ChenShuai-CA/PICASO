@@ -1,0 +1,86 @@
+{
+  "ALL": {
+    "n": 4,
+    "center": {
+      "lateral_velocity_delta_peak_mps": 0.12271526502445357,
+      "yaw_rate_delta_peak_dps": 6.211464007385073,
+      "heading_change_deg": 6.526840209960966,
+      "speed_rebound_kph": 2.041235759854316,
+      "positive_speed_step_fraction": 0.07869920673466084,
+      "brake_pulse_count": 1.0,
+      "jerk_p95_mps3": 59.25630324008033
+    },
+    "scale": {
+      "lateral_velocity_delta_peak_mps": 0.25,
+      "yaw_rate_delta_peak_dps": 7.944373940781687,
+      "heading_change_deg": 9.49227320251469,
+      "speed_rebound_kph": 0.75,
+      "positive_speed_step_fraction": 0.03,
+      "brake_pulse_count": 1.0,
+      "jerk_p95_mps3": 12.0
+    }
+  },
+  "CCFT": {
+    "n": 1,
+    "center": {
+      "lateral_velocity_delta_peak_mps": 0.22731722518801722,
+      "yaw_rate_delta_peak_dps": 11.42928862571716,
+      "heading_change_deg": 12.915679931640966,
+      "speed_rebound_kph": 2.109142690896986,
+      "positive_speed_step_fraction": 0.10160427807486631,
+      "brake_pulse_count": 1.0,
+      "jerk_p95_mps3": 62.197205815443326
+    },
+    "scale": {
+      "lateral_velocity_delta_peak_mps": 0.25,
+      "yaw_rate_delta_peak_dps": 3.0,
+      "heading_change_deg": 3.0,
+      "speed_rebound_kph": 0.75,
+      "positive_speed_step_fraction": 0.03,
+      "brake_pulse_count": 1.0,
+      "jerk_p95_mps3": 12.0
+    }
+  },
+  "CCRS": {
+    "n": 2,
+    "center": {
+      "lateral_velocity_delta_peak_mps": 0.01789040851872415,
+      "yaw_rate_delta_peak_dps": 0.8530571945011615,
+      "heading_change_deg": 0.1243896484375,
+      "speed_rebound_kph": 2.1805601567029975,
+      "positive_speed_step_fraction": 0.07869920673466084,
+      "brake_pulse_count": 1.5,
+      "jerk_p95_mps3": 59.25630324008033
+    },
+    "scale": {
+      "lateral_velocity_delta_peak_mps": 0.25,
+      "yaw_rate_delta_peak_dps": 3.0,
+      "heading_change_deg": 3.0,
+      "speed_rebound_kph": 0.75,
+      "positive_speed_step_fraction": 0.03,
+      "brake_pulse_count": 1.0,
+      "jerk_p95_mps3": 12.0
+    }
+  },
+  "CPTA": {
+    "n": 1,
+    "center": {
+      "lateral_velocity_delta_peak_mps": 0.30640620365738847,
+      "yaw_rate_delta_peak_dps": 17.079351663589478,
+      "heading_change_deg": 20.285800933837905,
+      "speed_rebound_kph": 1.57615402340889,
+      "positive_speed_step_fraction": 0.0707070707070707,
+      "brake_pulse_count": 1.0,
+      "jerk_p95_mps3": 50.36839694809443
+    },
+    "scale": {
+      "lateral_velocity_delta_peak_mps": 0.25,
+      "yaw_rate_delta_peak_dps": 3.0,
+      "heading_change_deg": 3.0,
+      "speed_rebound_kph": 0.75,
+      "positive_speed_step_fraction": 0.03,
+      "brake_pulse_count": 1.0,
+      "jerk_p95_mps3": 12.0
+    }
+  }
+}

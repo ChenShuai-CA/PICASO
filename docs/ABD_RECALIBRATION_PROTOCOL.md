@@ -17,7 +17,9 @@
 
 ## 2. 当前历史数据状态
 
-现有 24 条导出没有 AEB/FCW、驾驶员制动或目标平台执行通道。实际测试允许驾驶员在 AEB 过晚时
+现有导出没有车辆 AEB/FCW 或独立驾驶员制动通道。对全目录表头和 14-BZ3X smoke run 的复核表明，
+大量导出已经包含同一 `Time` 行上的 `Object 1 reference X/Y` 与 `Object 1 actual X/Y`（部分文件则为
+Head tracker reference/actual），可用于目标轨迹执行误差分析。实际测试允许驾驶员在 AEB 过晚时
 人工踩刹车，因此 `BR Command == 0` 只能排除制动机器人命令，不能区分车辆 AEB 与驾驶员制动。
 此前 10 条 `AEB_by_elimination` 记录全部改为 `unknown_AEB_or_driver_brake`，在逐 run 找到人工介入
 记录或补充信号前不得用于 AEB 制动参数校准。
@@ -62,10 +64,11 @@ VUT 和 LaunchPad/SPT 通过 Synchro 建立共同时间基准，并分别保留�
 - 实测侧：motion-pack/RTK 的时间、x/y、速度、纵横向加速度、航向、定位有效性；
 - 质量侧：通信状态、跟踪误差、abort/安全状态、目标型号和控制软件版本。
 
-根据命令与实测序列估计 `T_target_actual - T_target_command`、速度/加速度增益、稳态误差和条件内
-抖动。当前 env 的 `action_delay_steps` 可由命令到实测响应的延迟换算为 20 ms step；
-`target_accel_scale` 可由实际与命令加速度的稳健回归斜率估计。行人平台与遮挡车平台必须分开拟合，
-不能继续共用一个未经验证的缩放分布。
+历史导出的 reference/actual X/Y 可以直接估计路径跟踪 RMSE/P95、稳态误差和条件内抖动。只有在
+reference 轨迹的运动起点或导数具有足够信噪比时，才估计 `T_target_actual - T_target_reference`；
+它是参考轨迹到实测运动的表观延迟，不等于低层电机命令延迟。当前 env 的 `action_delay_steps` 只有在
+该延迟经重复运行验证后才能换算为 20 ms step；`target_accel_scale` 也只有在存在可辨识的参考加速度
+时才能由稳健回归估计。行人平台与遮挡车平台必须分开拟合，不能共用一个未经验证的缩放分布。
 
 ## 5. 统一时刻与裁决规则
 

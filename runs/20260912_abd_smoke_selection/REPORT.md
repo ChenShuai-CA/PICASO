@@ -12,6 +12,6 @@ Selected for parser, event-window and brake-source classification smoke testing.
 
 All five exports contain 415 channels at approximately 100 Hz and have matching `.spec`, `.log` and `.CRUN` files. The manifest records SHA256 values and exact relative paths; raw files were not copied or modified.
 
-Before using new runs for response calibration, add an independent driver-brake marker and synchronised target command/actual logs. Without vehicle CAN, retain the Post Processor threshold time as `observed_braking_onset`, not AEB request time.
+These exports already contain synchronized Object 1 reference and actual X/Y channels on the same Time rows. They support target path-tracking error analysis; low-level LaunchPad motor commands were not captured. Before using new runs for vehicle-response calibration, add an independent driver-brake marker. Without vehicle CAN, retain the Post Processor threshold time as `observed_braking_onset`, not AEB request time.
 
 Human review is entered only in the `driver_intervention` column of `manual_intervention_review.csv`. Allowed values are `none_confirmed`, `manual`, and `unknown`. The shared review method and its limitation are stored in `manifest.json`. Re-run this script after editing; it validates the four paths and preserves the review file.

@@ -1,0 +1,38 @@
+{
+  "txt_files_encountered": 5543,
+  "data_export_files": 4121,
+  "metadata_text_files": 1422,
+  "aeb_path_files_screened": 1258,
+  "header_parse_errors": 0,
+  "channel_capability_file_counts": {
+    "object_reference_actual_xy": 3199,
+    "head_tracker_reference_actual_xy": 4054,
+    "spt_reference_actual": 0,
+    "launchpad_low_level": 0,
+    "can_user_defined": 0
+  },
+  "explicit_aeb_fcw_channel_file_counts": {},
+  "screen_status_counts": {
+    "no_observed_braking_event": 98,
+    "br_zero_observed_braking": 892,
+    "robot_channel_active": 268
+  },
+  "reviewed_anchor_runs": 4,
+  "manual_review_queue_runs": 40,
+  "manual_review_vehicle_count": 10,
+  "manual_review_scenario_count": 13,
+  "interpretation": {
+    "prototype_similarity": "Unvalidated ranking against four operator-reviewed kinematic prototypes; it is not a no-takeover probability or classifier accuracy.",
+    "observed_braking_onset": "First sustained -1 m/s2 response backtracked to -0.3 m/s2; it is not the unavailable ECU AEB request time.",
+    "target_reference_actual": "Synchronized object/head-tracker reference and actual position channels from the same exported Time rows; low-level actuator commands are separate."
+  },
+  "br_zero_dynamic_target_runs": 781,
+  "aligned_target_position_residual_p95_m_quantiles": {
+    "0.0": 0.0,
+    "0.25": 1.1920928999487046e-07,
+    "0.5": 0.002809495897026633,
+    "0.75": 0.010092183328966138,
+    "0.95": 0.02239091429051439,
+    "1.0": 1.157118273274493
+  }
+}

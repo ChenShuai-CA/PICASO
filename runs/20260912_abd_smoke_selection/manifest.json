@@ -57,8 +57,15 @@
         "BR Position",
         "BR Velocity",
         "Brake force (unfiltered)",
-        "AR Command"
+        "AR Command",
+        "Object 1 forward velocity (ref point)",
+        "Object 1 forward acceleration",
+        "Object 1 actual X (front axle)",
+        "Object 1 actual Y (front axle)",
+        "Object 1 reference X position",
+        "Object 1 reference Y position"
       ],
+      "target_reference_actual_on_export_timebase": true,
       "companions": {
         ".spec": true,
         ".log": true,
@@ -66,8 +73,7 @@
       },
       "missing_for_source_separation": [
         "direct AEB request/active/state",
-        "independent driver brake pedal/pressure marker",
-        "target platform command and actual motion on common timebase"
+        "independent driver brake pedal/pressure marker"
       ]
     },
     {
@@ -109,8 +115,15 @@
         "BR Position",
         "BR Velocity",
         "Brake force (unfiltered)",
-        "AR Command"
+        "AR Command",
+        "Object 1 forward velocity (ref point)",
+        "Object 1 forward acceleration",
+        "Object 1 actual X (front axle)",
+        "Object 1 actual Y (front axle)",
+        "Object 1 reference X position",
+        "Object 1 reference Y position"
       ],
+      "target_reference_actual_on_export_timebase": true,
       "companions": {
         ".spec": true,
         ".log": true,
@@ -118,8 +131,7 @@
       },
       "missing_for_source_separation": [
         "direct AEB request/active/state",
-        "independent driver brake pedal/pressure marker",
-        "target platform command and actual motion on common timebase"
+        "independent driver brake pedal/pressure marker"
       ]
     },
     {
@@ -161,8 +173,15 @@
         "BR Position",
         "BR Velocity",
         "Brake force (unfiltered)",
-        "AR Command"
+        "AR Command",
+        "Object 1 forward velocity (ref point)",
+        "Object 1 forward acceleration",
+        "Object 1 actual X (front axle)",
+        "Object 1 actual Y (front axle)",
+        "Object 1 reference X position",
+        "Object 1 reference Y position"
       ],
+      "target_reference_actual_on_export_timebase": true,
       "companions": {
         ".spec": true,
         ".log": true,
@@ -170,8 +189,7 @@
       },
       "missing_for_source_separation": [
         "direct AEB request/active/state",
-        "independent driver brake pedal/pressure marker",
-        "target platform command and actual motion on common timebase"
+        "independent driver brake pedal/pressure marker"
       ]
     },
     {
@@ -213,8 +231,15 @@
         "BR Position",
         "BR Velocity",
         "Brake force (unfiltered)",
-        "AR Command"
+        "AR Command",
+        "Object 1 forward velocity (ref point)",
+        "Object 1 forward acceleration",
+        "Object 1 actual X (front axle)",
+        "Object 1 actual Y (front axle)",
+        "Object 1 reference X position",
+        "Object 1 reference Y position"
       ],
+      "target_reference_actual_on_export_timebase": true,
       "companions": {
         ".spec": true,
         ".log": true,
@@ -222,8 +247,7 @@
       },
       "missing_for_source_separation": [
         "direct AEB request/active/state",
-        "independent driver brake pedal/pressure marker",
-        "target platform command and actual motion on common timebase"
+        "independent driver brake pedal/pressure marker"
       ]
     },
     {
@@ -260,8 +284,15 @@
         "BR Position",
         "BR Velocity",
         "Brake force (unfiltered)",
-        "AR Command"
+        "AR Command",
+        "Object 1 forward velocity (ref point)",
+        "Object 1 forward acceleration",
+        "Object 1 actual X (front axle)",
+        "Object 1 actual Y (front axle)",
+        "Object 1 reference X position",
+        "Object 1 reference Y position"
       ],
+      "target_reference_actual_on_export_timebase": true,
       "companions": {
         ".spec": true,
         ".log": true,
@@ -269,8 +300,7 @@
       },
       "missing_for_source_separation": [
         "direct AEB request/active/state",
-        "independent driver brake pedal/pressure marker",
-        "target platform command and actual motion on common timebase"
+        "independent driver brake pedal/pressure marker"
       ]
     }
   ]

@@ -27,6 +27,14 @@ AVAILABLE_CORE = (
     'Time to collision (longitudinal)', 'Relative longitudinal distance',
     'Relative longitudinal velocity', 'BR Command', 'BR Position',
     'BR Velocity', 'Brake force (unfiltered)', 'AR Command',
+    'Object 1 forward velocity (ref point)', 'Object 1 forward acceleration',
+    'Object 1 actual X (front axle)', 'Object 1 actual Y (front axle)',
+    'Object 1 reference X position', 'Object 1 reference Y position',
+)
+
+TARGET_REFERENCE_ACTUAL = (
+    'Object 1 actual X (front axle)', 'Object 1 actual Y (front axle)',
+    'Object 1 reference X position', 'Object 1 reference Y position',
 )
 
 REVIEW_FIELDS = ('run', 'vehicle', 'scenario', 'driver_intervention')
@@ -124,6 +132,7 @@ def main():
         relative = str(path.relative_to(ROOT))
         review = reviews.get(relative)
         driver_status = review['driver_intervention'] if review else 'not_applicable'
+        has_target_reference_actual = all(name in names for name in TARGET_REFERENCE_ACTUAL)
         if br_active:
             classification = 'robot_brake_negative_control'
         elif driver_status == 'manual':
@@ -156,12 +165,13 @@ def main():
                 'br_command_max': br.get('event_max'),
             },
             'available_core_channels': [name for name in AVAILABLE_CORE if name in names],
+            'target_reference_actual_on_export_timebase': has_target_reference_actual,
             'companions': companions,
             'missing_for_source_separation': [
                 'direct AEB request/active/state',
                 'independent driver brake pedal/pressure marker',
-                'target platform command and actual motion on common timebase',
-            ],
+            ] + ([] if has_target_reference_actual else [
+                'target platform reference and actual motion on export timebase']),
         })
     manifest = {
         'purpose': 'historical non-CAN pipeline and source-classification smoke test',
@@ -202,8 +212,11 @@ def main():
         '', 'All five exports contain 415 channels at approximately 100 Hz and have '
         'matching `.spec`, `.log` and `.CRUN` files. The manifest records SHA256 values '
         'and exact relative paths; raw files were not copied or modified.', '',
-        'Before using new runs for response calibration, add an independent driver-brake '
-        'marker and synchronised target command/actual logs. Without vehicle CAN, retain '
+        'These exports already contain synchronized Object 1 reference and actual X/Y '
+        'channels on the same Time rows. They support target path-tracking error analysis; '
+        'low-level LaunchPad motor commands were not captured. Before using new runs for '
+        'vehicle-response calibration, add an independent driver-brake marker. Without '
+        'vehicle CAN, retain '
         'the Post Processor threshold time as `observed_braking_onset`, not AEB request time.',
         '',
         'Human review is entered only in the `driver_intervention` column of '
