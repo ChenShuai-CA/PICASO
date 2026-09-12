@@ -1,0 +1,7 @@
+{
+  "training_conditions": 320,
+  "screen_conditions": 320,
+  "train_screen_overlap": 0,
+  "development_checked_after_gate": false,
+  "heldout_checked": false
+}

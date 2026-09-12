@@ -1,0 +1,101 @@
+{
+  "protocol": "P2.8 conditional routing over frozen P2.7 prototypes",
+  "created_before_p28_condition_outcomes": true,
+  "condition_sets": {
+    "training": {
+      "seed": 72000,
+      "count_per_branch": 160,
+      "purpose": "training"
+    },
+    "screen": {
+      "seed": 73000,
+      "count_per_branch": 160,
+      "purpose": "training"
+    },
+    "fresh_development": {
+      "seed": 74000,
+      "count_per_branch": 160,
+      "purpose": "development",
+      "evaluate_only_after_both_branch_screen_pass": true
+    }
+  },
+  "sampler_version": 2,
+  "role_action_mode": "lane_locked",
+  "eligibility": "complete valid nominal script-safe; candidate outcomes never filter",
+  "frozen_library": {
+    "source": "P2.7 model selected by P2.7 validation set loss only",
+    "selected_seed": 47,
+    "selection_metrics": [
+      {
+        "seed": 7,
+        "val_set_loss": 0.1599440947175026
+      },
+      {
+        "seed": 17,
+        "val_set_loss": 0.1573062762618065
+      },
+      {
+        "seed": 27,
+        "val_set_loss": 0.1576903760433197
+      },
+      {
+        "seed": 37,
+        "val_set_loss": 0.1607913225889206
+      },
+      {
+        "seed": 47,
+        "val_set_loss": 0.15237966179847717
+      }
+    ],
+    "aggregation": "per-head median prediction over P2.7 train corpus by branch",
+    "library_sha256": "4d601a23b230de3c46737148b9c4e6179831165d7c63471b4f7f2917eafa8de6",
+    "p27_model_sha256": "0b0627e79fbd15aa3948860e8e71d0e9d3b14da2f7e8b9045a084205faa52ab4",
+    "cross_condition_prediction_rms": {
+      "single": 0.00034148438135161996,
+      "dual": 0.0003360818955115974
+    }
+  },
+  "router": {
+    "type": "separate branch ridge outcome regressors",
+    "input": "flattened first 5 actor-visible frames plus visibility/presence masks",
+    "information_scope": "centralized scenario-level selector; no privileged truth-fill",
+    "targets": "per-head dangerous-and-valid fraction over 3 ABD-supported draws",
+    "alphas": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "split": "source_index modulo 5 equals zero is validation"
+  },
+  "evaluation": {
+    "perturb_config": "runs/20260912_abd_calibration/abd_supported_v1.json",
+    "perturb_config_sha256": "051e304a0d8ec2db4e3fcfd9dae802f06f5ec18a23064b9ff38bfe395a0d2290",
+    "train_perturbations": 3,
+    "screen_perturbations": 5,
+    "budgets": [
+      1,
+      2
+    ],
+    "comparators": [
+      "fixed training-best order",
+      "deterministically shuffled-input router",
+      "zero-action script",
+      "all-four oracle diagnostic"
+    ],
+    "bootstrap_conditions": 5000,
+    "bootstrap_seed": 2028
+  },
+  "screen_gate_each_branch": {
+    "minimum_conditions": 60,
+    "router2_minus_fixed2_ci95_lower_strictly_above": 0,
+    "router2_minus_shuffled2_ci95_lower_strictly_above": 0,
+    "router2_minus_script_ci95_lower_strictly_above": 0,
+    "selected_candidate_valid_rate_at_least": 0.8,
+    "role_invalid_equals": 0,
+    "distinct_top2_orders_at_least": 2,
+    "modal_top2_share_at_most": 0.9
+  },
+  "heldout_read": false
+}

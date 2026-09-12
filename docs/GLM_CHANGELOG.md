@@ -1325,3 +1325,22 @@ BR Velocity/载荷计全程活跃、BR Command 全部有非零指令历史；7/8
 `abd_supported_v1_partial`。原 `abd_calibrated_v1.json` 保留作历史记录但废止，不得用于正式 P2.8。
 配置加载器同时增加版本、分布、有限数值、上下界和整数范围校验；evaluate 报告的 source 改为从
 配置版本生成。LOO 更名为内部端点敏感性，不再称为独立验证。
+
+## 2026-09-12 · P2.8 条件化原型路由（正式 screen）
+
+P2.8 冻结 P2.7 中仅按既有 validation set loss 选出的 seed47 四原型库，不再优化 pulse 参数。
+新的 branch-specific ridge router 以最初 5 帧 actor-visible history、可见性 mask 和 presence mask
+为输入，学习每个原型在 3 个 `abd_supported_v1_partial` 扰动下的 dangerous-and-valid 比例。
+训练条件 seed72000，独立 screen seed73000，均为 sampler/physics v2、`lane_locked`；候选结果不参与
+条件筛选，只保留 nominal 下 complete、valid 且 script-safe 的条件。训练 eligible 为 single 110、
+dual 100；screen 为 single 103、dual 101。固定排序、ridge alpha 和所有门槛均在 screen 前冻结。
+
+正式 screen 每条件使用 5 个成对扰动。single：router-2 0.365、fixed-2 0.324，配对差 0.041
+[0.012,0.078]；相对 shuffled-input router-2 差 0.052 [0.014,0.099]，通过。dual：router-2
+0.301、fixed-2 0.232，配对差 0.069 [0.034,0.113]；相对 shuffled-input 差 0.038
+[-0.006,0.083]，置信区间跨零，未通过预注册负控门。两分支候选有效率分别 1.000/0.987，角色违规
+均为 0，排序也确实随条件变化。
+
+因此 P2.8 总 gate 为 FAIL，fresh development 未评价，heldout 未读取。结果支持“可见历史相对固定
+全局原型排序有增益”的有限结论，但 dual 的输入对应关系尚不能排除由有限样本或排序边际分布造成；
+不能宣称条件化机制已双分支确认。router 是集中式场景级候选选择器，不是分散式闭环 actor policy。
