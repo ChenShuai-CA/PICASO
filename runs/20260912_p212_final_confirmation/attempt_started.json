@@ -1,0 +1,8 @@
+{
+  "protocol": "P2.12 one-time heldout confirmation of frozen P2.11 router-1",
+  "preregistration_sha256": "144837a65fbd1c13936f054ba404b04fdb12b7e7764af42be50d9ea07d538de7",
+  "authorized_cli_flag_received": true,
+  "started_at_utc": "2026-09-12T06:13:15.766253+00:00",
+  "status": "completed",
+  "completed_sha256": "3e051f2c5c3fc802b92f585b83d310774422315e572ff3537fa0ca8578905276"
+}

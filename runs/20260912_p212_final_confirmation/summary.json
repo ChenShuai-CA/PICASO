@@ -1,0 +1,123 @@
+{
+  "protocol": "P2.12 one-time heldout confirmation of frozen P2.11 router-1",
+  "preregistration_sha256": "144837a65fbd1c13936f054ba404b04fdb12b7e7764af42be50d9ea07d538de7",
+  "paper_scope": "conditional safety-critical scenario generation and budgeted candidate selection",
+  "frozen_input_hashes_verified": true,
+  "heldout_manifest": {
+    "condition_set_version": "heldout_seed77000_samplerv2",
+    "generated_per_branch": 360,
+    "eligible_total": 449,
+    "eligible_by_branch": {
+      "single": 222,
+      "dual": 227
+    },
+    "eligibility": "complete valid nominal script-safe only; outcomes unused",
+    "perturbations": 5,
+    "perturbation_source": "numerical sensitivity domain",
+    "nominal_episode_executions": 720,
+    "perturbed_script_episode_executions": 2245,
+    "candidate_matrix_episode_executions": 8980,
+    "reported_method_budget": 1
+  },
+  "results": [
+    {
+      "branch": "single",
+      "conditions": 222,
+      "router1_rate": 0.36756756756756753,
+      "fixed1_rate": 0.327027027027027,
+      "script_rate": 0.0,
+      "router1_minus_fixed1": 0.04054054054054054,
+      "router1_minus_fixed1_ci95": [
+        0.011711711711711714,
+        0.07117117117117118
+      ],
+      "router1_minus_script": 0.36756756756756753,
+      "router1_minus_script_ci95": [
+        0.3099099099099099,
+        0.42792792792792794
+      ],
+      "router1_minus_permutation_mean": 0.11436540540540535,
+      "permutation_mean": 0.2532021621621622,
+      "permutation_ci95": [
+        0.22162162162162163,
+        0.2864864864864865
+      ],
+      "permutation_p_one_sided": 0.0001999600079984003,
+      "candidate_valid_rate": 1.0,
+      "role_invalid": 0,
+      "router_invalid_reasons": {},
+      "fixed_invalid_reasons": {},
+      "mean_router_decision_steps": 69.63513513513513,
+      "total_router_decision_steps": 77295,
+      "top1_head_counts": {
+        "0": 1,
+        "1": 159,
+        "2": 62
+      },
+      "modal_top1_share": 0.7162162162162162,
+      "gates": {
+        "minimum_conditions": true,
+        "router1_vs_fixed1": true,
+        "router1_vs_script": true,
+        "permutation_alignment": true,
+        "candidate_validity": true,
+        "role_validity": true,
+        "head_diversity": true
+      },
+      "pass": true
+    },
+    {
+      "branch": "dual",
+      "conditions": 227,
+      "router1_rate": 0.20352422907488987,
+      "fixed1_rate": 0.17444933920704844,
+      "script_rate": 0.022026431718061675,
+      "router1_minus_fixed1": 0.02907488986784141,
+      "router1_minus_fixed1_ci95": [
+        0.0008810572687224658,
+        0.05817180616740057
+      ],
+      "router1_minus_script": 0.1814977973568282,
+      "router1_minus_script_ci95": [
+        0.13480176211453745,
+        0.22995594713656387
+      ],
+      "router1_minus_permutation_mean": 0.05744422907488986,
+      "permutation_mean": 0.14608000000000002,
+      "permutation_ci95": [
+        0.11541850220264319,
+        0.17533039647577095
+      ],
+      "permutation_p_one_sided": 0.0001999600079984003,
+      "candidate_valid_rate": 0.9418502202643172,
+      "role_invalid": 0,
+      "router_invalid_reasons": {
+        "target_target_collision": 66
+      },
+      "fixed_invalid_reasons": {},
+      "mean_router_decision_steps": 74.26872246696036,
+      "total_router_decision_steps": 84295,
+      "top1_head_counts": {
+        "0": 11,
+        "1": 129,
+        "2": 87
+      },
+      "modal_top1_share": 0.5682819383259912,
+      "gates": {
+        "minimum_conditions": true,
+        "router1_vs_fixed1": true,
+        "router1_vs_script": true,
+        "permutation_alignment": true,
+        "candidate_validity": true,
+        "role_validity": true,
+        "head_diversity": true
+      },
+      "pass": true
+    }
+  ],
+  "both_branch_pass": true,
+  "final_confirmation": "PASS",
+  "preferred_final_budget": 1,
+  "method_changed_after_heldout": false,
+  "heldout_read": true
+}

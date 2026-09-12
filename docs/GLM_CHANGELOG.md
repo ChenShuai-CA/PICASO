@@ -1458,3 +1458,26 @@ P2.11 完全一致，任一分支失败都如实记为最终确认 FAIL，不允
 明确授权并传入 `--authorize-one-time-heldout` 才会写入 attempt marker、生成条件和开始 rollout。
 完成标记存在后拒绝重跑；中断时只允许在同一预注册哈希与确定性缓存上恢复。旧
 `heldout_seed41000` 因较早 P2 设计的规模与筛选协议不匹配，继续封存且 P2.12 明确不读取。
+
+## 2026-09-12 · P2.12 一次性 heldout final confirmation 结果
+
+用户明确授权后，执行冻结提交 `0dcc3a0` 中的唯一 P2.12 attempt。seed77000 每分支各生成 360 条条件，
+只按 nominal script 的 complete、valid、safe 状态筛选，得到 single 222、dual 227 个合格条件；两支
+均达到预注册最小 220 条要求。720 个 heldout 条件与 P2.8 training/screen、fresh development、
+P2.10 screen 和 P2.11 screen 的物理指纹交集为 0。旧 `heldout_seed41000` 未读取。
+
+single 的 router-1 / fixed-1 / script 为 0.368 / 0.327 / 0.000；router-1 相对 fixed-1 的配对差
+为 0.041 [0.012, 0.071]，相对 script 为 0.368 [0.310, 0.428]，相对 5000 次条件置换均值的差为
+0.114，单侧 p=0.0002。dual 分别为 0.204 / 0.174 / 0.022；相对 fixed-1 的差为 0.029
+[0.001, 0.058]，相对 script 为 0.181 [0.135, 0.230]，相对置换均值的差为 0.057，单侧
+p=0.0002。candidate valid rate 为 1.000/0.942，角色违规均为 0；所有预注册门槛双分支通过。
+
+独立 post-run 审计从 449 条条件矩阵重算配对 bootstrap 与置换检验，核对 8,980 条候选记录、
+2,245 条 script 记录、全部 raw artifact 哈希和完成标记哈希，结果一致。fingerprint audit 原字段保存
+的是完成前 attempt marker 哈希；复核时将其明确重命名并补充完成态 marker 哈希，没有改变条件、
+outcome、统计或门槛。P2.12 最终结论为 PASS，C3/C5/C6 可作为论文主结果；dual 的 fixed-1 优势
+CI 下界 0.0009、置换增益 0.057，虽过预注册门槛但余量较窄，必须按数值如实呈现。
+
+最终结论限定为：冻结的场景级条件路由在每条件一个候选 rollout 的等预算下，提高 single/dual 的
+dangerous-and-valid 覆盖率。它不是持续反应式 actor；扰动仍是数值敏感性域，不是 AEB 校准分布，
+也不构成车辆/车型级验证。完成标记设为 `rerun_forbidden=true`，不得再运行或替换本 heldout。

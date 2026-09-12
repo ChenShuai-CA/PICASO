@@ -1,0 +1,15 @@
+{
+  "prior_condition_counts": {
+    "training_seed72000.json": 320,
+    "screen_seed73000.json": 320,
+    "development_seed74000.json": 320,
+    "confirmatory_screen_seed75000.json": 320,
+    "single_candidate_screen_seed76000.json": 720
+  },
+  "heldout_condition_set_version": "heldout_seed77000_samplerv2",
+  "heldout_conditions": 720,
+  "overlap_with_all_prior_development_conditions": 0,
+  "legacy_seed41000_read": false,
+  "attempt_start_marker_sha256_before_completion": "47e165193de1a7e72b8fc48d50796f2c998a99c653f8b0187e7a024b2793d196",
+  "completed_attempt_marker_sha256": "c6e88cc8583cf6a2bf262c31f2860482b2d05855e04ab9bf28332385b8f9ba8b"
+}

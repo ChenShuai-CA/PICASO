@@ -1,0 +1,18 @@
+{
+  "protocol": "P2.12 post-run independent artifact and statistics verification",
+  "eligible_conditions": 449,
+  "candidate_matrix_rows": 8980,
+  "script_rows": 2245,
+  "raw_artifact_hashes_verified_against_manifest": true,
+  "summary_statistics_recomputed_from_screen_dataset": true,
+  "paired_bootstrap_recomputed": true,
+  "condition_permutation_test_recomputed": true,
+  "heldout_condition_fingerprints": 720,
+  "overlap_with_five_prior_development_sets": 0,
+  "completed_sha256_verified_against_attempt_marker": true,
+  "completed_sha256": "3e051f2c5c3fc802b92f585b83d310774422315e572ff3537fa0ca8578905276",
+  "completed_attempt_marker_sha256": "c6e88cc8583cf6a2bf262c31f2860482b2d05855e04ab9bf28332385b8f9ba8b",
+  "audit_metadata_correction": "condition_fingerprint_audit originally stored the pre-completion marker hash; the field was renamed and the completed marker hash added without changing conditions, outcomes, statistics, or gates",
+  "outcomes_or_decisions_changed_during_verification": false,
+  "rerun_performed": false
+}

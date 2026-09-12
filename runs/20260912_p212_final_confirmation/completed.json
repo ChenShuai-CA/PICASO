@@ -1,0 +1,9 @@
+{
+  "protocol": "P2.12 one-time heldout confirmation of frozen P2.11 router-1",
+  "final_confirmation": "PASS",
+  "both_branch_pass": true,
+  "preferred_final_budget": 1,
+  "method_changed_after_heldout": false,
+  "heldout_read": true,
+  "rerun_forbidden": true
+}
