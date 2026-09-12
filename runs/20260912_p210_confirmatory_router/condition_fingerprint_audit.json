@@ -1,0 +1,15 @@
+{
+  "prior_condition_counts": {
+    "training_seed72000.json": 320,
+    "screen_seed73000.json": 320
+  },
+  "screen_condition_set_version": "training_seed75000_samplerv2",
+  "screen_conditions": 320,
+  "screen_overlap_with_p28_train_screen": 0,
+  "fresh_development_accessed_after_screen_gate": true,
+  "heldout_checked_or_read": false,
+  "fresh_development_condition_set_version": "development_seed74000_samplerv2",
+  "fresh_development_conditions": 320,
+  "fresh_development_overlap": 0,
+  "fresh_development_sha256": "193d5ef9b7ab0e51077cac065384d4c5173ba0c80fbb5e389885c56e46449207"
+}

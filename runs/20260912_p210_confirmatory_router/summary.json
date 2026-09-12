@@ -1,0 +1,339 @@
+{
+  "protocol": "P2.10 frozen ridge conditional-router independent confirmation",
+  "preregistration_sha256": "867e668e04652cae1b6c40e4c819c06e953576d51a55ed052e4af65bbba0ddc6",
+  "frozen_input_hashes_verified": true,
+  "screen_manifest": {
+    "condition_set_version": "training_seed75000_samplerv2",
+    "split": "confirmatory_screen",
+    "generated_per_branch": 160,
+    "eligible_total": 225,
+    "eligible_by_branch": {
+      "single": 121,
+      "dual": 104
+    },
+    "eligibility": "complete valid nominal script-safe only; candidate outcomes unused",
+    "perturbations": 5,
+    "perturbation_source": "abd_supported_v1_partial",
+    "nominal_counts": {
+      "total": 320,
+      "safe": 225
+    }
+  },
+  "screen_results": [
+    {
+      "split": "screen",
+      "branch": "single",
+      "conditions": 121,
+      "router1": {
+        "rate": 0.38016528925619836,
+        "candidate_valid_rate": 1.0,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 70.06611570247934,
+        "total_selected_attempt_steps": 42390
+      },
+      "router2": {
+        "rate": 0.3884297520661157,
+        "candidate_valid_rate": 1.0,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 119.31404958677686,
+        "total_selected_attempt_steps": 72185
+      },
+      "fixed2": {
+        "rate": 0.35702479338842974,
+        "candidate_valid_rate": 1.0,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 121.82644628099173,
+        "total_selected_attempt_steps": 73705
+      },
+      "script_rate": 0.0,
+      "router2_minus_fixed2": 0.03140495867768595,
+      "router2_minus_fixed2_ci95": [
+        0.008264462809917356,
+        0.05950413223140495
+      ],
+      "router2_minus_script": 0.3884297520661157,
+      "router2_minus_script_ci95": [
+        0.30578512396694213,
+        0.47107438016528924
+      ],
+      "router2_minus_permutation_mean": 0.043018842975206584,
+      "permutation_mean": 0.3454109090909091,
+      "permutation_ci95": [
+        0.3173553719008264,
+        0.371900826446281
+      ],
+      "permutation_p_one_sided": 0.0007998400319936012,
+      "distinct_router_top2_orders": 7,
+      "modal_router_top2_share": 0.7024793388429752,
+      "top2_order_counts": {
+        "0+1": 2,
+        "1+0": 1,
+        "1+2": 7,
+        "1+3": 85,
+        "2+0": 7,
+        "2+1": 3,
+        "2+3": 16
+      },
+      "prediction_std_by_head": [
+        0.07866425977848779,
+        0.15243751566120908,
+        0.10787854757701888,
+        0.09390102471102169
+      ],
+      "gates": {
+        "minimum_conditions": true,
+        "router2_vs_fixed2": true,
+        "router2_vs_script": true,
+        "permutation_alignment": true,
+        "candidate_validity": true,
+        "role_validity": true,
+        "order_diversity": true
+      },
+      "pass": true
+    },
+    {
+      "split": "screen",
+      "branch": "dual",
+      "conditions": 104,
+      "router1": {
+        "rate": 0.3230769230769231,
+        "candidate_valid_rate": 0.948076923076923,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 68.68846153846154,
+        "total_selected_attempt_steps": 35718
+      },
+      "router2": {
+        "rate": 0.37307692307692303,
+        "candidate_valid_rate": 0.9690366972477065,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 120.93076923076923,
+        "total_selected_attempt_steps": 62884
+      },
+      "fixed2": {
+        "rate": 0.2903846153846154,
+        "candidate_valid_rate": 1.0,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 127.16538461538461,
+        "total_selected_attempt_steps": 66126
+      },
+      "script_rate": 0.015384615384615385,
+      "router2_minus_fixed2": 0.08269230769230769,
+      "router2_minus_fixed2_ci95": [
+        0.03461538461538462,
+        0.1346153846153846
+      ],
+      "router2_minus_script": 0.3576923076923077,
+      "router2_minus_script_ci95": [
+        0.27110576923076923,
+        0.4442788461538455
+      ],
+      "router2_minus_permutation_mean": 0.050584999999999936,
+      "permutation_mean": 0.3224919230769231,
+      "permutation_ci95": [
+        0.2865384615384615,
+        0.3557692307692308
+      ],
+      "permutation_p_one_sided": 0.001799640071985603,
+      "distinct_router_top2_orders": 8,
+      "modal_router_top2_share": 0.375,
+      "top2_order_counts": {
+        "0+1": 3,
+        "0+2": 2,
+        "1+0": 7,
+        "1+2": 14,
+        "1+3": 39,
+        "2+0": 17,
+        "2+1": 21,
+        "2+3": 1
+      },
+      "prediction_std_by_head": [
+        0.06750873889480595,
+        0.11793744366155036,
+        0.06290903378568322,
+        0.08165239699680339
+      ],
+      "gates": {
+        "minimum_conditions": true,
+        "router2_vs_fixed2": true,
+        "router2_vs_script": true,
+        "permutation_alignment": true,
+        "candidate_validity": true,
+        "role_validity": true,
+        "order_diversity": true
+      },
+      "pass": true
+    }
+  ],
+  "both_branch_screen_pass": true,
+  "fresh_development_evaluated": true,
+  "development_manifest": {
+    "condition_set_version": "development_seed74000_samplerv2",
+    "split": "fresh_development",
+    "generated_per_branch": 160,
+    "eligible_total": 223,
+    "eligible_by_branch": {
+      "single": 107,
+      "dual": 116
+    },
+    "eligibility": "complete valid nominal script-safe only; candidate outcomes unused",
+    "perturbations": 5,
+    "perturbation_source": "abd_supported_v1_partial",
+    "nominal_counts": {
+      "total": 320,
+      "safe": 223
+    }
+  },
+  "development_results": [
+    {
+      "split": "development",
+      "branch": "single",
+      "conditions": 107,
+      "router1": {
+        "rate": 0.3046728971962616,
+        "candidate_valid_rate": 1.0,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 70.15514018691589,
+        "total_selected_attempt_steps": 37533
+      },
+      "router2": {
+        "rate": 0.32523364485981304,
+        "candidate_valid_rate": 1.0,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 124.87663551401869,
+        "total_selected_attempt_steps": 66809
+      },
+      "fixed2": {
+        "rate": 0.27850467289719627,
+        "candidate_valid_rate": 1.0,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 129.2803738317757,
+        "total_selected_attempt_steps": 69165
+      },
+      "script_rate": 0.0,
+      "router2_minus_fixed2": 0.04672897196261682,
+      "router2_minus_fixed2_ci95": [
+        0.020560747663551402,
+        0.07663551401869158
+      ],
+      "router2_minus_script": 0.32523364485981304,
+      "router2_minus_script_ci95": [
+        0.24299065420560748,
+        0.40934579439252333
+      ],
+      "router2_minus_permutation_mean": 0.043340560747663515,
+      "permutation_mean": 0.28189308411214953,
+      "permutation_ci95": [
+        0.2523364485981308,
+        0.31214953271028034
+      ],
+      "permutation_p_one_sided": 0.0033993201359728054,
+      "distinct_router_top2_orders": 7,
+      "modal_router_top2_share": 0.6261682242990654,
+      "top2_order_counts": {
+        "1+0": 3,
+        "1+2": 5,
+        "1+3": 67,
+        "2+0": 10,
+        "2+1": 4,
+        "2+3": 17,
+        "3+1": 1
+      },
+      "prediction_std_by_head": [
+        0.0702394530947821,
+        0.1566850340648157,
+        0.10921405057883599,
+        0.0934022397456195
+      ],
+      "gates": {
+        "minimum_conditions": true,
+        "router2_vs_fixed2": true,
+        "router2_vs_script": true,
+        "permutation_alignment": true,
+        "candidate_validity": true,
+        "role_validity": true,
+        "order_diversity": true
+      },
+      "pass": true
+    },
+    {
+      "split": "development",
+      "branch": "dual",
+      "conditions": 116,
+      "router1": {
+        "rate": 0.30517241379310345,
+        "candidate_valid_rate": 0.9413793103448276,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 71.52241379310345,
+        "total_selected_attempt_steps": 41483
+      },
+      "router2": {
+        "rate": 0.3448275862068966,
+        "candidate_valid_rate": 0.9633774160732451,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 125.65517241379311,
+        "total_selected_attempt_steps": 72880
+      },
+      "fixed2": {
+        "rate": 0.2672413793103448,
+        "candidate_valid_rate": 1.0,
+        "role_invalid": 0,
+        "mean_steps_until_success_or_exhaustion": 131.98620689655172,
+        "total_selected_attempt_steps": 76552
+      },
+      "script_rate": 0.034482758620689655,
+      "router2_minus_fixed2": 0.07758620689655173,
+      "router2_minus_fixed2_ci95": [
+        0.03793103448275861,
+        0.12413793103448274
+      ],
+      "router2_minus_script": 0.3103448275862069,
+      "router2_minus_script_ci95": [
+        0.23448275862068965,
+        0.3913793103448276
+      ],
+      "router2_minus_permutation_mean": 0.0420458620689656,
+      "permutation_mean": 0.302781724137931,
+      "permutation_ci95": [
+        0.2672413793103448,
+        0.33620689655172414
+      ],
+      "permutation_p_one_sided": 0.0065986802639472104,
+      "distinct_router_top2_orders": 8,
+      "modal_router_top2_share": 0.4051724137931034,
+      "top2_order_counts": {
+        "0+1": 3,
+        "0+2": 2,
+        "1+0": 15,
+        "1+2": 8,
+        "1+3": 47,
+        "2+0": 15,
+        "2+1": 22,
+        "2+3": 4
+      },
+      "prediction_std_by_head": [
+        0.07724692578364893,
+        0.11017763703790111,
+        0.06024217554438816,
+        0.08108587443130864
+      ],
+      "gates": {
+        "minimum_conditions": true,
+        "router2_vs_fixed2": true,
+        "router2_vs_script": true,
+        "permutation_alignment": true,
+        "candidate_validity": true,
+        "role_validity": true,
+        "order_diversity": true
+      },
+      "pass": true
+    }
+  ],
+  "both_branch_development_pass": true,
+  "eligible_for_later_one_time_heldout": true,
+  "episode_evaluations": {
+    "screen": 5625,
+    "fresh_development": 5575,
+    "total": 11200
+  },
+  "heldout_read": false
+}

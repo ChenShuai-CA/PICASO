@@ -1402,3 +1402,24 @@ CI [-0.016,0.032]）。因此两分支诊断均为 `aligned_routing_signal_requi
 特征含有弱但可检出的条件排序信号，暂不支持“原型无互补”“扰动偏好不稳定”“可观测性完全不足”
 或“必须换非线性模型”。P2.8 的预注册总 gate 仍保持 FAIL；P2.9 是对已消费 screen 的诊断，下一步
 应冻结原 P2.8 ridge 与原型库，使用新的预注册 screen 和多置换负控重新检验，不能据此解封 heldout。
+
+## 2026-09-12 · P2.10 冻结 ridge 独立确认
+
+在生成任何新条件和 outcome 前冻结 P2.7 四原型库、P2.8 branch-specific ridge、固定 top-2 顺序、
+数值敏感性配置、seed 和全部门槛。新的 confirmatory screen 使用 seed75000、sampler v2、
+`lane_locked`、每分支生成160条件、每个合格条件5个配对扰动；负控为5000次跨条件排序置换。
+screen 与 P2.8 training/screen 的物理条件指纹交集为0。两分支 screen 全门槛通过后，才读取此前
+未评价的 `development_seed74000_samplerv2`；它与全部先前条件的指纹交集也为0。heldout 未检查、未读。
+
+confirmatory screen：single N=121，router-2 0.388、fixed-2 0.357，差0.031
+[0.008,0.060]，置乱对齐差0.043、p=0.0008；dual N=104，router-2 0.373、fixed-2 0.290，
+差0.083 [0.035,0.135]，置乱对齐差0.051、p=0.0018。候选有效率1.000/0.969，角色违规均为0。
+
+条件式 fresh development：single N=107，router-2 0.325、fixed-2 0.279，差0.047
+[0.021,0.077]，置乱差0.043、p=0.0034；dual N=116，router-2 0.345、fixed-2 0.267，
+差0.078 [0.038,0.124]，置乱差0.042、p=0.0066。候选有效率1.000/0.963，角色违规均为0。
+router-2 相对扰动下 script 的 bootstrap CI 下界在四个分支×阶段组合中也全部大于0。
+
+因此冻结的两候选 ridge router 通过 P2.10 双阶段判据，具备之后一次性 heldout 评价资格。本结论限定为
+每条件最多两次候选 rollout 的 dangerous-and-valid 覆盖率，并且当前数值扰动只作为可复现敏感性域，
+不是 AEB 校准分布；不能表述为单次闭环策略优于脚本。P2.10 本身不执行 heldout。

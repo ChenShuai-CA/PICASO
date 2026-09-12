@@ -1,0 +1,95 @@
+{
+  "protocol": "P2.10 frozen ridge conditional-router independent confirmation",
+  "created_before_p210_screen_conditions_and_outcomes": true,
+  "scientific_scope": "confirm condition-to-prototype routing under the existing numerical sensitivity domain; not AEB-calibrated validation and not a single-rollout policy claim",
+  "frozen_inputs": {
+    "prototype_library": {
+      "path": "runs/20260912_p28_conditional_router/frozen_library.json",
+      "sha256": "d4303d5eb7324de304825322a5f64d2e78c0451057826ff9b6aa99a1be34e5e7"
+    },
+    "single_ridge": {
+      "path": "runs/20260912_p28_conditional_router/router_single.npz",
+      "sha256": "d66de2683f49094c281290af98f2e7b17fc26854f9ca5506f99527829702c08b"
+    },
+    "dual_ridge": {
+      "path": "runs/20260912_p28_conditional_router/router_dual.npz",
+      "sha256": "cfa7a215dbea3598737f3cc5f68038df98cd47eaab4281fb1731a0d3af01e9ab"
+    },
+    "perturbation_config": {
+      "path": "runs/20260912_abd_calibration/abd_supported_v1.json",
+      "sha256": "051e304a0d8ec2db4e3fcfd9dae802f06f5ec18a23064b9ff38bfe395a0d2290",
+      "interpretation": "historically reproducible numerical sensitivity envelope; AEB calibration attribution withdrawn"
+    },
+    "p29_preregistration_sha256": "f9ac2697f560abb694e20497e5c356362d7500154f5dc56ab2bdf1c7b19d58ea",
+    "p29_summary_sha256": "427a04dba5c221722f5a98725225b2b30344d97a2a3fb4c6db8df24c146599aa",
+    "p29_completed_sha256": "3419914ebee8e1b3913f72c4b78e11b0e5701298655b33fc1538fea920df573d"
+  },
+  "frozen_methods": {
+    "router": "P2.8 branch-specific ridge models with no refit or recalibration",
+    "router_input": "first five actor-visible history frames with visibility and presence masks; no hidden-target truth-fill",
+    "prototype_budget": 2,
+    "fixed_orders": {
+      "single": [
+        1,
+        3,
+        0,
+        2
+      ],
+      "dual": [
+        1,
+        3,
+        0,
+        2
+      ]
+    },
+    "role_action_mode": "lane_locked"
+  },
+  "confirmatory_screen": {
+    "seed": 75000,
+    "count_per_branch": 160,
+    "purpose": "training",
+    "sampler_version": 2,
+    "perturbations_per_condition": 5,
+    "eligibility": "nominal script episode is complete, valid, and safe; candidate outcomes never filter conditions",
+    "must_have_zero_fingerprint_overlap_with": [
+      "P2.8 training seed 72000",
+      "P2.8 screen seed 73000"
+    ]
+  },
+  "conditional_fresh_development": {
+    "path": "runs/20260912_p28_conditional_router/conditions/development_seed74000.json",
+    "seed": 74000,
+    "count_per_branch": 160,
+    "purpose": "development",
+    "read_and_evaluate_only_after_both_screen_branches_pass": true,
+    "perturbations_per_condition": 5,
+    "must_have_zero_fingerprint_overlap_with_all_prior_p210_inputs": true
+  },
+  "inference": {
+    "condition_bootstrap_rounds": 5000,
+    "permutation_rounds": 5000,
+    "seed": 2030,
+    "permutation_test": "branch-wise permutation of frozen router orders across conditions",
+    "alpha": 0.05,
+    "minimum_practical_alignment_delta": 0.03
+  },
+  "gate_each_branch_for_screen_and_development": {
+    "minimum_eligible_conditions": 60,
+    "router2_minus_fixed2_condition_bootstrap_ci95_lower_strictly_above": 0,
+    "router2_minus_script_condition_bootstrap_ci95_lower_strictly_above": 0,
+    "router2_minus_permutation_mean_at_least": 0.03,
+    "permutation_p_one_sided_at_most": 0.05,
+    "router2_selected_candidate_valid_rate_at_least": 0.8,
+    "router2_role_invalid_equals": 0,
+    "distinct_router_top2_orders_at_least": 2,
+    "modal_router_top2_share_at_most": 0.9
+  },
+  "decision": {
+    "screen": "both branches must pass every gate before any fresh-development file is read",
+    "development": "both branches must pass every gate to make the frozen router eligible for a later user-authorized one-time heldout evaluation",
+    "failure": "record the negative result and do not tune on the failed split",
+    "heldout": "never read during P2.10"
+  },
+  "fresh_development_read_before_screen_gate": false,
+  "heldout_read": false
+}
