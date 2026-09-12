@@ -1381,3 +1381,24 @@ Motion Pack 的 Forward velocity/Lateral velocity 曲线，四条均填写为 `n
 response 分析。该复核属于运动学曲线的间接证据：它可以识别明显避让和异常停车形态，但没有独立
 踏板/制动压力标记，可能漏掉与 AEB 曲线相似的纯直线人工制动。由于车辆 AEB request/status 仍不可得，
 四条记录继续禁止用于 AEB request-to-response timing 校准；BR-active 的 V14_T133_R1 保持机器人制动负控。
+
+## 2026-09-12 · P2.9 路由上限与可观测性诊断
+
+P2.9 在计算新指标前冻结输入哈希、门槛和决策树，仅复用 P2.8 的 training/screen attempt 矩阵；
+没有新增 rollout，没有读取 fresh development 或 heldout。每个条件计算事后最优 top-2 上限，并用
+leave-one-perturbation-out（其余四个扰动选原型、留出扰动计分）检验原型偏好是否跨扰动稳定；另以
+5000 次条件置乱检验 actor-visible history 与原型排序的对应关系，并用固定网格 RBF kernel ridge
+作为非线性容量探针。
+
+single 的 fixed-2 / optimistic oracle-2 / LOO oracle-2 为 0.324 / 0.417 / 0.406；LOO 相对 fixed-2
+差 0.082 [0.037,0.134]。dual 分别为 0.232 / 0.343 / 0.333；LOO 差 0.101
+[0.053,0.154]。有限扰动噪声扣除后的平均条件信号可靠度为 single 0.966、dual 0.947。
+所有 LOO 折都存在并列最优 pair，但取并列候选中的最差 held-draw 结果时，single/dual 仍为
+0.404/0.325，相对 fixed-2 的 bootstrap CI 下界均大于零，因此稳定性结论不依赖字典序 tie-break。
+
+P2.8 ridge 的 single top-2 为 0.365，相对置乱均值 +0.049，p=0.0058；dual 为 0.301，
+相对置乱均值 +0.037，p=0.0108。RBF 为 0.357/0.307，均没有显著超过 ridge（dual 差 +0.006，
+CI [-0.016,0.032]）。因此两分支诊断均为 `aligned_routing_signal_requires_new_screen`：现有合法可见
+特征含有弱但可检出的条件排序信号，暂不支持“原型无互补”“扰动偏好不稳定”“可观测性完全不足”
+或“必须换非线性模型”。P2.8 的预注册总 gate 仍保持 FAIL；P2.9 是对已消费 screen 的诊断，下一步
+应冻结原 P2.8 ridge 与原型库，使用新的预注册 screen 和多置换负控重新检验，不能据此解封 heldout。

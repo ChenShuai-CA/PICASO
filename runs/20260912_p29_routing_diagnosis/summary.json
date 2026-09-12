@@ -1,0 +1,487 @@
+{
+  "protocol": "P2.9 frozen-attempt routing ceiling and observability diagnosis",
+  "preregistration_sha256": "f9ac2697f560abb694e20497e5c356362d7500154f5dc56ab2bdf1c7b19d58ea",
+  "input_hashes_verified": true,
+  "new_rollouts": 0,
+  "fresh_development_read": false,
+  "heldout_read": false,
+  "results": [
+    {
+      "branch": "single",
+      "conditions": 103,
+      "perturbations": 5,
+      "fixed_order": [
+        1,
+        3,
+        0,
+        2
+      ],
+      "fixed2_rate": 0.32427184466019415,
+      "head_rates": [
+        0.1203883495145631,
+        0.3145631067961165,
+        0.09320388349514563,
+        0.21165048543689322
+      ],
+      "pair_diagnostics": [
+        {
+          "pair": [
+            0,
+            1
+          ],
+          "rate": 0.32427184466019415,
+          "unique_gain_over_better_member": 0.009708737864077666
+        },
+        {
+          "pair": [
+            0,
+            2
+          ],
+          "rate": 0.21359223300970873,
+          "unique_gain_over_better_member": 0.09320388349514562
+        },
+        {
+          "pair": [
+            0,
+            3
+          ],
+          "rate": 0.21165048543689322,
+          "unique_gain_over_better_member": 0.0
+        },
+        {
+          "pair": [
+            1,
+            2
+          ],
+          "rate": 0.4077669902912621,
+          "unique_gain_over_better_member": 0.09320388349514563
+        },
+        {
+          "pair": [
+            1,
+            3
+          ],
+          "rate": 0.32427184466019415,
+          "unique_gain_over_better_member": 0.009708737864077666
+        },
+        {
+          "pair": [
+            2,
+            3
+          ],
+          "rate": 0.3048543689320388,
+          "unique_gain_over_better_member": 0.0932038834951456
+        }
+      ],
+      "head_success_jaccard": [
+        [
+          1.0,
+          0.3413173652694611,
+          0.0,
+          0.5688073394495413
+        ],
+        [
+          0.3413173652694611,
+          1.0,
+          0.0,
+          0.6227544910179641
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.5688073394495413,
+          0.6227544910179641,
+          0.0,
+          1.0
+        ]
+      ],
+      "optimistic_oracle2_rate": 0.4174757281553398,
+      "optimistic_oracle2_minus_fixed2": 0.09320388349514563,
+      "optimistic_oracle2_minus_fixed2_ci95": [
+        0.04854368932038835,
+        0.1436893203883495
+      ],
+      "optimistic_pair_frequency": {
+        "0+1": 87,
+        "0+2": 16,
+        "0+3": 0,
+        "1+2": 0,
+        "1+3": 0,
+        "2+3": 0
+      },
+      "loo_oracle2_rate": 0.40582524271844655,
+      "loo_oracle2_minus_fixed2": 0.08155339805825243,
+      "loo_oracle2_minus_fixed2_ci95": [
+        0.036893203883495145,
+        0.13398058252427186
+      ],
+      "loo_tie_average_rate": 0.4106796116504854,
+      "loo_tie_average_minus_fixed2": 0.08640776699029126,
+      "loo_tie_average_minus_fixed2_ci95": [
+        0.040776699029126215,
+        0.1378640776699029
+      ],
+      "loo_tie_worst_rate": 0.403883495145631,
+      "loo_tie_worst_minus_fixed2": 0.07961165048543689,
+      "loo_tie_worst_minus_fixed2_ci95": [
+        0.034902912621359236,
+        0.13009708737864079
+      ],
+      "loo_folds_with_pair_ties_fraction": 1.0,
+      "mean_loo_tied_pair_count": 5.031067961165048,
+      "mean_loo_pair_consistency": 0.9883495145631069,
+      "condition_signal_reliability": {
+        "observed_variance": [
+          0.09438416143156289,
+          0.21223681705692013,
+          0.06495335998477061,
+          0.157509994288978
+        ],
+        "estimated_draw_noise_variance": [
+          0.0031067961165048546,
+          0.001359223300970874,
+          0.005048543689320387,
+          0.002718446601941748
+        ],
+        "estimated_condition_signal_variance": [
+          0.09127736531505803,
+          0.21087759375594925,
+          0.059904816295450226,
+          0.15479154768703624
+        ],
+        "reliability": [
+          0.9670835014118596,
+          0.9935957233065442,
+          0.9222743259085581,
+          0.982741116751269
+        ]
+      },
+      "mean_condition_signal_reliability": 0.9664236668445577,
+      "constant_screen_mse": 0.1318181455998645,
+      "ridge": {
+        "model": "P2.8 ridge",
+        "top2_rate": 0.3650485436893203,
+        "delta_vs_fixed2": 0.040776699029126215,
+        "delta_vs_fixed2_ci95": [
+          0.011650485436893206,
+          0.07766990291262135
+        ],
+        "top2_minus_permutation_mean": 0.04852582524271842,
+        "permutation_mean": 0.3165227184466019,
+        "permutation_ci95": [
+          0.2776699029126214,
+          0.35339805825242715
+        ],
+        "permutation_p_one_sided": 0.0057988402319536095,
+        "distinct_top2_orders": 7,
+        "modal_top2_share": 0.6796116504854369,
+        "prediction_std_by_head": [
+          0.07734532096483043,
+          0.16194623548499618,
+          0.104980575368566,
+          0.10000141739245914
+        ],
+        "screen_mse": 0.12961538239728138,
+        "screen_mse_relative_to_training_constant": 0.983289378009689,
+        "screen_head_correlations": [
+          0.12735025777087047,
+          0.214765981737432,
+          0.24174521739193774,
+          0.12654841655662924
+        ]
+      },
+      "rbf_probe": {
+        "model": "RBF kernel ridge probe",
+        "top2_rate": 0.3572815533980582,
+        "delta_vs_fixed2": 0.033009708737864074,
+        "delta_vs_fixed2_ci95": [
+          2.1557728633498183e-18,
+          0.07184466019417475
+        ],
+        "top2_minus_permutation_mean": 0.050918446601941725,
+        "permutation_mean": 0.3063631067961165,
+        "permutation_ci95": [
+          0.2640776699029126,
+          0.34757281553398056
+        ],
+        "permutation_p_one_sided": 0.009198160367926415,
+        "distinct_top2_orders": 11,
+        "modal_top2_share": 0.27184466019417475,
+        "prediction_std_by_head": [
+          0.2011797439679359,
+          0.3104839771124726,
+          0.18719562775089316,
+          0.2825051713951929
+        ],
+        "screen_mse": 0.12105969975127023,
+        "screen_mse_relative_to_training_constant": 0.9183841814824824,
+        "screen_head_correlations": [
+          0.43677581231464563,
+          0.4640081576662471,
+          0.2067824274545991,
+          0.3961352437495147
+        ],
+        "selected_gamma_multiplier": 4.0,
+        "selected_gamma": 0.11248493018540413,
+        "selected_alpha": 0.1,
+        "training_validation_mse": 0.08879961971138015,
+        "rbf_top2_minus_ridge2": -0.0077669902912621365,
+        "rbf_top2_minus_ridge2_ci95": [
+          -0.02330097087378641,
+          0.0038834951456310682
+        ]
+      },
+      "gates": {
+        "prototype_opportunity": true,
+        "stable_condition_preference": true,
+        "ridge_feature_alignment": true,
+        "rbf_feature_alignment": true,
+        "nonlinear_gain_over_ridge": false
+      },
+      "diagnosis": "aligned_routing_signal_requires_new_screen"
+    },
+    {
+      "branch": "dual",
+      "conditions": 101,
+      "perturbations": 5,
+      "fixed_order": [
+        1,
+        3,
+        0,
+        2
+      ],
+      "fixed2_rate": 0.23168316831683167,
+      "head_rates": [
+        0.15247524752475247,
+        0.22574257425742575,
+        0.12475247524752475,
+        0.1801980198019802
+      ],
+      "pair_diagnostics": [
+        {
+          "pair": [
+            0,
+            1
+          ],
+          "rate": 0.2396039603960396,
+          "unique_gain_over_better_member": 0.013861386138613846
+        },
+        {
+          "pair": [
+            0,
+            2
+          ],
+          "rate": 0.25544554455445545,
+          "unique_gain_over_better_member": 0.10297029702970298
+        },
+        {
+          "pair": [
+            0,
+            3
+          ],
+          "rate": 0.18811881188118812,
+          "unique_gain_over_better_member": 0.007920792079207928
+        },
+        {
+          "pair": [
+            1,
+            2
+          ],
+          "rate": 0.3405940594059406,
+          "unique_gain_over_better_member": 0.11485148514851487
+        },
+        {
+          "pair": [
+            1,
+            3
+          ],
+          "rate": 0.2316831683168317,
+          "unique_gain_over_better_member": 0.005940594059405946
+        },
+        {
+          "pair": [
+            2,
+            3
+          ],
+          "rate": 0.29108910891089107,
+          "unique_gain_over_better_member": 0.11089108910891088
+        }
+      ],
+      "head_success_jaccard": [
+        [
+          1.0,
+          0.5785123966942148,
+          0.08527131782945736,
+          0.7684210526315789
+        ],
+        [
+          0.5785123966942148,
+          1.0,
+          0.029069767441860465,
+          0.7521367521367521
+        ],
+        [
+          0.08527131782945736,
+          0.029069767441860465,
+          1.0,
+          0.047619047619047616
+        ],
+        [
+          0.7684210526315789,
+          0.7521367521367521,
+          0.047619047619047616,
+          1.0
+        ]
+      ],
+      "optimistic_oracle2_rate": 0.3425742574257426,
+      "optimistic_oracle2_minus_fixed2": 0.1108910891089109,
+      "optimistic_oracle2_minus_fixed2_ci95": [
+        0.06336633663366337,
+        0.16435643564356434
+      ],
+      "optimistic_pair_frequency": {
+        "0+1": 82,
+        "0+2": 19,
+        "0+3": 0,
+        "1+2": 0,
+        "1+3": 0,
+        "2+3": 0
+      },
+      "loo_oracle2_rate": 0.3326732673267327,
+      "loo_oracle2_minus_fixed2": 0.10099009900990098,
+      "loo_oracle2_minus_fixed2_ci95": [
+        0.05346534653465347,
+        0.15445544554455448
+      ],
+      "loo_tie_average_rate": 0.3353795379537954,
+      "loo_tie_average_minus_fixed2": 0.10369636963696371,
+      "loo_tie_average_minus_fixed2_ci95": [
+        0.055973597359735984,
+        0.15749504950495047
+      ],
+      "loo_tie_worst_rate": 0.3247524752475247,
+      "loo_tie_worst_minus_fixed2": 0.0930693069306931,
+      "loo_tie_worst_minus_fixed2_ci95": [
+        0.04356435643564357,
+        0.1485148514851485
+      ],
+      "loo_folds_with_pair_ties_fraction": 1.0,
+      "mean_loo_tied_pair_count": 5.19009900990099,
+      "mean_loo_pair_consistency": 0.9900990099009901,
+      "condition_signal_reliability": {
+        "observed_variance": [
+          0.10571881188118795,
+          0.16373069306930696,
+          0.07828118811881195,
+          0.13240396039603985
+        ],
+        "estimated_draw_noise_variance": [
+          0.00613861386138614,
+          0.0031683168316831685,
+          0.007920792079207923,
+          0.004158415841584159
+        ],
+        "estimated_condition_signal_variance": [
+          0.09958019801980181,
+          0.1605623762376238,
+          0.07036039603960402,
+          0.1282455445544557
+        ],
+        "reliability": [
+          0.9419345171199519,
+          0.9806492187122055,
+          0.8988161489426287,
+          0.9685929648241206
+        ]
+      },
+      "mean_condition_signal_reliability": 0.9474982123997268,
+      "constant_screen_mse": 0.12025349479011307,
+      "ridge": {
+        "model": "P2.8 ridge",
+        "top2_rate": 0.30099009900990104,
+        "delta_vs_fixed2": 0.06930693069306931,
+        "delta_vs_fixed2_ci95": [
+          0.031683168316831684,
+          0.1108910891089109
+        ],
+        "top2_minus_permutation_mean": 0.03672792079207926,
+        "permutation_mean": 0.2642621782178218,
+        "permutation_ci95": [
+          0.22970297029702968,
+          0.297029702970297
+        ],
+        "permutation_p_one_sided": 0.010797840431913617,
+        "distinct_top2_orders": 8,
+        "modal_top2_share": 0.40594059405940597,
+        "prediction_std_by_head": [
+          0.07723412127609683,
+          0.11702962349726363,
+          0.06048917712724323,
+          0.08679369229107003
+        ],
+        "screen_mse": 0.11082493109636937,
+        "screen_mse_relative_to_training_constant": 0.9215942645974652,
+        "screen_head_correlations": [
+          0.10612164110280675,
+          0.4415493055990823,
+          0.254033376309345,
+          0.3250532392433702
+        ]
+      },
+      "rbf_probe": {
+        "model": "RBF kernel ridge probe",
+        "top2_rate": 0.306930693069307,
+        "delta_vs_fixed2": 0.07524752475247526,
+        "delta_vs_fixed2_ci95": [
+          0.03762376237623762,
+          0.1207920792079208
+        ],
+        "top2_minus_permutation_mean": 0.04028356435643571,
+        "permutation_mean": 0.2666471287128713,
+        "permutation_ci95": [
+          0.23168316831683167,
+          0.299009900990099
+        ],
+        "permutation_p_one_sided": 0.0061987602479504095,
+        "distinct_top2_orders": 10,
+        "modal_top2_share": 0.38613861386138615,
+        "prediction_std_by_head": [
+          0.08702897307066178,
+          0.1383576779898388,
+          0.07801161237535399,
+          0.10292248283846014
+        ],
+        "screen_mse": 0.10351817569596455,
+        "screen_mse_relative_to_training_constant": 0.8608329918115241,
+        "screen_head_correlations": [
+          0.19620360326464917,
+          0.5141534653599036,
+          0.3514977061042633,
+          0.3943007103282043
+        ],
+        "selected_gamma_multiplier": 1.0,
+        "selected_gamma": 0.011314549608657472,
+        "selected_alpha": 1.0,
+        "training_validation_mse": 0.0625033033270328,
+        "rbf_top2_minus_ridge2": 0.0059405940594059415,
+        "rbf_top2_minus_ridge2_ci95": [
+          -0.015841584158415842,
+          0.031683168316831684
+        ]
+      },
+      "gates": {
+        "prototype_opportunity": true,
+        "stable_condition_preference": true,
+        "ridge_feature_alignment": true,
+        "rbf_feature_alignment": true,
+        "nonlinear_gain_over_ridge": false
+      },
+      "diagnosis": "aligned_routing_signal_requires_new_screen"
+    }
+  ],
+  "dual_driven_recommendation": "The existing legal feature representation contains aligned routing signal. Freeze the simplest aligned model and test it once on a new preregistered screen."
+}

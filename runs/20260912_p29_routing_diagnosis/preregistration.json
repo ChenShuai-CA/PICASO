@@ -1,0 +1,75 @@
+{
+  "protocol": "P2.9 frozen-attempt routing ceiling and observability diagnosis",
+  "created_before_p29_metric_computation": true,
+  "scope": "diagnostic mechanism study; no new rollout, no fresh development evaluation, no heldout access",
+  "inputs": {
+    "training_dataset": {
+      "path": "runs/20260912_p28_conditional_router/training_dataset.npz",
+      "sha256": "82de3469abe1b947dc602a763b0ef0d61aa21ef8927c64f6063b1e7498999357"
+    },
+    "screen_dataset": {
+      "path": "runs/20260912_p28_conditional_router/screen_dataset.npz",
+      "sha256": "0987868ecccd09b78f2560c1e756725d73ed1004a21d5e75219f1c307e94931f"
+    },
+    "ridge_single": {
+      "path": "runs/20260912_p28_conditional_router/router_single.npz",
+      "sha256": "d66de2683f49094c281290af98f2e7b17fc26854f9ca5506f99527829702c08b"
+    },
+    "ridge_dual": {
+      "path": "runs/20260912_p28_conditional_router/router_dual.npz",
+      "sha256": "cfa7a215dbea3598737f3cc5f68038df98cd47eaab4281fb1731a0d3af01e9ab"
+    },
+    "p28_preregistration_sha256": "4c087c39e5f626b6cdd9c5cc3861119e09ecb0d0759eb76c1d9decce9c255d44",
+    "p28_frozen_library_sha256": "d4303d5eb7324de304825322a5f64d2e78c0451057826ff9b6aa99a1be34e5e7",
+    "p28_summary_sha256": "5b63d8982aa209f8bb32f116cd72224227c1a22c2d110e12811417ff159ee8e1"
+  },
+  "branches": [
+    "single",
+    "dual"
+  ],
+  "outcome": "complete valid dangerous for each frozen prototype and paired perturbation",
+  "fixed_comparator": "P2.8 training-best first two prototypes",
+  "diagnostics": {
+    "optimistic_ceiling": "per-condition best prototype pair selected and evaluated on all screen perturbations",
+    "cross_perturbation_stability": "leave one perturbation out; select the best pair on the other draws and score only the held draw",
+    "condition_signal_reliability": "between-condition variance after subtracting estimated binomial draw noise",
+    "feature_alignment": "P2.8 ridge top-2 rate compared with 5000 branch-wise permutations of its screen condition orders",
+    "nonlinear_probe": "fixed RBF kernel ridge probe trained only on the P2.8 training split; gamma multiplier and alpha selected only on the existing training validation split",
+    "prototype_complementarity": "all six pair coverages, pair overlap, and unique coverage over the best single prototype"
+  },
+  "rbf_probe": {
+    "gamma_multipliers_over_inverse_median_squared_distance": [
+      0.25,
+      1.0,
+      4.0
+    ],
+    "alphas": [
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "target": "per-head dangerous-and-valid fraction over the existing training perturbations",
+    "refit_after_selection": false
+  },
+  "inference": {
+    "condition_bootstrap_rounds": 5000,
+    "permutation_rounds": 5000,
+    "seed": 2029,
+    "minimum_practical_delta": 0.03,
+    "material_oracle_delta": 0.05,
+    "alpha": 0.05
+  },
+  "decision_tree_each_branch": [
+    "prototype opportunity is present only if optimistic oracle top-2 minus fixed top-2 is at least 0.05 and its condition-bootstrap CI lower bound is above zero",
+    "stable condition preference is present only if leave-one-perturbation-out oracle top-2 minus fixed top-2 is at least 0.03 and its CI lower bound is above zero",
+    "actor-visible feature alignment is present only if top-2 minus permutation mean is at least 0.03 and permutation p is at most 0.05",
+    "if opportunity is absent, diagnose prototype-complementarity ceiling",
+    "if opportunity exists but stability is absent, diagnose perturbation-outcome instability before changing the router",
+    "if stability exists and only the nonlinear probe has feature alignment with at least 0.03 gain over ridge, diagnose ridge-capacity limitation",
+    "if stability exists but neither model has feature alignment, diagnose actor-visible observability limitation",
+    "otherwise retain the simplest aligned router and require a new preregistered screen"
+  ],
+  "fresh_development_read": false,
+  "heldout_read": false
+}
