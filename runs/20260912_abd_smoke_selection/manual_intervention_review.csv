@@ -1,5 +1,5 @@
-﻿run,vehicle,scenario,driver_intervention,evidence_source,evidence_locator,intervention_time_s,reviewer,review_date,notes
-Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R1.txt,14-BZ3X,CCRs,unknown,,,,,,
-Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R2.txt,14-BZ3X,CCRs,unknown,,,,,,
-Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/38-CCFT [L.6.1.9]/39-AEB/40-Farside/41-GVT 20 kph/133-VUT 10 kph; CCFT 20 kph AEB/V14_T133_R2.txt,14-BZ3X,CCFT,unknown,,,,,,
-Data/ABD_Data/14-BZ3X/10-C-NCAP VRU 2024 (VUT)/22-CPTA-LN [O.6.1.9]/23-CPTA-LN 5 kph AEB (Day)/503-VUT 10 kph; CPTA-LN 5 kph AEB (Day)/V14_T503_R4.txt,14-BZ3X,CPTA,unknown,,,,,,
+run,vehicle,scenario,driver_intervention
+Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R1.txt,14-BZ3X,CCRs,none_confirmed
+Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R2.txt,14-BZ3X,CCRs,none_confirmed
+Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/38-CCFT [L.6.1.9]/39-AEB/40-Farside/41-GVT 20 kph/133-VUT 10 kph; CCFT 20 kph AEB/V14_T133_R2.txt,14-BZ3X,CCFT,none_confirmed
+Data/ABD_Data/14-BZ3X/10-C-NCAP VRU 2024 (VUT)/22-CPTA-LN [O.6.1.9]/23-CPTA-LN 5 kph AEB (Day)/503-VUT 10 kph; CPTA-LN 5 kph AEB (Day)/V14_T503_R4.txt,14-BZ3X,CPTA,none_confirmed

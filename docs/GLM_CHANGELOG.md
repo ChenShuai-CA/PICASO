@@ -1370,3 +1370,14 @@ V14_T56_R1/R2（CCRs 重复）、V14_T133_R2（CCFT、BR-zero）、V14_T503_R4�
 V14_T133_R1（BR-active 负控）。五条均为 415 通道、约 100 Hz，配套 `.spec/.log/.CRUN` 齐全；
 四条 BR-zero 仍为 `unknown_aeb_or_driver_brake`，不能用于 AEB 校准。清单、哈希和事件诊断见
 `runs/20260912_abd_smoke_selection/`。
+
+## 2026-09-12 · 14-BZ3X 人工介入复核完成
+
+项目试验员已在 Robot Controller 中逐条检查四条 BR-zero run，综合 Results > Check Paths 与
+Motion Pack 的 Forward velocity/Lateral velocity 曲线，四条均填写为 `none_confirmed`。CSV 已精简为
+只需维护 `driver_intervention`；统一判读方法、日期和局限由脚本写入 manifest，不要求逐行重复填写。
+
+四条记录现标为 `observed_braking_no_takeover_signature_aeb_unconfirmed`，可进入 observed braking
+response 分析。该复核属于运动学曲线的间接证据：它可以识别明显避让和异常停车形态，但没有独立
+踏板/制动压力标记，可能漏掉与 AEB 曲线相似的纯直线人工制动。由于车辆 AEB request/status 仍不可得，
+四条记录继续禁止用于 AEB request-to-response timing 校准；BR-active 的 V14_T133_R1 保持机器人制动负控。

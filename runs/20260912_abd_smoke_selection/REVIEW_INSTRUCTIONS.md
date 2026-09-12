@@ -1,32 +1,21 @@
 # 14-BZ3X 人工制动介入复核说明
 
-请编辑同目录的 `manual_intervention_review.csv`。四条 BR-zero run 已预填为 `unknown`；只修改人工复核
-字段，不修改 `run`、`vehicle` 或 `scenario`。
+请编辑同目录的 `manual_intervention_review.csv`。只需要修改 `driver_intervention`，不要修改
+`run`、`vehicle` 或 `scenario`，也不需要逐行填写其他证据字段。
+
+本批次的统一判读方法已经固化在 `manifest.json`：进入 Robot Controller，结合 Results 中的
+Check Paths，以及 Motion Pack 中的 Forward velocity [m/s] 和 Lateral velocity [m/s] 判断。
+人工避让通常会出现明显横向速度，纵向速度收敛到 0 的形态也会与正常 AEB 刹停不同。
 
 ## `driver_intervention` 允许值
 
-- `none_confirmed`：现场运行记录、试验员记录或同步视频明确证明该 run 没有人工踩刹车；
-- `manual`：记录明确说明驾驶员进行了安全制动；
-- `unknown`：没有记录、记录含糊、只能看到车辆减速，或不能对应到该具体 run。
+- `none_confirmed`：综合上述路径和速度曲线，未观察到人为介入接管特征；
+- `manual`：综合上述路径和速度曲线，确认存在人为介入接管；
+- `unknown`：曲线含糊、无法打开对应结果，或无法可靠判断。
 
-“记录没有写人工介入”不等于 `none_confirmed`，应填 `unknown`。
-
-## 证据字段
-
-- `evidence_source`：例如纸质试验记录、电子 run sheet、同步视频、试验日报；
-- `evidence_locator`：文件名、表格行号、视频时间码或纸质页码；
-- `intervention_time_s`：能与 ABD `Time` 对齐时才填；不能可靠对齐则留空；
-- `reviewer`、`review_date`：复核人和日期；
-- `notes`：记录“为什么确认无介入”或“在哪个阶段人工踩下”等信息。
-
-## 示例
-
-```csv
-driver_intervention,evidence_source,evidence_locator,intervention_time_s,reviewer,review_date,notes
-none_confirmed,试验日报,2024-05-18 第12行,,张三,2026-09-12,试验员明确记录全程未接管
-manual,同步视频,CAM02 00:01:24.530,24.53,张三,2026-09-12,AEB过晚后人工制动
-unknown,,,,张三,2026-09-12,没有能对应到该run的现场记录
-```
+该方法属于试验员基于运动学曲线的间接复核。由于没有独立踏板/制动压力标记，若有人只做直线制动，
+且速度曲线恰好与 AEB 刹停高度相似，仍可能无法识别；因此 `none_confirmed` 只表示“未观察到接管
+特征”，不表示通过传感器证明驾驶员没有踩踏板。
 
 填写后在 WSL 中运行：
 

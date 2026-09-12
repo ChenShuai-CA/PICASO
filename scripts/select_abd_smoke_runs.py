@@ -29,11 +29,30 @@ AVAILABLE_CORE = (
     'BR Velocity', 'Brake force (unfiltered)', 'AR Command',
 )
 
-REVIEW_FIELDS = (
-    'run', 'vehicle', 'scenario', 'driver_intervention', 'evidence_source',
-    'evidence_locator', 'intervention_time_s', 'reviewer', 'review_date', 'notes',
-)
+REVIEW_FIELDS = ('run', 'vehicle', 'scenario', 'driver_intervention')
 REVIEW_VALUES = ('none_confirmed', 'manual', 'unknown')
+
+REVIEW_METHOD = {
+    'type': 'indirect_kinematic_human_review',
+    'software': 'Robot Controller',
+    'views': [
+        'Results > Check Paths',
+        'Motion Pack > Forward velocity [m/s]',
+        'Motion Pack > Lateral velocity [m/s]',
+    ],
+    'decision_basis': (
+        'The project test operator reviewed the path together with longitudinal and '
+        'lateral velocity curves. A takeover is marked when the combined trajectory '
+        'and velocity response differs materially from a normal AEB stop, including '
+        'avoidance-related lateral motion or a different longitudinal convergence to zero.'
+    ),
+    'confirmation_date': '2026-09-12',
+    'evidence_level': 'operator-reviewed indirect kinematic evidence',
+    'limitation': (
+        'No independent brake-pedal/pressure marker is recorded. Manual straight-line '
+        'braking that closely resembles an AEB stop may therefore remain undetected.'
+    ),
+}
 
 
 def load_or_create_review(path, selected_paths):
@@ -52,7 +71,11 @@ def load_or_create_review(path, selected_paths):
                     'driver_intervention': 'unknown',
                 })
     with path.open(encoding='utf-8-sig', newline='') as handle:
-        rows = list(csv.DictReader(handle))
+        reader = csv.DictReader(handle)
+        missing_fields = set(REVIEW_FIELDS) - set(reader.fieldnames or ())
+        if missing_fields:
+            raise ValueError(f'missing manual review fields: {sorted(missing_fields)}')
+        rows = list(reader)
     expected = {str(path.relative_to(ROOT)) for filename, path in selected_paths.items()
                 if SELECTION[filename][1].startswith('zero_br_')}
     actual = {row['run'] for row in rows}
@@ -106,7 +129,7 @@ def main():
         elif driver_status == 'manual':
             classification = 'driver_brake_contaminated'
         elif driver_status == 'none_confirmed':
-            classification = 'observed_braking_driver_excluded_aeb_unconfirmed'
+            classification = 'observed_braking_no_takeover_signature_aeb_unconfirmed'
         else:
             classification = 'unknown_aeb_or_driver_brake'
         rows.append({
@@ -117,6 +140,8 @@ def main():
             'observed_response_fit_eligible': (
                 not br_active and driver_status == 'none_confirmed'),
             'driver_intervention_review': review,
+            'driver_intervention_evidence_level': (
+                REVIEW_METHOD['evidence_level'] if review else 'not_applicable'),
             'calibration_blocker': (
                 'robot braking is active' if br_active else
                 'direct AEB request/status is unavailable'),
@@ -145,7 +170,10 @@ def main():
             'three scenario types, repeated CCRs response, four BR-zero unknown-source '
             'events, and one BR-active negative control; all selected runs have the '
             'same 415-channel export and complete companion files'),
-        'aeb_calibration_status': 'NO-GO: direct AEB and driver intervention unavailable',
+        'manual_intervention_review_method': REVIEW_METHOD,
+        'aeb_calibration_status': (
+            'NO-GO for AEB request timing: direct vehicle AEB request/status is unavailable; '
+            'manual takeover was reviewed indirectly from path and velocity curves'),
         'rows': rows,
     }
     (output / 'manifest.json').write_text(
@@ -154,8 +182,10 @@ def main():
     lines = [
         '# ABD historical smoke selection: 14-BZ3X', '',
         'Selected for parser, event-window and brake-source classification smoke testing. '
-        'These are not AEB calibration samples because the exports cannot separate vehicle '
-        'AEB from driver braking.', '',
+        'The project test operator reviewed manual takeover using Robot Controller Check Paths '
+        'and Motion Pack forward/lateral velocity curves. The four BR-zero runs have no observed '
+        'takeover signature and may enter observed braking response analysis. They are not AEB '
+        'request-timing samples because the exports contain no direct vehicle AEB request/status.', '',
         '| run | scenario | role | driver review | onset s | onset TTC s | peak m/s2 | BR cmd range | class |',
         '|---|---|---|---|---:|---:|---:|---:|---|',
     ]
@@ -176,9 +206,10 @@ def main():
         'marker and synchronised target command/actual logs. Without vehicle CAN, retain '
         'the Post Processor threshold time as `observed_braking_onset`, not AEB request time.',
         '',
-        'Human review is entered only in `manual_intervention_review.csv`. Allowed values are '
-        '`none_confirmed`, `manual`, and `unknown`. Re-run this script after editing; it validates '
-        'the four paths and preserves the review file.',
+        'Human review is entered only in the `driver_intervention` column of '
+        '`manual_intervention_review.csv`. Allowed values are `none_confirmed`, `manual`, and '
+        '`unknown`. The shared review method and its limitation are stored in `manifest.json`. '
+        'Re-run this script after editing; it validates the four paths and preserves the review file.',
         '',
     ]
     (output / 'REPORT.md').write_text('\n'.join(lines), encoding='utf-8')
