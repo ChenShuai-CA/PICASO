@@ -18,7 +18,7 @@ AEB request/status 通道，结论不是直接激活证明；驾驶员违规介�
 | `brake_deceleration` | **U(5.455, 8.174) m/s²** | ABD 支持的经验敏感性包络。按 `a_eff=(v_onset²-v_end²)/(2∫vdt)` 换算，匹配 env 的恒定减速度及停车距离语义；不是车型总体概率分布。 |
 | `response_delay` | U(0.1, 0.4) s | 保留原假定。观测 margin-time 为 0.055–0.386 s，但混合了触发策略、几何和制动建立过程，不能当成触发到输出的时延。 |
 | `action_delay_steps` | {0,1,2} | 保留原假定；没有 AEB request 通道，100 Hz VUT 日志不能辨识该执行抖动。 |
-| `target_accel_scale` | U(0.85,1.15) | 保留原假定；这是 NPC 侧参数，VUT 日志没有对应执行通道。 |
+| `target_accel_scale` | U(0.85,1.15) | 保留原假定；这是 NPC 侧参数。更正（2026-09-12）：VUT 日志经 Synchro 含目标端 Head tracker reference/actual 执行通道（CCFT/CPTA 有值、CCRs 零值与规程一致，见 MANUAL_EVIDENCE.md E9）；v1 仍保留假定（运动目标 run 仅 2/10，位置差→加速度缩放需专门建模），该通道组列为未来版本候选数据源。 |
 
 原峰值减速度范围 9.128–11.419 m/s² 仍作为事件平台诊断量保存在表内，但峰值不能直接替代 env
 从触发后持续施加的恒定减速度。修正后的等效范围与先前假定 U(5.5,8.0) 基本重合，因此数据不支持
@@ -36,3 +36,8 @@ AEB request/status 通道，结论不是直接激活证明；驾驶员违规介�
 产物：`abd_supported_v1.json`、`calibration_table.csv`、`distributions.json`、
 `verification.json`。生成脚本为 `scripts/calibrate_abd_v1.py`；默认仿真路径保持不变，正式实验须显式
 传入该配置。
+
+更正记录：2026-09-12 修正 `target_accel_scale` 行——原表述"VUT 日志没有对应执行通道"不实
+（Head tracker reference/actual 通道存在，MANUAL_EVIDENCE.md E9）。`abd_supported_v1.json` 内的
+同句旧措辞保留原样：该 JSON 属归因撤回后的历史复现产物，脚本已按 driver-intervention 确认门
+拒绝在无 `none_confirmed` 记录时重新生成，故不重生成、不手改生成物。

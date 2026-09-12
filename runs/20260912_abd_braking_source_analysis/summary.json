@@ -1,0 +1,776 @@
+{
+  "label_counts": {
+    "operator_confirmed_aeb_response": 44,
+    "manual_after_fcw_audio": 33
+  },
+  "vehicle_counts_by_label": {
+    "manual_after_fcw_audio": {
+      "9-BZ7": 30,
+      "Guang_Qi_S9_data": 1,
+      "XPengP7+_data": 2
+    },
+    "operator_confirmed_aeb_response": {
+      "14-BZ3X": 14,
+      "Guang_Qi_E8_data": 2,
+      "Guang_Qi_S9_data": 3,
+      "8-huajingS": 7,
+      "9-BZ7": 9,
+      "XPengP7+_data": 2,
+      "Guang_Qi_A66_data": 2,
+      "6-C-NCAP 2024 Bao5": 1,
+      "13-xiaopengG9": 3,
+      "15-TANG L-CNCAP2024": 1
+    }
+  },
+  "class_overlap_vehicles": [
+    "9-BZ7",
+    "Guang_Qi_S9_data",
+    "XPengP7+_data"
+  ],
+  "onset_speed_kph_by_label": {
+    "aeb": {
+      "n": 44,
+      "p10": 12.1359,
+      "median": 20.776,
+      "p90": 40.4989
+    },
+    "manual": {
+      "n": 33,
+      "p10": 50.39,
+      "median": 59.256,
+      "p90": 70.335
+    }
+  },
+  "common_speed_support_kph": {
+    "low": 50.337,
+    "high": 64.228,
+    "aeb_n": 4,
+    "manual_n": 25
+  },
+  "feature_comparisons": [
+    {
+      "feature": "speed_rebound_kph",
+      "aeb": {
+        "n": 44,
+        "p10": 1.9217,
+        "median": 2.4679,
+        "p90": 2.9149
+      },
+      "manual": {
+        "n": 33,
+        "p10": 2.951,
+        "median": 3.1707,
+        "p90": 4.3496
+      },
+      "univariate_auc_aeb_if_value_high": 0.0758,
+      "univariate_separability_auc": 0.9242,
+      "in_sample_best_threshold": 2.9449,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.9091,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.9242
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.8636,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.9015
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.6429,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.7911
+      }
+    },
+    {
+      "feature": "event_duration_s",
+      "aeb": {
+        "n": 44,
+        "p10": 0.541,
+        "median": 0.835,
+        "p90": 1.638
+      },
+      "manual": {
+        "n": 33,
+        "p10": 1.482,
+        "median": 1.66,
+        "p90": 2.11
+      },
+      "univariate_auc_aeb_if_value_high": 0.084,
+      "univariate_separability_auc": 0.916,
+      "in_sample_best_threshold": 1.385,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.8864,
+        "specificity_manual": 1.0,
+        "balanced_accuracy": 0.9432
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.8864,
+        "specificity_manual": 1.0,
+        "balanced_accuracy": 0.9432
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.8571,
+        "specificity_manual": 1.0,
+        "balanced_accuracy": 0.9286
+      }
+    },
+    {
+      "feature": "time_onset_to_peak_s",
+      "aeb": {
+        "n": 44,
+        "p10": 0.353,
+        "median": 0.5,
+        "p90": 1.055
+      },
+      "manual": {
+        "n": 33,
+        "p10": 1.11,
+        "median": 1.31,
+        "p90": 1.736
+      },
+      "univariate_auc_aeb_if_value_high": 0.0847,
+      "univariate_separability_auc": 0.9153,
+      "in_sample_best_threshold": 1.03,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.8864,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.9129
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.8636,
+        "specificity_manual": 0.9091,
+        "balanced_accuracy": 0.8864
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.7857,
+        "specificity_manual": 0.9091,
+        "balanced_accuracy": 0.8474
+      }
+    },
+    {
+      "feature": "positive_speed_step_fraction",
+      "aeb": {
+        "n": 44,
+        "p10": 0.0568,
+        "median": 0.073,
+        "p90": 0.0884
+      },
+      "manual": {
+        "n": 33,
+        "p10": 0.0392,
+        "median": 0.0571,
+        "p90": 0.0665
+      },
+      "univariate_auc_aeb_if_value_high": 0.8561,
+      "univariate_separability_auc": 0.8561,
+      "in_sample_best_threshold": 0.0683,
+      "in_sample_direction": "aeb_if_high",
+      "in_sample": {
+        "sensitivity_aeb": 0.6591,
+        "specificity_manual": 1.0,
+        "balanced_accuracy": 0.8295
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.6364,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.7879
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.6429,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.7911
+      }
+    },
+    {
+      "feature": "effective_constant_deceleration_distance_mps2",
+      "aeb": {
+        "n": 44,
+        "p10": 5.0218,
+        "median": 7.4985,
+        "p90": 8.6689
+      },
+      "manual": {
+        "n": 33,
+        "p10": 5.7466,
+        "median": 8.986,
+        "p90": 9.2858
+      },
+      "univariate_auc_aeb_if_value_high": 0.1653,
+      "univariate_separability_auc": 0.8347,
+      "in_sample_best_threshold": 8.828,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.9545,
+        "specificity_manual": 0.6667,
+        "balanced_accuracy": 0.8106
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.8864,
+        "specificity_manual": 0.6667,
+        "balanced_accuracy": 0.7765
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.8571,
+        "specificity_manual": 0.0606,
+        "balanced_accuracy": 0.4589
+      }
+    },
+    {
+      "feature": "brake_force_max_n",
+      "aeb": {
+        "n": 44,
+        "p10": 0.6458,
+        "median": 12.5235,
+        "p90": 30.0224
+      },
+      "manual": {
+        "n": 33,
+        "p10": 16.3372,
+        "median": 18.877,
+        "p90": 43.73
+      },
+      "univariate_auc_aeb_if_value_high": 0.2266,
+      "univariate_separability_auc": 0.7734,
+      "in_sample_best_threshold": 15.0555,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.6364,
+        "specificity_manual": 1.0,
+        "balanced_accuracy": 0.8182
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.6364,
+        "specificity_manual": 1.0,
+        "balanced_accuracy": 0.8182
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.8571,
+        "specificity_manual": 0.1515,
+        "balanced_accuracy": 0.5043
+      }
+    },
+    {
+      "feature": "peak_deceleration_magnitude_mps2",
+      "aeb": {
+        "n": 44,
+        "p10": 9.1584,
+        "median": 10.417,
+        "p90": 11.2397
+      },
+      "manual": {
+        "n": 33,
+        "p10": 10.568,
+        "median": 11.036,
+        "p90": 11.132
+      },
+      "univariate_auc_aeb_if_value_high": 0.2658,
+      "univariate_separability_auc": 0.7342,
+      "in_sample_best_threshold": 10.943,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.7273,
+        "specificity_manual": 0.8788,
+        "balanced_accuracy": 0.803
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.7273,
+        "specificity_manual": 0.8788,
+        "balanced_accuracy": 0.803
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.5714,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.7554
+      }
+    },
+    {
+      "feature": "brake_pulse_count",
+      "aeb": {
+        "n": 44,
+        "p10": 1.0,
+        "median": 2.0,
+        "p90": 2.0
+      },
+      "manual": {
+        "n": 33,
+        "p10": 2.0,
+        "median": 2.0,
+        "p90": 3.0
+      },
+      "univariate_auc_aeb_if_value_high": 0.2751,
+      "univariate_separability_auc": 0.7249,
+      "in_sample_best_threshold": 1.5,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.3409,
+        "specificity_manual": 0.9697,
+        "balanced_accuracy": 0.6553
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.3409,
+        "specificity_manual": 0.9697,
+        "balanced_accuracy": 0.6553
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.9286,
+        "specificity_manual": 0.0,
+        "balanced_accuracy": 0.4643
+      }
+    },
+    {
+      "feature": "lateral_velocity_delta_peak_mps",
+      "aeb": {
+        "n": 44,
+        "p10": 0.0192,
+        "median": 0.0465,
+        "p90": 0.1941
+      },
+      "manual": {
+        "n": 33,
+        "p10": 0.0577,
+        "median": 0.0795,
+        "p90": 0.5947
+      },
+      "univariate_auc_aeb_if_value_high": 0.3044,
+      "univariate_separability_auc": 0.6956,
+      "in_sample_best_threshold": 0.0576,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.6364,
+        "specificity_manual": 0.9091,
+        "balanced_accuracy": 0.7727
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.6136,
+        "specificity_manual": 0.9091,
+        "balanced_accuracy": 0.7614
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.2857,
+        "specificity_manual": 0.9697,
+        "balanced_accuracy": 0.6277
+      }
+    },
+    {
+      "feature": "yaw_rate_delta_peak_dps",
+      "aeb": {
+        "n": 44,
+        "p10": 0.9874,
+        "median": 2.2139,
+        "p90": 11.2023
+      },
+      "manual": {
+        "n": 33,
+        "p10": 2.2935,
+        "median": 4.3146,
+        "p90": 7.4738
+      },
+      "univariate_auc_aeb_if_value_high": 0.3368,
+      "univariate_separability_auc": 0.6632,
+      "in_sample_best_threshold": 2.8981,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.6136,
+        "specificity_manual": 0.8485,
+        "balanced_accuracy": 0.7311
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.5909,
+        "specificity_manual": 0.8485,
+        "balanced_accuracy": 0.7197
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.6429,
+        "specificity_manual": 0.0909,
+        "balanced_accuracy": 0.3669
+      }
+    },
+    {
+      "feature": "jerk_p95_mps3",
+      "aeb": {
+        "n": 44,
+        "p10": 51.0432,
+        "median": 60.8639,
+        "p90": 66.9031
+      },
+      "manual": {
+        "n": 33,
+        "p10": 51.9832,
+        "median": 58.1173,
+        "p90": 63.7411
+      },
+      "univariate_auc_aeb_if_value_high": 0.6253,
+      "univariate_separability_auc": 0.6253,
+      "in_sample_best_threshold": 58.2941,
+      "in_sample_direction": "aeb_if_high",
+      "in_sample": {
+        "sensitivity_aeb": 0.6818,
+        "specificity_manual": 0.5758,
+        "balanced_accuracy": 0.6288
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.25,
+        "specificity_manual": 0.5758,
+        "balanced_accuracy": 0.4129
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.5714,
+        "specificity_manual": 0.0606,
+        "balanced_accuracy": 0.316
+      }
+    },
+    {
+      "feature": "heading_change_deg",
+      "aeb": {
+        "n": 44,
+        "p10": 0.1245,
+        "median": 0.2978,
+        "p90": 12.9074
+      },
+      "manual": {
+        "n": 33,
+        "p10": 0.2539,
+        "median": 0.5229,
+        "p90": 1.5363
+      },
+      "univariate_auc_aeb_if_value_high": 0.3774,
+      "univariate_separability_auc": 0.6226,
+      "in_sample_best_threshold": 0.2466,
+      "in_sample_direction": "aeb_if_low",
+      "in_sample": {
+        "sensitivity_aeb": 0.4545,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.697
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.4318,
+        "specificity_manual": 0.9394,
+        "balanced_accuracy": 0.6856
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.6429,
+        "specificity_manual": 0.3333,
+        "balanced_accuracy": 0.4881
+      }
+    },
+    {
+      "feature": "br_position_travel_mm",
+      "aeb": {
+        "n": 44,
+        "p10": 14.5368,
+        "median": 22.114,
+        "p90": 33.463
+      },
+      "manual": {
+        "n": 33,
+        "p10": 0.0106,
+        "median": 25.817,
+        "p90": 31.3
+      },
+      "univariate_auc_aeb_if_value_high": 0.5489,
+      "univariate_separability_auc": 0.5489,
+      "in_sample_best_threshold": 6.058,
+      "in_sample_direction": "aeb_if_high",
+      "in_sample": {
+        "sensitivity_aeb": 0.9773,
+        "specificity_manual": 0.4242,
+        "balanced_accuracy": 0.7008
+      },
+      "leave_one_run_out": {
+        "scheme": "leave_one_run_out",
+        "n": 77,
+        "sensitivity_aeb": 0.9773,
+        "specificity_manual": 0.4242,
+        "balanced_accuracy": 0.7008
+      },
+      "leave_one_vehicle_out": {
+        "scheme": "leave_one_vehicle_out_on_class-overlap_groups",
+        "n": 47,
+        "sensitivity_aeb": 0.9286,
+        "specificity_manual": 0.0,
+        "balanced_accuracy": 0.4643
+      }
+    }
+  ],
+  "common_speed_support_feature_comparisons": [
+    {
+      "feature": "speed_rebound_kph",
+      "aeb": {
+        "n": 4,
+        "p10": 1.7707,
+        "median": 2.3085,
+        "p90": 2.821
+      },
+      "manual": {
+        "n": 25,
+        "p10": 2.9458,
+        "median": 3.1368,
+        "p90": 3.2231
+      },
+      "univariate_auc_aeb_if_value_high": 0.05,
+      "univariate_separability_auc": 0.95
+    },
+    {
+      "feature": "event_duration_s",
+      "aeb": {
+        "n": 4,
+        "p10": 1.779,
+        "median": 1.81,
+        "p90": 2.212
+      },
+      "manual": {
+        "n": 25,
+        "p10": 1.44,
+        "median": 1.66,
+        "p90": 1.688
+      },
+      "univariate_auc_aeb_if_value_high": 0.93,
+      "univariate_separability_auc": 0.93
+    },
+    {
+      "feature": "jerk_p95_mps3",
+      "aeb": {
+        "n": 4,
+        "p10": 46.9415,
+        "median": 51.7512,
+        "p90": 53.1497
+      },
+      "manual": {
+        "n": 25,
+        "p10": 53.2716,
+        "median": 58.2373,
+        "p90": 64.2501
+      },
+      "univariate_auc_aeb_if_value_high": 0.08,
+      "univariate_separability_auc": 0.92
+    },
+    {
+      "feature": "br_position_travel_mm",
+      "aeb": {
+        "n": 4,
+        "p10": 28.9125,
+        "median": 32.215,
+        "p90": 37.6539
+      },
+      "manual": {
+        "n": 25,
+        "p10": 0.016,
+        "median": 26.132,
+        "p90": 31.311
+      },
+      "univariate_auc_aeb_if_value_high": 0.86,
+      "univariate_separability_auc": 0.86
+    },
+    {
+      "feature": "brake_pulse_count",
+      "aeb": {
+        "n": 4,
+        "p10": 1.0,
+        "median": 1.0,
+        "p90": 1.7
+      },
+      "manual": {
+        "n": 25,
+        "p10": 2.0,
+        "median": 2.0,
+        "p90": 2.0
+      },
+      "univariate_auc_aeb_if_value_high": 0.145,
+      "univariate_separability_auc": 0.855
+    },
+    {
+      "feature": "effective_constant_deceleration_distance_mps2",
+      "aeb": {
+        "n": 4,
+        "p10": 7.8794,
+        "median": 8.777,
+        "p90": 9.0292
+      },
+      "manual": {
+        "n": 25,
+        "p10": 7.7502,
+        "median": 9.213,
+        "p90": 9.288
+      },
+      "univariate_auc_aeb_if_value_high": 0.2,
+      "univariate_separability_auc": 0.8
+    },
+    {
+      "feature": "heading_change_deg",
+      "aeb": {
+        "n": 4,
+        "p10": 0.4712,
+        "median": 0.6499,
+        "p90": 1.4186
+      },
+      "manual": {
+        "n": 25,
+        "p10": 0.2501,
+        "median": 0.3959,
+        "p90": 0.894
+      },
+      "univariate_auc_aeb_if_value_high": 0.78,
+      "univariate_separability_auc": 0.78
+    },
+    {
+      "feature": "positive_speed_step_fraction",
+      "aeb": {
+        "n": 4,
+        "p10": 0.0499,
+        "median": 0.0533,
+        "p90": 0.0585
+      },
+      "manual": {
+        "n": 25,
+        "p10": 0.0531,
+        "median": 0.0601,
+        "p90": 0.0665
+      },
+      "univariate_auc_aeb_if_value_high": 0.24,
+      "univariate_separability_auc": 0.76
+    },
+    {
+      "feature": "peak_deceleration_magnitude_mps2",
+      "aeb": {
+        "n": 4,
+        "p10": 10.7409,
+        "median": 11.098,
+        "p90": 11.1324
+      },
+      "manual": {
+        "n": 25,
+        "p10": 10.469,
+        "median": 11.012,
+        "p90": 11.1196
+      },
+      "univariate_auc_aeb_if_value_high": 0.7,
+      "univariate_separability_auc": 0.7
+    },
+    {
+      "feature": "brake_force_max_n",
+      "aeb": {
+        "n": 4,
+        "p10": 11.6519,
+        "median": 16.6645,
+        "p90": 57.8062
+      },
+      "manual": {
+        "n": 25,
+        "p10": 16.309,
+        "median": 18.877,
+        "p90": 31.5958
+      },
+      "univariate_auc_aeb_if_value_high": 0.36,
+      "univariate_separability_auc": 0.64
+    },
+    {
+      "feature": "time_onset_to_peak_s",
+      "aeb": {
+        "n": 4,
+        "p10": 0.934,
+        "median": 1.37,
+        "p90": 1.687
+      },
+      "manual": {
+        "n": 25,
+        "p10": 1.068,
+        "median": 1.27,
+        "p90": 1.36
+      },
+      "univariate_auc_aeb_if_value_high": 0.57,
+      "univariate_separability_auc": 0.57
+    },
+    {
+      "feature": "lateral_velocity_delta_peak_mps",
+      "aeb": {
+        "n": 4,
+        "p10": 0.0538,
+        "median": 0.087,
+        "p90": 0.1623
+      },
+      "manual": {
+        "n": 25,
+        "p10": 0.0464,
+        "median": 0.0691,
+        "p90": 0.092
+      },
+      "univariate_auc_aeb_if_value_high": 0.54,
+      "univariate_separability_auc": 0.54
+    },
+    {
+      "feature": "yaw_rate_delta_peak_dps",
+      "aeb": {
+        "n": 4,
+        "p10": 1.4107,
+        "median": 4.7575,
+        "p90": 7.9395
+      },
+      "manual": {
+        "n": 25,
+        "p10": 1.957,
+        "median": 3.5378,
+        "p90": 7.6723
+      },
+      "univariate_auc_aeb_if_value_high": 0.47,
+      "univariate_separability_auc": 0.53
+    }
+  ],
+  "interpretation": {
+    "use": "Kinematic features may rank AEB-path BR-zero runs for manual review; they are not yet a validated automatic source label.",
+    "selection_bias": "40 of 44 AEB examples were selected using similarity to four confirmed AEB prototypes, so apparent separation is optimistically biased.",
+    "domain_confounding": "Manual examples are FCW-only post-warning takeovers, not early safety takeovers during failed AEB tests. Test intent, speed, vehicle and scenario differ.",
+    "speed_overlap_limit": "Only four reviewed AEB events fall inside the manual class onset-speed range, so common-speed comparisons are descriptive and underpowered.",
+    "manual_requirement": "A validated classifier requires operator-labelled manual takeovers drawn from AEB-path BR-zero runs."
+  }
+}

@@ -1514,3 +1514,36 @@ for 10 eligible runs"，为 P3 归因撤回的设计行为，不绕过），JSON
 `runs/20260912_abd_calibration/REPORT.md` 同日更正为准。
 
 **测试**：pytest 全量 **106 passed**（本轮无 scenario_lab 代码改动，仅证据文字修正）。
+
+## 2026-09-12 · ABD 数据现状核验 + BR 踏板通道判别力补分析（回应"AEB 数据有多少/Codex 为何不自行判别"）
+
+**背景**：runs/ 下存在四个未在 CHANGELOG 留痕的 ABD 目录（20260912_abd_fcw_audio_audit /
+braking_source_analysis / no_takeover_screen / proxy_calibration_v2），本轮逐一核验其产物并
+回答用户质询。
+
+**ABD 数据漏斗（no_takeover_screen/screening.csv + proxy_calibration_v2）**：5,543 txt →
+4,121 通道导出 → 1,258 条 AEB-path → 892 条 BR-zero 且有观测制动事件 → **44 条 operator
+复核 AEB 响应 run**（43 条 none_confirmed 全窗 + 1 条 AEB 停止后人工接管、截尾到首次停止；
+10 车型 14 场景标签）。FCW-only 188 条（T_FCW_audio 已恢复，全部可用于报警时刻分析；其中
+33 条 BR-zero 经确认为报警后人工制动，禁止进入 AEB 响应/代理校准）。proxy_calibration_v2
+主动封存：在 response_delay 拆分为 trigger-policy 与 actuation delay 前不直接进仿真，防止
+0.15–0.35 s 先验被重复计入。
+
+**BR 踏板通道判别力（本轮新算，labelled_event_features.csv 44 AEB vs 33 manual）**：
+braking_source_analysis 提取了 br_position_travel_mm/brake_force_max_n 但 REPORT 未给出
+该对照，本轮补齐——
+- `br_position_travel_mm`：AEB 中位 22.1（0–46.2）vs manual 中位 25.8（0.01–45.1）mm，
+  **完全重叠无分离**。即这些车型的 AEB 液压/助力执行会反驱踏板（cmd=0 时踏板仍移动
+  14–50 mm，载荷计仅 3–20 N）——踏板位移不能作为驾驶员检测器。
+- `brake_force_max_n`：AEB 中位 12.7（max 75.0）vs manual 中位 18.9（min 15.3，max 306.7）N，
+  核心区间重叠；**仅 manual 高力尾（>75 N）具单向证据力**（"有脚"可判，"≤75 N"不能证 AEB）。
+- 同速度子集（50.3–64.2 kph）：peak decel AEB 11.10 vs manual 11.01 m/s²、onset-to-peak
+  1.37 vs 1.27 s——**"人工接管踩得轻"的假设在该车队被数据否定**（FCW 接管为避撞全力踩，
+  ~1g）。有分离的特征（speed rebound AUC 0.924 / duration 0.916 / time-to-peak 0.915）被
+  起始速度混淆（AEB 中位 20.8 vs manual 59.3 kph），不满足自动打标条件——Codex 拒绝自动
+  标注、改出 40 条排序人工复核队列的处置与该证据一致。
+
+**待办建议（未执行）**：1) 以 force>75 N 作单向 triage 扫剩余 ~848 条未复核 BR-zero run；
+2) 在 892 条中寻找 AEB 测试速度档的疑似人工接管样本，补齐 matched-speed manual 类
+（现有 33 条 manual 全来自高速 FCW 测试，是自动判别器标定的真实瓶颈）；3) 本段四个目录
+的原始工作应补 CHANGELOG 留痕（本轮只补核验记录）。
