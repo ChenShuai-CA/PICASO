@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 import sys
@@ -28,6 +29,41 @@ AVAILABLE_CORE = (
     'BR Velocity', 'Brake force (unfiltered)', 'AR Command',
 )
 
+REVIEW_FIELDS = (
+    'run', 'vehicle', 'scenario', 'driver_intervention', 'evidence_source',
+    'evidence_locator', 'intervention_time_s', 'reviewer', 'review_date', 'notes',
+)
+REVIEW_VALUES = ('none_confirmed', 'manual', 'unknown')
+
+
+def load_or_create_review(path, selected_paths):
+    """Create a stable human-review surface once and never overwrite answers."""
+    if not path.exists():
+        with path.open('w', encoding='utf-8-sig', newline='') as handle:
+            writer = csv.DictWriter(handle, fieldnames=REVIEW_FIELDS,
+                                    lineterminator='\n')
+            writer.writeheader()
+            for filename, (scenario, role) in SELECTION.items():
+                if not role.startswith('zero_br_'):
+                    continue
+                writer.writerow({
+                    'run': str(selected_paths[filename].relative_to(ROOT)),
+                    'vehicle': '14-BZ3X', 'scenario': scenario,
+                    'driver_intervention': 'unknown',
+                })
+    with path.open(encoding='utf-8-sig', newline='') as handle:
+        rows = list(csv.DictReader(handle))
+    expected = {str(path.relative_to(ROOT)) for filename, path in selected_paths.items()
+                if SELECTION[filename][1].startswith('zero_br_')}
+    actual = {row['run'] for row in rows}
+    if actual != expected:
+        raise ValueError('manual intervention review rows do not match four BR-zero runs')
+    invalid = [row['driver_intervention'] for row in rows
+               if row['driver_intervention'] not in REVIEW_VALUES]
+    if invalid:
+        raise ValueError(f'invalid driver_intervention values: {invalid}')
+    return {row['run']: row for row in rows}
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -47,6 +83,9 @@ def main():
     if missing:
         raise FileNotFoundError(f'missing selected runs: {sorted(missing)}')
 
+    review_path = output / 'manual_intervention_review.csv'
+    reviews = load_or_create_review(review_path, found)
+
     rows = []
     for filename, (scenario, role) in SELECTION.items():
         path = found[filename]
@@ -59,16 +98,28 @@ def main():
                       for suffix in ('.spec', '.log', '.CRUN')}
         br_active = max(abs(br.get('event_min', 0.)),
                         abs(br.get('event_max', 0.))) > 1e-6
-        classification = ('robot_brake_negative_control' if br_active
-                          else 'unknown_aeb_or_driver_brake')
+        relative = str(path.relative_to(ROOT))
+        review = reviews.get(relative)
+        driver_status = review['driver_intervention'] if review else 'not_applicable'
+        if br_active:
+            classification = 'robot_brake_negative_control'
+        elif driver_status == 'manual':
+            classification = 'driver_brake_contaminated'
+        elif driver_status == 'none_confirmed':
+            classification = 'observed_braking_driver_excluded_aeb_unconfirmed'
+        else:
+            classification = 'unknown_aeb_or_driver_brake'
         rows.append({
-            'run': str(path.relative_to(ROOT)), 'sha256': detail['sha256'],
+            'run': relative, 'sha256': detail['sha256'],
             'vehicle': '14-BZ3X', 'scenario': scenario,
             'selection_role': role, 'classification': classification,
             'calibration_eligible': False,
+            'observed_response_fit_eligible': (
+                not br_active and driver_status == 'none_confirmed'),
+            'driver_intervention_review': review,
             'calibration_blocker': (
                 'robot braking is active' if br_active else
-                'AEB and driver braking cannot be separated'),
+                'direct AEB request/status is unavailable'),
             'rows': detail['rows_parsed'], 'channels': detail['n_channels'],
             'dt_median_s': detail['time']['dt_median_s'],
             'event': {
@@ -105,13 +156,14 @@ def main():
         'Selected for parser, event-window and brake-source classification smoke testing. '
         'These are not AEB calibration samples because the exports cannot separate vehicle '
         'AEB from driver braking.', '',
-        '| run | scenario | role | onset s | onset TTC s | peak m/s2 | BR cmd range | class |',
-        '|---|---|---|---:|---:|---:|---:|---|',
+        '| run | scenario | role | driver review | onset s | onset TTC s | peak m/s2 | BR cmd range | class |',
+        '|---|---|---|---|---:|---:|---:|---:|---|',
     ]
     for row in rows:
         event = row['event']
         lines.append(
             f"| {Path(row['run']).name} | {row['scenario']} | {row['selection_role']} | "
+            f"{(row['driver_intervention_review'] or {}).get('driver_intervention', 'n/a')} | "
             f"{event['onset_s']:.3f} | {event['onset_ttc_s']:.3f} | "
             f"{event['peak_deceleration_mps2']:.3f} | "
             f"{event['br_command_min']:.3f}..{event['br_command_max']:.3f} | "
@@ -123,6 +175,10 @@ def main():
         'Before using new runs for response calibration, add an independent driver-brake '
         'marker and synchronised target command/actual logs. Without vehicle CAN, retain '
         'the Post Processor threshold time as `observed_braking_onset`, not AEB request time.',
+        '',
+        'Human review is entered only in `manual_intervention_review.csv`. Allowed values are '
+        '`none_confirmed`, `manual`, and `unknown`. Re-run this script after editing; it validates '
+        'the four paths and preserves the review file.',
         '',
     ]
     (output / 'REPORT.md').write_text('\n'.join(lines), encoding='utf-8')
