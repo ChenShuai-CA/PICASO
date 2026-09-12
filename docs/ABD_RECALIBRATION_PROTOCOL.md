@@ -40,6 +40,20 @@ RC group/spec 和最终导出表。
 作为普通 CAN 数据通道导出。Bus 0 用于机器人触发。若车型 CAN 不提供 AEB request/status，只能把
 该车型标记为“响应起点可观测、请求时刻不可辨识”，不能估计 trigger-to-response delay。
 
+### 无车辆 CAN 的实际边界
+
+当前及计划测试均不连接车辆 CAN，所以 `T_AEB_req`、AEB state 和 requested deceleration 不可获取。
+项目不再把 AEB request-to-response delay 设为可校准量。可行替代是：
+
+1. 使用 Post Processor 的 −1/−0.3 m/s²规则定义 `observed_braking_onset`；
+2. 通过独立模拟量采集制动踏板位移/力或制动压力，并记录安全接管标记，得到 `T_driver`；
+3. 只对确认没有人工/BR 接管的完整减速事件，或 `T_driver` 之前足够长的未污染窗口，拟合响应曲线；
+4. 若可增加外置 AVAD audio/light receiver，可独立记录 FCW 并计算 FCW-to-braking interval，
+   但仍不得将其命名为 AEB request delay。
+
+在该条件下，“完整校准”应重新定义为**观测制动响应 + 人工接管删失 + 目标平台执行误差校准**，
+而不是 ECU AEB 内部请求时延校准。
+
 ## 4. NPC/目标平台必采通道
 
 VUT 和 LaunchPad/SPT 通过 Synchro 建立共同时间基准，并分别保留各自的原始 run/export：

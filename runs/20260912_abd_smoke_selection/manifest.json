@@ -1,0 +1,229 @@
+{
+  "purpose": "historical non-CAN pipeline and source-classification smoke test",
+  "vehicle": "14-BZ3X",
+  "selected_runs": 5,
+  "selection_reason": "three scenario types, repeated CCRs response, four BR-zero unknown-source events, and one BR-active negative control; all selected runs have the same 415-channel export and complete companion files",
+  "aeb_calibration_status": "NO-GO: direct AEB and driver intervention unavailable",
+  "rows": [
+    {
+      "run": "Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R1.txt",
+      "sha256": "35fb5df3df23cb95234d3de51301c9f025625a5c0338e4eb63ab93ea75848a50",
+      "vehicle": "14-BZ3X",
+      "scenario": "CCRs",
+      "selection_role": "zero_br_unknown_repeat_1",
+      "classification": "unknown_aeb_or_driver_brake",
+      "calibration_eligible": false,
+      "calibration_blocker": "AEB and driver braking cannot be separated",
+      "rows": 3017,
+      "channels": 415,
+      "dt_median_s": 0.01000022888180041,
+      "event": {
+        "onset_s": 24.7917003631592,
+        "onset_ttc_s": 0.884491264820099,
+        "peak_deceleration_mps2": -11.418913459777821,
+        "speed_drop_2s_kph": 20.4337196350098,
+        "br_command_min": 0.0,
+        "br_command_max": 0.0
+      },
+      "available_core_channels": [
+        "Time",
+        "Speed",
+        "Forward acceleration (body)",
+        "Time to collision (longitudinal)",
+        "Relative longitudinal distance",
+        "Relative longitudinal velocity",
+        "BR Command",
+        "BR Position",
+        "BR Velocity",
+        "Brake force (unfiltered)",
+        "AR Command"
+      ],
+      "companions": {
+        ".spec": true,
+        ".log": true,
+        ".CRUN": false
+      },
+      "missing_for_source_separation": [
+        "direct AEB request/active/state",
+        "independent driver brake pedal/pressure marker",
+        "target platform command and actual motion on common timebase"
+      ]
+    },
+    {
+      "run": "Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R2.txt",
+      "sha256": "033633ab282ea714ede9be3d7f706837d6170a3d5b16f95b9e91aa2ef900918a",
+      "vehicle": "14-BZ3X",
+      "scenario": "CCRs",
+      "selection_role": "zero_br_unknown_repeat_2",
+      "classification": "unknown_aeb_or_driver_brake",
+      "calibration_eligible": false,
+      "calibration_blocker": "AEB and driver braking cannot be separated",
+      "rows": 2989,
+      "channels": 415,
+      "dt_median_s": 0.01000022888180041,
+      "event": {
+        "onset_s": 25.1618003845215,
+        "onset_ttc_s": 0.689324259757996,
+        "peak_deceleration_mps2": -10.388234519958502,
+        "speed_drop_2s_kph": 20.457540512085,
+        "br_command_min": 0.0,
+        "br_command_max": 0.0
+      },
+      "available_core_channels": [
+        "Time",
+        "Speed",
+        "Forward acceleration (body)",
+        "Time to collision (longitudinal)",
+        "Relative longitudinal distance",
+        "Relative longitudinal velocity",
+        "BR Command",
+        "BR Position",
+        "BR Velocity",
+        "Brake force (unfiltered)",
+        "AR Command"
+      ],
+      "companions": {
+        ".spec": true,
+        ".log": true,
+        ".CRUN": false
+      },
+      "missing_for_source_separation": [
+        "direct AEB request/active/state",
+        "independent driver brake pedal/pressure marker",
+        "target platform command and actual motion on common timebase"
+      ]
+    },
+    {
+      "run": "Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/38-CCFT [L.6.1.9]/39-AEB/40-Farside/41-GVT 20 kph/133-VUT 10 kph; CCFT 20 kph AEB/V14_T133_R2.txt",
+      "sha256": "997eb6a0f63d70c6e09d932504e8f38b3fc18ee47df258dd5f9152ea9ea7232f",
+      "vehicle": "14-BZ3X",
+      "scenario": "CCFT",
+      "selection_role": "zero_br_unknown_turning",
+      "classification": "unknown_aeb_or_driver_brake",
+      "calibration_eligible": false,
+      "calibration_blocker": "AEB and driver braking cannot be separated",
+      "rows": 4206,
+      "channels": 415,
+      "dt_median_s": 0.01000022888180041,
+      "event": {
+        "onset_s": 37.8830986022949,
+        "onset_ttc_s": 0.173126250505447,
+        "peak_deceleration_mps2": -10.02350645065308,
+        "speed_drop_2s_kph": 10.5170669555664,
+        "br_command_min": 0.0,
+        "br_command_max": 0.0
+      },
+      "available_core_channels": [
+        "Time",
+        "Speed",
+        "Forward acceleration (body)",
+        "Time to collision (longitudinal)",
+        "Relative longitudinal distance",
+        "Relative longitudinal velocity",
+        "BR Command",
+        "BR Position",
+        "BR Velocity",
+        "Brake force (unfiltered)",
+        "AR Command"
+      ],
+      "companions": {
+        ".spec": true,
+        ".log": true,
+        ".CRUN": true
+      },
+      "missing_for_source_separation": [
+        "direct AEB request/active/state",
+        "independent driver brake pedal/pressure marker",
+        "target platform command and actual motion on common timebase"
+      ]
+    },
+    {
+      "run": "Data/ABD_Data/14-BZ3X/10-C-NCAP VRU 2024 (VUT)/22-CPTA-LN [O.6.1.9]/23-CPTA-LN 5 kph AEB (Day)/503-VUT 10 kph; CPTA-LN 5 kph AEB (Day)/V14_T503_R4.txt",
+      "sha256": "eb36e988b2fa11b6a254e7077b6306d0d8ee8e2d141c09ea52c85f53563b7caa",
+      "vehicle": "14-BZ3X",
+      "scenario": "CPTA",
+      "selection_role": "zero_br_unknown_turning",
+      "classification": "unknown_aeb_or_driver_brake",
+      "calibration_eligible": false,
+      "calibration_blocker": "AEB and driver braking cannot be separated",
+      "rows": 4519,
+      "channels": 415,
+      "dt_median_s": 0.01000022888180041,
+      "event": {
+        "onset_s": 41.4435005187988,
+        "onset_ttc_s": 0.694680571556091,
+        "peak_deceleration_mps2": -6.119406223297118,
+        "speed_drop_2s_kph": 9.93012809753418,
+        "br_command_min": 0.0,
+        "br_command_max": 0.0
+      },
+      "available_core_channels": [
+        "Time",
+        "Speed",
+        "Forward acceleration (body)",
+        "Time to collision (longitudinal)",
+        "Relative longitudinal distance",
+        "Relative longitudinal velocity",
+        "BR Command",
+        "BR Position",
+        "BR Velocity",
+        "Brake force (unfiltered)",
+        "AR Command"
+      ],
+      "companions": {
+        ".spec": true,
+        ".log": true,
+        ".CRUN": true
+      },
+      "missing_for_source_separation": [
+        "direct AEB request/active/state",
+        "independent driver brake pedal/pressure marker",
+        "target platform command and actual motion on common timebase"
+      ]
+    },
+    {
+      "run": "Data/ABD_Data/14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/38-CCFT [L.6.1.9]/39-AEB/40-Farside/41-GVT 20 kph/133-VUT 10 kph; CCFT 20 kph AEB/V14_T133_R1.txt",
+      "sha256": "7a5dd71cb87d2860f7f3ebf9c3fc86d2e296b71ea4999fe586b8d4eb981ae475",
+      "vehicle": "14-BZ3X",
+      "scenario": "CCFT",
+      "selection_role": "positive_br_robot_negative_control",
+      "classification": "robot_brake_negative_control",
+      "calibration_eligible": false,
+      "calibration_blocker": "robot braking is active",
+      "rows": 5581,
+      "channels": 415,
+      "dt_median_s": 0.01000022888180041,
+      "event": {
+        "onset_s": 11.6708002090454,
+        "onset_ttc_s": 16.9418563842773,
+        "peak_deceleration_mps2": -4.476152420043945,
+        "speed_drop_2s_kph": 13.629887908697144,
+        "br_command_min": 18.1615886688232,
+        "br_command_max": 47.3286743164063
+      },
+      "available_core_channels": [
+        "Time",
+        "Speed",
+        "Forward acceleration (body)",
+        "Time to collision (longitudinal)",
+        "Relative longitudinal distance",
+        "Relative longitudinal velocity",
+        "BR Command",
+        "BR Position",
+        "BR Velocity",
+        "Brake force (unfiltered)",
+        "AR Command"
+      ],
+      "companions": {
+        ".spec": true,
+        ".log": true,
+        ".CRUN": true
+      },
+      "missing_for_source_separation": [
+        "direct AEB request/active/state",
+        "independent driver brake pedal/pressure marker",
+        "target platform command and actual motion on common timebase"
+      ]
+    }
+  ]
+}

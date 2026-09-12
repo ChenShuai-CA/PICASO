@@ -1357,3 +1357,16 @@ dual 100；screen 为 single 103、dual 101。固定排序、ridge alpha 和所�
 显式具有 `driver_intervention=none_confirmed`，否则拒绝生成。P2.8 数值仍可作为与原 assumed 范围
 近似的敏感性实验复现，但不再称为 ABD 校准验证。完整补采字段、同步、删失裁决和 env 参数拆分见
 `docs/ABD_RECALIBRATION_PROTOCOL.md`。
+
+## 2026-09-12 · 无车辆 CAN 边界与历史 smoke 车型筛选
+
+用户确认全部测试均未连接车辆 CAN，因此 AEB request/active/state 和 requested deceleration 无法补采。
+后续校准范围改为 observed braking onset、驾驶员安全接管删失和目标平台 command/actual 执行误差；
+不再以 AEB request-to-response delay 为目标。FCW 只有在新增外置 AVAD audio/light receiver 时才可
+直接记录。
+
+对 `Data/ABD_Data` 约 4,130 条导出进行路径和表头筛查后，选择 14-BZ3X 做 5 条历史 smoke：
+V14_T56_R1/R2（CCRs 重复）、V14_T133_R2（CCFT、BR-zero）、V14_T503_R4（CPTA、BR-zero）及
+V14_T133_R1（BR-active 负控）。五条均为 415 通道、约 100 Hz，配套 `.spec/.log/.CRUN` 齐全；
+四条 BR-zero 仍为 `unknown_aeb_or_driver_brake`，不能用于 AEB 校准。清单、哈希和事件诊断见
+`runs/20260912_abd_smoke_selection/`。
