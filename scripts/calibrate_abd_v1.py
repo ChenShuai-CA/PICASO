@@ -1,6 +1,7 @@
 """P3.2: ABD-supported perturbation envelope -> abd_supported_v1.
 
-Reads the runs that manual_review.csv marks eligible (P3.1 evidence review),
+Reads runs that manual_review.csv marks eligible and explicitly confirms had no
+driver intervention,
 re-extracts event-window features from the raw ABD exports, fits an empirical
 envelope for the env parameter identifiable from VUT-side logs (effective
 constant brake_deceleration), and writes a versioned perturbation config plus
@@ -124,8 +125,18 @@ def stat(values):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     with REVIEW.open(encoding='utf-8-sig', newline='') as handle:
-        rows = [r for r in csv.DictReader(handle)
-                if r['calibration_decision'].startswith('eligible_for_abd_calibrated_v1')]
+        reviewed = list(csv.DictReader(handle))
+        candidates = [r for r in reviewed
+                      if r['calibration_decision'].startswith(
+                          'eligible_for_abd_calibrated_v1')]
+        unresolved = [r['run'] for r in candidates
+                      if r.get('driver_intervention', '').strip().casefold()
+                      not in ('none_confirmed', 'none')]
+        if unresolved:
+            raise SystemExit(
+                'driver intervention is absent or not confirmed-none for '
+                f'{len(unresolved)} eligible runs; AEB attribution is unresolved')
+        rows = candidates
     if not rows:
         raise SystemExit('no eligible runs in manual_review.csv')
 

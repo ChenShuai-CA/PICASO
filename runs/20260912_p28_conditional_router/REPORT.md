@@ -16,3 +16,11 @@ Both-branch mechanism gate: **False**.
 The gate did not pass both branches, so the preregistered fresh development set was not evaluated.
 
 The router is a centralized scenario-level candidate selector over actor-visible histories. It is not a decentralized closed-loop actor policy. Success rates estimate dangerous-and-valid coverage over five paired perturbation draws per condition.
+
+## Provenance reassessment
+
+After this run, the user confirmed that drivers manually brake when AEB triggers too late. The historical
+ABD exports have no channel that separates that input from vehicle AEB. The numerical perturbation range
+used here nearly matches the prior assumed sensitivity range, so these P2.8 outcomes remain reproducible as
+a sensitivity-domain experiment; they are no longer evidence of performance under an AEB-calibrated ABD
+distribution. See `runs/20260912_abd_calibration/REASSESSMENT_DRIVER_INTERVENTION.md`.

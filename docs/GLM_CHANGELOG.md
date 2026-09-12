@@ -1344,3 +1344,16 @@ dual 100；screen 为 single 103、dual 101。固定排序、ridge alpha 和所�
 因此 P2.8 总 gate 为 FAIL，fresh development 未评价，heldout 未读取。结果支持“可见历史相对固定
 全局原型排序有增益”的有限结论，但 dual 的输入对应关系尚不能排除由有限样本或排序边际分布造成；
 不能宣称条件化机制已双分支确认。router 是集中式场景级候选选择器，不是分散式闭环 actor policy。
+
+## 2026-09-12 · P3 归因撤回：用户确认存在人工安全制动
+
+用户确认：AEB 已触发但过晚时，驾驶员会人工踩刹车避免碰撞。Post Processor User Guide PDF
+第 19 页也明确说明其 −1/−0.3 m/s²加速度阈值 AEB event 检测可能把 driver intervention 误识别
+为 AEB。现有 24 条导出没有直接 AEB/FCW 或驾驶员制动通道，因此 BR Command=0 只能排除机器人，
+不能排除驾驶员。
+
+原 10 条 `AEB_by_elimination` 全部降级为 `unknown_AEB_or_driver_brake`，`abd_supported_v1.json`
+仅保留历史复现用途，ABD/AEB 校准证据声明撤回。`scripts/calibrate_abd_v1.py` 现在要求每条入选 run
+显式具有 `driver_intervention=none_confirmed`，否则拒绝生成。P2.8 数值仍可作为与原 assumed 范围
+近似的敏感性实验复现，但不再称为 ABD 校准验证。完整补采字段、同步、删失裁决和 env 参数拆分见
+`docs/ABD_RECALIBRATION_PROTOCOL.md`。
