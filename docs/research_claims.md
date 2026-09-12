@@ -84,7 +84,7 @@ ABD 不再承担当前论文的核心 RQ 或成功门槛。现有数据可以支
 - 历史数据解析和通道审计；
 - `observed_braking_onset`、等效减速度和停车响应的有限案例分析；
 - 通过 `.spec` 中 CAN User Defined→Time Tolerance Trigger 映射恢复的
-  `T_FCW_audio_observed`，以及经过制动来源/人工介入筛选后的 FCW→制动间隔；
+  `T_FCW_audio_observed`；历史 FCW-only 测试中的后续制动不用于 AEB 分析；
 - 数值敏感性范围的动机与量级检查。
 
 现有数据不能支持：
@@ -100,8 +100,10 @@ ABD 不再承担当前论文的核心 RQ 或成功门槛。现有数据可以支
 
 原因是测试没有连接车辆 CAN，且缺少独立踏板/压力通道。全目录复核已经确认大量运行具有同步的
 Object/Head tracker reference/actual 通道，可用于目标执行误差分析，但仍需剔除固定参考点偏置和
-异常残差。四条
-14-BZ3X BR-zero smoke run 只表示未观察到人工接管运动学特征，不能升级为直接 AEB 触发证据。
+异常残差。经测试人员复核，当前 AEB 响应池为 44 条唯一运行：43 条无人工接管，1 条在 AEB 完成
+首次刹停后才人工接管（分析窗截断在首次刹停）。这些运行可支持观测制动响应包络和工程先验
+`T_AEB_proxy`，仍不能升级为直接 ECU AEB 触发证据。另有 188 条 FCW-only 声音上升沿，其中
+33 条 BR-zero 制动均确认是报警后人工接管，因此不进入 AEB 响应或代理校准。
 当前 `abd_supported_v1` 数值仅保留为历史可复现的 sensitivity envelope，论文统一称为
 “numerical sensitivity domain”。
 

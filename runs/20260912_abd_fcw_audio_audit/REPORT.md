@@ -4,11 +4,11 @@
 - Mappings supported as FCW audio by an explicit sound label or FCW-context operator convention: **201**.
 - Runs with an observed 0-to-1 audio edge: **188**, across **10** vehicle folders.
 
-- Runs that also contain an observed braking onset: **186**. Their FCW-audio-to-braking intervals are descriptive external-response measurements and are reported separately from ECU request timing.
+- Runs that also contain an observed braking onset: **186**. These are FCW-only tests, so the subsequent braking is not an AEB response.
 
-- Paired runs with zero event-window BR Command: **33**. Their braking source remains unconfirmed until driver intervention is reviewed; they are not automatically labelled AEB.
+- Of the paired runs, **153** have robot braking and **33** BR-zero runs were confirmed as the expected manual takeover after the warning.
 
-For these BR-zero pairs, edit only the final `driver_intervention` column in `manual_intervention_review.csv`, using `none_confirmed`, `manual`, or `unknown`.
+- All recovered audio edges remain usable FCW timing observations. No historical FCW-only run is eligible for AEB response, AEB proxy timing, or FCW-to-AEB delay.
 
 `T_FCW_audio_observed` is the first rising edge of `Time tolerance X (within tolerances)` after the companion SPEC maps that trigger input to CAN User Defined 1 or 2. This recovers the AVAD3-observed audible warning time even when the raw CAN User Defined column was not included in the TXT export.
 

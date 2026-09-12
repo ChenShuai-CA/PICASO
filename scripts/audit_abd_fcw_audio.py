@@ -155,12 +155,31 @@ def write_csv(path: Path, rows: list[dict]):
         writer.writerows(rows)
 
 
+def read_review_csv(path: Path) -> list[dict]:
+    raw = path.read_bytes()
+    for encoding in ('utf-8-sig', 'gb18030'):
+        try:
+            return list(csv.DictReader(raw.decode(encoding).splitlines()))
+        except UnicodeDecodeError:
+            continue
+    raise UnicodeError(f'cannot decode review CSV: {path}')
+
+
+def fcw_intervention_class(value: str) -> str:
+    note = value.strip()
+    folded = note.casefold()
+    if '人工接管' in note or 'manual' in folded:
+        return 'manual_after_fcw_audio_expected_by_test_procedure'
+    if folded in ('none', 'none_confirmed'):
+        return 'none_confirmed'
+    return 'unresolved'
+
+
 def write_manual_review(path: Path, rows: list[dict]):
     prior = {}
     if path.exists():
-        with path.open(encoding='utf-8-sig', newline='') as handle:
-            prior = {row['run']: row.get('driver_intervention', 'unknown')
-                     for row in csv.DictReader(handle)}
+        prior = {row['run']: row.get('driver_intervention', 'unknown')
+                 for row in read_review_csv(path)}
     review = []
     for row in rows:
         interval = float(row['fcw_audio_to_observed_braking_s'])
@@ -228,6 +247,8 @@ def main(argv=None):
         row['fcw_audio_to_observed_braking_s'] for row in br_zero_paired], dtype=float)
     review = write_manual_review(
         args.output / 'manual_intervention_review.csv', br_zero_paired)
+    intervention_classes = Counter(
+        fcw_intervention_class(row.get('driver_intervention', '')) for row in review)
     delays = np.asarray([row['qualified_to_final_s'] for row in observed
                          if row.get('qualified_to_final_s') is not None], dtype=float)
     summary = {
@@ -252,6 +273,9 @@ def main(argv=None):
             'max': float(br_zero_intervals.max()),
         } if len(br_zero_intervals) else None),
         'manual_intervention_review_queue_runs': len(review),
+        'manual_intervention_review_counts': dict(intervention_classes),
+        'fcw_only_test_runs_with_observed_audio': len(observed),
+        'fcw_runs_eligible_for_aeb_response_or_proxy': 0,
         'trace_status_counts': dict(statuses),
         'semantic_status_counts': dict(semantics),
         'configured_label_counts': dict(labels),
@@ -267,6 +291,9 @@ def main(argv=None):
             'time_tolerance_final': (
                 'Includes configured TTT true time and delay; do not use as audible-onset '
                 'time when the within-tolerances trace is available.'),
+            'historical_test_intent': (
+                'These are FCW-only tests. Braking after the warning is robot braking or '
+                'the expected driver takeover and is not an AEB response.'),
         },
     }
     (args.output / 'summary.json').write_text(
@@ -278,14 +305,14 @@ def main(argv=None):
         f"operator convention: **{len(audio_rows)}**.",
         f"- Runs with an observed 0-to-1 audio edge: **{len(observed)}**, across "
         f"**{summary['vehicles_with_observed_fcw_audio']}** vehicle folders.", '',
-        f"- Runs that also contain an observed braking onset: **{len(paired)}**. "
-        "Their FCW-audio-to-braking intervals are descriptive external-response "
-        "measurements and are reported separately from ECU request timing.", '',
-        f"- Paired runs with zero event-window BR Command: **{len(br_zero_paired)}**. "
-        "Their braking source remains unconfirmed until driver intervention is reviewed; "
-        "they are not automatically labelled AEB.", '',
-        'For these BR-zero pairs, edit only the final `driver_intervention` column in '
-        '`manual_intervention_review.csv`, using `none_confirmed`, `manual`, or `unknown`.', '',
+        f"- Runs that also contain an observed braking onset: **{len(paired)}**. These are "
+        "FCW-only tests, so the subsequent braking is not an AEB response.", '',
+        f"- Of the paired runs, **{sum(row.get('braking_source_status') == 'robot_channel_active' for row in paired)}** "
+        "have robot braking and **"
+        f"{intervention_classes.get('manual_after_fcw_audio_expected_by_test_procedure', 0)}** "
+        "BR-zero runs were confirmed as the expected manual takeover after the warning.", '',
+        '- All recovered audio edges remain usable FCW timing observations. No historical '
+        'FCW-only run is eligible for AEB response, AEB proxy timing, or FCW-to-AEB delay.', '',
         '`T_FCW_audio_observed` is the first rising edge of `Time tolerance X (within '
         'tolerances)` after the companion SPEC maps that trigger input to CAN User Defined '
         '1 or 2. This recovers the AVAD3-observed audible warning time even when the raw '

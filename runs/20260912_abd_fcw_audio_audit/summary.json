@@ -22,6 +22,11 @@
     "max": 2.1899986267089986
   },
   "manual_intervention_review_queue_runs": 33,
+  "manual_intervention_review_counts": {
+    "manual_after_fcw_audio_expected_by_test_procedure": 33
+  },
+  "fcw_only_test_runs_with_observed_audio": 188,
+  "fcw_runs_eligible_for_aeb_response_or_proxy": 0,
   "trace_status_counts": {
     "fcw_audio_rising_edge_found": 188,
     "no_within_tolerance_rising_edge": 13
@@ -45,6 +50,7 @@
   },
   "interpretation": {
     "t_fcw_audio_observed_s": "First 0-to-1 edge of the mapped TTT within-tolerances channel. This is AVAD3-observed audible FCW onset under the operator-provided channel convention, not an ECU internal FCW request time.",
-    "time_tolerance_final": "Includes configured TTT true time and delay; do not use as audible-onset time when the within-tolerances trace is available."
+    "time_tolerance_final": "Includes configured TTT true time and delay; do not use as audible-onset time when the within-tolerances trace is available.",
+    "historical_test_intent": "These are FCW-only tests. Braking after the warning is robot braking or the expected driver takeover and is not an AEB response."
   }
 }

@@ -1,0 +1,49 @@
+{
+  "aeb_review_rows_including_anchors": 44,
+  "aeb_unique_eligible_runs": 44,
+  "aeb_duplicate_files_removed": 0,
+  "aeb_intervention_classes": {
+    "none_confirmed": 43,
+    "manual_after_aeb_stop": 1
+  },
+  "aeb_vehicle_count": 10,
+  "aeb_scenario_count": 14,
+  "fcw_observed_audio_runs": 188,
+  "fcw_reviewed_manual_after_audio": 33,
+  "fcw_braking_interpretation_counts": {
+    "robot_braking_after_fcw": 153,
+    "manual_braking_after_fcw": 33,
+    "no_observed_braking": 2
+  },
+  "fcw_runs_eligible_for_aeb_response_or_proxy": 0,
+  "brake_deceleration_distance_equivalent_mps2": {
+    "n": 44,
+    "min": 4.209,
+    "p05": 4.8067,
+    "median": 7.4985,
+    "p95": 8.7997,
+    "max": 9.097,
+    "mean": 7.1782,
+    "std": 1.3333
+  },
+  "peak_deceleration_mps2": {
+    "n": 44,
+    "min": -11.461,
+    "p05": -11.3373,
+    "median": -10.417,
+    "p95": -8.6463,
+    "max": -6.119,
+    "mean": -10.2497,
+    "std": 1.0717
+  },
+  "brake_build_up_onset_to_peak_s": {
+    "n": 44,
+    "min": 0.3,
+    "p05": 0.3315,
+    "median": 0.5,
+    "p95": 1.4465,
+    "max": 1.75,
+    "mean": 0.6368,
+    "std": 0.3461
+  }
+}

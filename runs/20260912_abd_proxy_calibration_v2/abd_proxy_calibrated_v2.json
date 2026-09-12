@@ -1,0 +1,326 @@
+{
+  "version": "abd_proxy_calibrated_v2",
+  "created": "2026-09-12",
+  "purpose": "ABD-supported proxy calibration evidence for the split AEB response model",
+  "current_scenario_lab_compatible": false,
+  "compatibility_blocker": "scenario_lab.response_delay currently affects both stopping-trigger preview and the brake queue; v2 requires separate controller_trigger_margin and aeb_actuation_delay fields before use",
+  "eligible_unique_aeb_runs": 44,
+  "vehicles": 10,
+  "scenarios": [
+    "AEB",
+    "CBLA",
+    "CBNA",
+    "CCFT",
+    "CCRM",
+    "CCRS",
+    "CCRs",
+    "CPFA",
+    "CPLA",
+    "CPNA",
+    "CPNCO",
+    "CPTA",
+    "OTHER",
+    "SCP"
+  ],
+  "parameters": {
+    "brake_deceleration": {
+      "status": "abd_supported_observed_response_envelope",
+      "dist": "uniform_sensitivity_envelope",
+      "low": 4.209,
+      "high": 9.097,
+      "summary_distance_equivalent_mps2": {
+        "n": 44,
+        "min": 4.209,
+        "p05": 4.8067,
+        "median": 7.4985,
+        "p95": 8.7997,
+        "max": 9.097,
+        "mean": 7.1782,
+        "std": 1.3333
+      },
+      "peak_deceleration_diagnostic_signed_mps2": {
+        "n": 44,
+        "min": -11.461,
+        "p05": -11.3373,
+        "median": -10.417,
+        "p95": -8.6463,
+        "max": -6.119,
+        "mean": -10.2497,
+        "std": 1.0717
+      }
+    },
+    "aeb_actuation_delay": {
+      "status": "operator_engineering_prior_not_observed_ecu_signal",
+      "dist": "uniform",
+      "low": 0.15,
+      "nominal": 0.25,
+      "high": 0.35,
+      "unit": "s",
+      "mapping": "T_AEB_proxy = T_dec_03 - aeb_actuation_delay"
+    },
+    "brake_build_up": {
+      "status": "abd_supported_observed_onset_to_peak_diagnostic",
+      "summary_s": {
+        "n": 44,
+        "min": 0.3,
+        "p05": 0.3315,
+        "median": 0.5,
+        "p95": 1.4465,
+        "max": 1.75,
+        "mean": 0.6368,
+        "std": 0.3461
+      },
+      "note": "Retained as an empirical diagnostic pending a ramp-model fit."
+    },
+    "controller_trigger_margin": {
+      "status": "not_identified_separately_from_geometry_and_trigger_policy",
+      "observed_margin_time_diagnostic_s": {
+        "n": 44,
+        "min": -0.8609,
+        "p05": -0.4239,
+        "median": 0.0142,
+        "p95": 0.5188,
+        "max": 1.8973,
+        "mean": 0.0441,
+        "std": 0.4081
+      }
+    }
+  },
+  "fcw": {
+    "observed_audio_edges": 188,
+    "test_intent": "fcw_only_no_aeb",
+    "aeb_linkage_eligible_runs": 0,
+    "braking_interpretation_counts": {
+      "robot_braking_after_fcw": 153,
+      "manual_braking_after_fcw": 33,
+      "no_observed_braking": 2
+    }
+  },
+  "provenance": {
+    "aeb_activation": "engineering-prior proxy, never an observed ECU signal",
+    "fcw_activation": "AVAD3-observed audible warning edge",
+    "driver_intervention": "operator review of Robot Controller paths and velocity traces"
+  },
+  "source_runs": [
+    {
+      "run": "14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R1.txt",
+      "sha256": "35fb5df3df23cb95234d3de51301c9f025625a5c0338e4eb63ab93ea75848a50",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R2.txt",
+      "sha256": "033633ab282ea714ede9be3d7f706837d6170a3d5b16f95b9e91aa2ef900918a",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/38-CCFT [L.6.1.9]/39-AEB/40-Farside/41-GVT 20 kph/133-VUT 10 kph; CCFT 20 kph AEB/V14_T133_R2.txt",
+      "sha256": "997eb6a0f63d70c6e09d932504e8f38b3fc18ee47df258dd5f9152ea9ea7232f",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/10-C-NCAP VRU 2024 (VUT)/22-CPTA-LN [O.6.1.9]/23-CPTA-LN 5 kph AEB (Day)/503-VUT 10 kph; CPTA-LN 5 kph AEB (Day)/V14_T503_R4.txt",
+      "sha256": "eb36e988b2fa11b6a254e7077b6306d0d8ee8e2d141c09ea52c85f53563b7caa",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/56-VUT 20 kph; CCRs -50 % AEB/V14_T56_R3.txt",
+      "sha256": "b926621fbf063d0f1cca4aa4737d65c3db4cc2558376b2bea5a49aa01d819cf9",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "Guang_Qi_E8_data/8-L6.1.5-CCRs-VUT/10-L6.1.5-CCRS-VUT-AEB/11-L6.1.5-CCRs-VUT-AEB/170-L6.1.5-CCRs-VUT-AEB-20kph-(-50%)/V5_T170_R1.txt",
+      "sha256": "dd9983f7efa7bb6cff8310f9a7520c0394ab9f5dbd4ce2705cff63f69b2b7586",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "Guang_Qi_S9_data/2-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/27-VUT 20 kph; CCRs -50 % AEB/V4_T27_R1.txt",
+      "sha256": "2092e3eec4fac1aff91771c397f0d089c2a91b387be0cd0821c9c29759faf847",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "8-huajingS/5-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/60-VUT 40 kph; CCRs -50 % AEB/V8_T60_R2.txt",
+      "sha256": "cec612ed04f82f4ee55d162d76f2c0deb387bebfe8f0b9152cb0a819050a8db0",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/5-C-IASI ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB-CNCAP/11-CCRs/58-VUT 40 kph; CCRs -50 % AEB (1)/V9_T58_R1.txt",
+      "sha256": "a4dfaa4c596f2cae36152cbf08407e892d1a70cadf548ee34a5e22a177ab6c86",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "XPengP7+_data/2-C-NCAP ADAS 2024 (VUT)/15-SCP [L.6.1.7]/16-AEB/17-Farside/18-GVT 20 kph/76-VUT 30 kph; CCScp Farside GVT 20 kph AEB/V2_T76_R1.txt",
+      "sha256": "cef914986c18d4d94d239ea77791187841c0aaa9bc13862a6dc4880b6d760963",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "Guang_Qi_A66_data/2-C-NCAP VRU 2024 (VUT)/19-CPFAO [O.6.1.8]/21-CPFAO-25 6.5 kph AEB (Night)/89-VUT 60 kph; CPFAO-25 6.5 kph AEB (Night)/V3_T89_R1.txt",
+      "sha256": "8df67e490c5a6aa6ea2203d6ac685111e5fbf7f93d51c3cbd889ea36c945c0fc",
+      "intervention_class": "manual_after_aeb_stop"
+    },
+    {
+      "run": "6-C-NCAP 2024 Bao5/8-L6.1.5-CCRs-VUT/10-L6.1.5-CCRS-VUT-AEB/11-L6.1.5-CCRs-VUT-AEB/173-L6.1.5-CCRs-VUT-AEB-30kph-(+50%)/V6_T173_R1.txt",
+      "sha256": "47118330e429e71b15dfd0e85ddce7b890f1d6b3696d54485d1e23c7e6d3e01b",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "13-xiaopengG9/8-Euro NCAP AEB VRU 2020 Group (VUT)/5-Pedestrian Farside Scenarios/6-CPFA-50 8 kph (Day) [7.2.4]/332-VUT 60 kph; CPFA-50 8 kph (Day)/V13_T332_R2.txt",
+      "sha256": "d9853ba71ad8bb165fdefc67eaf5f16cd7680eb185b2ece633857cb5cd5c3fb6",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "15-TANG L-CNCAP2024/23-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/3329-VUT 40 kph; CCRs -50 % AEB/V15_T3329_R1.txt",
+      "sha256": "2283b23275f0392f6230619d47eab523c09128343feda224536fbb5ac88efab8",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/15-SCP [L.6.1.7]/16-AEB/17-Farside/18-GVT 20 kph/1788-VUT 30 kph; CCScp Farside GVT 20 kph AEB/V14_T1788_R4.txt",
+      "sha256": "b6acc97a011167f4c5f5a07274579f9431728fd4b7f3ef307e7e05099def6988",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/10-C-NCAP VRU 2024 (VUT)/30-CSFAO [O.6.2.6]/31-CSFAO-50 20 kph AEB (Day)/1797-VUT 15 kph; FCTB-50 20 kph AEB (Day)-ENCAP/V14_T1797_R1.txt",
+      "sha256": "1c91519991575a065e315b12fd1d9cbd0e15bc4ddb0caf8acaff01c62fa4a473",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/10-C-NCAP VRU 2024 (VUT)/17-CPNCO [O.6.1.7]/18-CPNCO-25 5 kph AEB (Day)/476-VUT 20 kph; CPNCO-25 5 kph AEB (Day)/V14_T476_R1.txt",
+      "sha256": "5893bdddfa4fd91a1013a430d27e68a9368a0e3e3b71127cafa57ac6215430fe",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/10-C-NCAP VRU 2024 (VUT)/12-CPLA [O.6.1.6]/13-CPLA-25 5 kph AEB (Day)/452-VUT 20 kph; CPLA-25 5 kph AEB (Day)/V14_T452_R3.txt",
+      "sha256": "63dcea75a96664167495c6ec163541bb1206e53512f89de5879ad2a3188a2d62",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/10-C-NCAP VRU 2024 (VUT)/32-CBLA [O.6.2.7]/33-CBLA-25 15 kph AEB (Day)/530-VUT 40 kph; CBLA-25 15 kph AEB (Day)/V14_T530_R1.txt",
+      "sha256": "6f7cffa2712dae5c4811efd671cf375caaaae0421fe36a8394627e892c182bf1",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/5-C-NCAP ADAS 2024 (VUT)/38-CCFT [L.6.1.9]/39-AEB/40-Farside/41-GVT 20 kph/133-VUT 10 kph; CCFT 20 kph AEB/V14_T133_R3.txt",
+      "sha256": "607d98e5f8f1c7ed6d4a20cac98aa1038a53f5e41e6f04cba9a704efe8dbe07b",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/10-C-NCAP VRU 2024 (VUT)/28-CBNAO [O.6.2.5]/29-CBNAO-50 15 kph AEB (Day)/631-VUT 40 kph; CBNA-50 15 kph AEB (Day)-ciasi/V14_T631_R2.txt",
+      "sha256": "e5f7259fa6c6ac5dbebdb63af13ebd68980b95017774895cb8f91c753e2b1b24",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/10-C-NCAP VRU 2024 (VUT)/24-CPTA-LF [O.6.1.10]/25-CPTA-LF 6.5 kph AEB (Day)/512-VUT 10 kph; CPTA-LF 6.5 kph AEB (Day)/V14_T512_R2.txt",
+      "sha256": "04d9f443820de82f2ad82c1b4d15e6e37331592e432758d4d6fa3097a09abca0",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "8-huajingS/7-C-NCAP VRU 2024 (VUT)/37-CSTA-RN [O.6.2.9]/38-CSTA-RN 20 kph AEB (Day)/370-VUT 20 kph; CSTA-RN 20 kph AEB (Day)/V8_T370_R2.txt",
+      "sha256": "84b5eeb1ecea400dc810b8e24edaa6002ae674fa3d00a6129c0fac4c47e48c49",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "Guang_Qi_S9_data/5-C-NCAP VRU 2024 (VUT)/35-CSTA-LN [O.6.2.8]/36-CSTA-LN 20 kph AEB (Day)/333-VUT 20 kph; CSTA-LN 20 kph AEB (Day)/V4_T333_R2.txt",
+      "sha256": "5453a7766f8cb69d58b29fe06c0812c4a8b4378e445ce49a248ed82772348b52",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "14-BZ3X/10-C-NCAP VRU 2024 (VUT)/19-CPFAO [O.6.1.8]/21-CPFAO-25 6.5 kph AEB (Night)/1775-VUT 40 kph; CPNA-25 5 kph AEB (Night)/V14_T1775_R1.txt",
+      "sha256": "a7df072a615bd51ef9711707dd2678d84277f1d6cea40bab97c4668f0c33c059",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/7-C-IASI VRU 2024 (VUT)/30-CSFA [O.6.2.6]/31-CSFA-50 20 kph AEB (Day)/502-VUT 20 kph; CSFA-50 20 kph AEB (Day) (1)/V9_T502_R3.txt",
+      "sha256": "78391f05336eaa6a792505f119272143ca27412112e1da26e3f219d4d424692a",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/9-Euro NCAP AEB Car-to-car 2023 (VUT)/25-AEB/27-CCRm [8.2.2.2]/854-VUT 60 kph; CCRm 100 % AEB (1)/V9_T854_R1.txt",
+      "sha256": "6b203636273d2f8dd160a7c4b458c4f0321e56a2ca731fdc4becc94da248f3bf",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "8-huajingS/7-C-NCAP VRU 2024 (VUT)/17-CPNCO [O.6.1.7]/18-CPNCO-25 5 kph AEB (Day)/286-VUT 40 kph; CPNCO-25 5 kph AEB (Day)/V8_T286_R2.txt",
+      "sha256": "96fcd15ca3e62b807fb708ce6014487673ea088977063fb4796345af40257772",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "8-huajingS/7-C-NCAP VRU 2024 (VUT)/12-CPLA [O.6.1.6]/15-CPLA-25 5 kph AEB (Night)/262-VUT 40 kph; CPLA-25 5 kph AEB (Night)/V8_T262_R1.txt",
+      "sha256": "e85ea900e89aa40bd7339185b9881e977e9e2f993c9125b6d97b2fb90a41106f",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/7-C-IASI VRU 2024 (VUT)/28-CBNA [O.6.2.5]/29-CBNA-50 15 kph AEB (Day)/499-VUT 20 kph; CBNA-50 15 kph AEB (Day) (1)/V9_T499_R1.txt",
+      "sha256": "33428bea9de0e59102f56400394a98070ad8ce1befc58db7e82954c6158f46df",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/8-C-NCAP VRU 2024 (VUT)/17-CPNCO [O.6.1.7]/18-CPNCO-25 5 kph AEB (Day)/598-VUT 20 kph; CPNCO-25 5 kph AEB (Day) (1)/V9_T598_R3.txt",
+      "sha256": "781b5b2191b166a28b5233ddaa9985f35ad418d8a5f0bae22b38a2df6537f10e",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "8-huajingS/12-UN Regulation 152 (Subject Vehicle)/1-Mass in running order (MIRO)/4-Pedestrian Target (PT)/1465-VUT 20 kph; PT 5 kph Nearside AEBS; MIRO M1/V8_T1465_R1.txt",
+      "sha256": "e18b92507d5fe65ba675778863bf317358a1c396e0da455f22bfbd7b12db7823",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "13-xiaopengG9/8-Euro NCAP AEB VRU 2020 Group (VUT)/7-Pedestrian Nearside Scenarios/8-CPNA-25 5 kph (Day) [7.2.5]/353-VUT 40 kph; CPNA-25 5 kph (Day)/V13_T353_R1.txt",
+      "sha256": "ff2c30fc4a548f13c429b36a88055e81cc598a760d88ece96a9176c1d72697d7",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/8-C-NCAP VRU 2024 (VUT)/12-CPLA [O.6.1.6]/15-CPLA-25 5 kph AEB (Night)/583-VUT 40 kph; CPLA-25 5 kph AEB (Night) (1)/V9_T583_R2.txt",
+      "sha256": "02ee8d83ade14058fef2db2182b10dec66e43edc383fd45658df0b9ae409b110",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "Guang_Qi_A66_data/3-C-NCAP ADAS 2024 (VUT)/9-CCR [L.6.1]/10-AEB/11-CCRs/189-VUT 40 kph; CCRs -50 % AEB/V3_T189_R1.txt",
+      "sha256": "54570e72f9b54c69e492f33e40bfefd29eeb4fc23027171c651c453fe2bd77b8",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "Guang_Qi_E8_data/4-Cal/1707-O6.2.7-CPLA-VUT-AEB-20.5kph-(-25%)/V5_T1707_R1.txt",
+      "sha256": "340c8dcb4c865525bf93b4b88c842b790a24c31706ebfe6a62eb26c0d81e5c6c",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "XPengP7+_data/9-C-NCAP VRU 2024 (VUT)/22-CPTA-LN [O.6.1.9]/23-CPTA-LN 5 kph AEB (Day)/1170-VUT 10 kph; CPTA-LN 5 kph AEB (Day)/V2_T1170_R2.txt",
+      "sha256": "679f56bcf04612b868cae46e7d865ce30087eb10f27af07eed65783f7b20b439",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "Guang_Qi_S9_data/5-C-NCAP VRU 2024 (VUT)/17-CPNCO [O.6.1.7]/18-CPNCO-25 5 kph AEB (Day)/249-VUT 20 kph; CPNCO-25 5 kph AEB (Day)/V4_T249_R1.txt",
+      "sha256": "229b5a6fa4e502507152c5cc856d8f17827909414e8f6958c9b427d16a73926b",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "8-huajingS/5-C-NCAP ADAS 2024 (VUT)/38-CCFT [L.6.1.9]/39-AEB/40-Farside/42-GVT 40 kph/134-VUT 20 kph; CCFT 40 kph AEB/V8_T134_R3.txt",
+      "sha256": "9786b6d6fc8ef37b83425f7259d15b6d4f61b2faebdbcc6f0b3234b5e6e42e96",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/7-C-IASI VRU 2024 (VUT)/19-CPFAO [O.6.1.8]/21-CPNA-25 5 kph AEB (Night)/451-VUT 40 kph; CPFAO-25 6.5 kph AEB (Night) (1)/V9_T451_R2.txt",
+      "sha256": "d4c80883a61f49f18ec8b9a8d87b9d0704356127131096a2d630ee9117576eae",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "8-huajingS/5-C-NCAP ADAS 2024 (VUT)/15-SCP [L.6.1.7]/16-AEB/17-Farside/18-GVT 20 kph/103-VUT 30 kph; CCScp Farside GVT 20 kph AEB/V8_T103_R1.txt",
+      "sha256": "dcf17c8de360e9c59a0257196f78e87a41c1d62b06fc80d9937afdc3acc5c058",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/7-C-IASI VRU 2024 (VUT)/32-CBLA [O.6.2.7]/33-CBLA-50 45 kph& 65 Kph AEB (Day)/490-VUT 65 kph; CBLA-50 15 kph AEB (Day) (1)/V9_T490_R1.txt",
+      "sha256": "6d1919a3db9bf1a5ebb87b6b005cf28145d3264fbe021b0b2a950bfc14261063",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "9-BZ7/6-C-NCAP ADAS 2024 (VUT)/15-SCP [L.6.1.7]/16-AEB/17-Farside/18-GVT 20 kph/275-VUT 30 kph; CCScp Farside GVT 20 kph AEB (1)/V9_T275_R2.txt",
+      "sha256": "b67128a61223fca8ef1d087bdda689f43707ea89d8a9ac82840a44aea07598bf",
+      "intervention_class": "none_confirmed"
+    },
+    {
+      "run": "13-xiaopengG9/8-Euro NCAP AEB VRU 2020 Group (VUT)/13-Pedestrian Longitudinal Scenarios/14-CPLA-50 5 kph (Day) [7.2.7]/518-VUT 40 kph; CPLA-50 5 kph (Day)/V13_T518_R2.txt",
+      "sha256": "a8cbcce81c1ff60fddb6ed0014866ad697da5b3dd38a7eff8cb948e15aa73083",
+      "intervention_class": "none_confirmed"
+    }
+  ]
+}
