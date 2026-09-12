@@ -119,3 +119,19 @@ def test_braking_reference_for_visible_stationary_object():
     assert env.bodies[0].speed == 0
     assert not env.collision
     assert env.first_brake_time is not None
+
+
+def test_split_aeb_delay_preserves_legacy_replay_and_separates_new_roles():
+    legacy = ScenarioEnv()
+    legacy.reset(ScenarioSpec(response_delay=0.4))
+    assert legacy.controller_preview_delay == pytest.approx(0.4)
+    assert legacy.aeb_actuation_delay == pytest.approx(0.4)
+    assert len(legacy.brake_queue) == 20
+
+    split = ScenarioEnv()
+    split.reset(ScenarioSpec(response_delay=0.4,
+                             controller_preview_delay=0.25,
+                             aeb_actuation_delay=0.15))
+    assert split.controller_preview_delay == pytest.approx(0.25)
+    assert split.aeb_actuation_delay == pytest.approx(0.15)
+    assert len(split.brake_queue) == 8

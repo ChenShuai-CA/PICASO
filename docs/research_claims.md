@@ -96,16 +96,19 @@ ABD 不再承担当前论文的核心 RQ 或成功门槛。现有数据可以支
 - AEB 触发时刻 MAE、NCAP 合规或实车闭环部署结论。
 
 测试团队可提供 0.15–0.35 s（名义 0.25 s）的 request-to-−0.3 m/s²响应工程先验，并据此报告
-`T_AEB_proxy` 区间；该量只能标记为专家/工程先验，不能写成历史 TXT 实测 ECU 时刻。
+`T_AEB_proxy` 区间；request 与 ECU active 在无 CAN 时不可分辨，两个代理使用相同敏感性带。
+这些量只能标记为专家/工程先验，不能写成历史 TXT 实测 ECU 时刻。
 
-原因是测试没有连接车辆 CAN，且缺少独立踏板/压力通道。全目录复核已经确认大量运行具有同步的
-Object/Head tracker reference/actual 通道，可用于目标执行误差分析，但仍需剔除固定参考点偏置和
-异常残差。经测试人员复核，当前 AEB 响应池为 44 条唯一运行：43 条无人工接管，1 条在 AEB 完成
-首次刹停后才人工接管（分析窗截断在首次刹停）。这些运行可支持观测制动响应包络和工程先验
-`T_AEB_proxy`，仍不能升级为直接 ECU AEB 触发证据。另有 188 条 FCW-only 声音上升沿，其中
+原因是测试没有连接车辆 CAN。全目录复核已经确认大量运行具有同步的 Object/Head tracker
+reference/actual 通道，可用于目标执行误差分析，但仍需剔除固定参考点偏置和异常残差。经测试人员
+复核，43 条无人工接管运行可作为人工确认锚点；另有 637 条通过 BR 踏板力学签名和残余风险规则
+筛出的响应候选，合计形成 `aeb_dataset_v1=680`。其中 670 条在观测 onset 后 10 s 内停稳，按纵向
+接触代理排除 contact 后的 612 条给出等效减速度敏感性包络 U(5.801,8.951) m/s²。637 条机器筛选
+候选不能写成 ECU 确认 AEB，池化包络也不是车型均衡的概率分布。另有 188 条 FCW-only 声音上升沿，其中
 33 条 BR-zero 制动均确认是报警后人工接管，因此不进入 AEB 响应或代理校准。
-当前 `abd_supported_v1` 数值仅保留为历史可复现的 sensitivity envelope，论文统一称为
-“numerical sensitivity domain”。
+当前 `abd_supported_v1` 仅保留用于历史回放；新实验可使用
+`abd_derived_v2_sensitivity`，论文统一称为“ABD-supported numerical sensitivity domain”。
+仿真已将冻结控制器预瞄与 AEB 执行时延拆分，避免控制器随每次时延扰动同步改变触发点。
 
 当前可继续扩展 observed braking response 与目标平台执行误差分析；车辆 ECU 时延的直接校准仍需
 新增 CAN 或权威外部触发通道。这不是当前论文提交的前置条件。

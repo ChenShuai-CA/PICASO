@@ -20,7 +20,13 @@ class ScenarioSpec:
     controller: Literal['ttc', 'stopping'] = 'stopping'
     controller_threshold: float = 2.0
     brake_deceleration: float = 7.0
+    # Legacy combined parameter retained for replay of experiments created
+    # before the trigger-preview and brake-actuation delays were separated.
     response_delay: float = 0.2
+    # New experiments may set these independently.  ``None`` preserves the
+    # legacy behavior by falling back to ``response_delay`` for each role.
+    controller_preview_delay: float | None = None
+    aeb_actuation_delay: float | None = None
     action_delay_steps: int = 0
     target_accel_scale: float = 1.0
     observation_noise: float = 0.0
@@ -58,7 +64,10 @@ class ScenarioSpec:
             raise ValueError('invalid initial geometry, speed or horizon')
         if not (0 <= self.pedestrian_speed <= 3 and 0 <= self.occluder_speed <= 15):
             raise ValueError('target speed out of bounds')
-        if min(self.response_delay, self.observation_noise, self.pedestrian_delay) < 0:
+        optional_delays = [v for v in (
+            self.controller_preview_delay, self.aeb_actuation_delay) if v is not None]
+        if min(self.response_delay, self.observation_noise, self.pedestrian_delay,
+               *optional_delays) < 0:
             raise ValueError('negative delay/noise')
         if not (0 <= self.action_delay_steps <= 10 and self.brake_deceleration > 0
                 and 0 < self.target_accel_scale <= 2):

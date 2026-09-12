@@ -68,8 +68,19 @@ def perturb_spec(spec, rng, calibrated=None):
         s.perturbation_source = 'assumed_sensitivity_not_abd_calibrated'
         return s
     p = calibrated['parameters']
-    s.response_delay = float(rng.uniform(p['response_delay']['low'],
-                                         p['response_delay']['high']))
+    if 'aeb_actuation_delay' in p:
+        actuation = p['aeb_actuation_delay']
+        preview = p['controller_preview_delay']
+        s.aeb_actuation_delay = float(rng.uniform(
+            actuation['low'], actuation['high']))
+        s.controller_preview_delay = float(rng.uniform(
+            preview['low'], preview['high']))
+    else:
+        # Backward-compatible consumption of v1 and preregistered configs.
+        s.response_delay = float(rng.uniform(p['response_delay']['low'],
+                                             p['response_delay']['high']))
+        s.aeb_actuation_delay = None
+        s.controller_preview_delay = None
     s.brake_deceleration = float(rng.uniform(p['brake_deceleration']['low'],
                                              p['brake_deceleration']['high']))
     steps = p['action_delay_steps']
@@ -85,9 +96,12 @@ def load_perturb_config(path):
     config = json.loads(Path(path).read_text(encoding='utf-8'))
     if not isinstance(config.get('version'), str) or not config['version']:
         raise ValueError('perturb config requires a nonempty version')
-    required = ('brake_deceleration', 'response_delay', 'action_delay_steps',
-                'target_accel_scale')
     parameters = config.get('parameters', {})
+    split_delay = 'aeb_actuation_delay' in parameters
+    required = ('brake_deceleration', 'action_delay_steps',
+                'target_accel_scale') + (
+                    ('aeb_actuation_delay', 'controller_preview_delay')
+                    if split_delay else ('response_delay',))
     missing = [name for name in required if not {'dist', 'low', 'high'} <= set(
         parameters.get(name, {}))]
     if missing:

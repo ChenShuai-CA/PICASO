@@ -84,3 +84,32 @@ def test_shipped_v1_config_consumable():
     assert p['response_delay']['status'].startswith('retained_assumed_')
     assert (p['response_delay']['low'], p['response_delay']['high']) == (0.1, 0.4)
     assert s.perturbation_source == 'abd_supported_v1_partial'
+
+
+def test_split_delay_config_does_not_overwrite_legacy_delay(tmp_path):
+    params = {
+        'brake_deceleration': {'dist': 'uniform', 'low': 6.0, 'high': 8.0},
+        'aeb_actuation_delay': {'dist': 'uniform', 'low': 0.15, 'high': 0.35},
+        'controller_preview_delay': {'dist': 'uniform', 'low': 0.25, 'high': 0.25},
+        'action_delay_steps': {'dist': 'integers', 'low': 0, 'high': 2},
+        'target_accel_scale': {'dist': 'uniform', 'low': 0.85, 'high': 1.15},
+    }
+    path = tmp_path / 'split.json'
+    path.write_text(json.dumps({'version': 'abd_split_v2', 'parameters': params}),
+                    encoding='utf-8')
+    config = load_perturb_config(path)
+    spec = ScenarioSpec(response_delay=0.4)
+    sampled = perturb_spec(spec, np.random.default_rng(9), calibrated=config)
+    assert 0.15 <= sampled.aeb_actuation_delay <= 0.35
+    assert sampled.controller_preview_delay == pytest.approx(0.25)
+    assert sampled.response_delay == pytest.approx(0.4)
+
+
+def test_split_delay_config_requires_controller_preview(tmp_path):
+    path = make_config(tmp_path)
+    config = json.loads(path.read_text(encoding='utf-8'))
+    config['parameters']['aeb_actuation_delay'] = config['parameters'].pop(
+        'response_delay')
+    path.write_text(json.dumps(config), encoding='utf-8')
+    with pytest.raises(ValueError, match='controller_preview_delay'):
+        load_perturb_config(path)

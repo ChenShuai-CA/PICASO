@@ -1,37 +1,40 @@
 {
   "n_runs": 680,
+  "n_vehicles": 10,
+  "n_operator_confirmed": 43,
+  "n_machine_screened": 637,
   "parse_errors": 0,
   "stopped_within_10s": 670,
   "equiv_decel_clean_stop": {
     "n": 612,
     "min": 1.405,
-    "p5": 5.772,
-    "median": 7.868,
-    "p95": 8.952,
+    "p5": 5.801,
+    "median": 7.866,
+    "p95": 8.951,
     "max": 9.322
   },
   "equiv_decel_all_stopped": {
     "n": 667,
     "min": 0.609,
-    "p5": 5.573,
+    "p5": 5.597,
     "median": 7.81,
-    "p95": 8.932,
+    "p95": 8.93,
     "max": 9.322
   },
   "peak_decel_signed": {
     "n": 680,
     "min": -20.333,
-    "p5": -14.551,
+    "p5": -14.427,
     "median": -11.783,
-    "p95": -10.536,
+    "p95": -10.54,
     "max": -5.67
   },
   "margin_time_proxy": {
     "n": 677,
     "min": -0.718,
-    "p5": -0.349,
+    "p5": -0.348,
     "median": 0.066,
-    "p95": 0.858,
+    "p95": 0.847,
     "max": 7.506
   },
   "ttc_coverage": 677,
@@ -40,6 +43,7 @@
     0.25,
     0.35
   ],
+  "proxy_before_log_start": 1,
   "outcome_counts": {
     "clear": 516,
     "contact_and_stopped": 56,

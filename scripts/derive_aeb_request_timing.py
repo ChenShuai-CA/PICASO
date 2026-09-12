@@ -5,8 +5,11 @@ never recorded. Operator decision (2026-09-13): the method pipeline does not
 need them -- derive request time by back-calculating a fixed actuation delay
 of 0.15-0.35 s from the observed braking onset:
 
-    active  = onset of the detected deceleration event (what the log shows)
-    request = onset - delay, delay in {0.15, 0.25, 0.35} (sensitivity bands)
+    response onset = onset of the detected deceleration event (what the log shows)
+    request/active proxy = onset - delay, delay in {0.15, 0.25, 0.35}
+
+Request and ECU-active cannot be separated without vehicle CAN, so their proxy
+columns are deliberately identical.  They are never labelled as observations.
 
 This unblocks request-to-response delay calibration *as a method*; the delay
 value itself is an injected prior, not a measurement, and every consumer must
@@ -25,8 +28,8 @@ Per run over aeb_dataset_v1 (680 unique pedal-signature rows):
 Outputs runs/20260913_abd_request_timing/:
 - timing.csv                 per-run timestamps and diagnostics
 - abd_derived_v2_sensitivity.json  perturb_spec-consumable config
-  (brake_deceleration = v1 measured envelope excluding contact runs;
-   response_delay = U(0.15, 0.35) operator back-calculation prior)
+  (brake_deceleration = v1 observed-response sensitivity envelope excluding
+   contact-proxy runs; aeb_actuation_delay = U(0.15, 0.35) operator prior)
 - summary.json               distributions
 """
 from __future__ import annotations
@@ -67,8 +70,9 @@ def _score(task):
            'onset_s': '', 'onset_speed_kph': '', 'peak_decel_ms2': '',
            'stopped': '', 'stop_rel_s': '', 'end_speed_kph': '',
            'equiv_decel_ms2': '', 'onset_ttc_s': '', 'margin_time_s': '',
-           'active_s': '',
-           **{f'request_s_d{int(d*1000):03d}': '' for d in BACKCALC_S}}
+           'observed_response_onset_s': '',
+           **{f'aeb_request_proxy_s_d{int(d*1000):03d}': '' for d in BACKCALC_S},
+           **{f'aeb_active_proxy_s_d{int(d*1000):03d}': '' for d in BACKCALC_S}}
     try:
         _, delimiter, names, _, data_offset = _header(path)
         selected = [i for i, name in enumerate(names) if name in NEED]
@@ -118,10 +122,11 @@ def _score(task):
             rec['margin_time_s'] = round(
                 ttc0 - (v0 / 3.6) / abs(peak), 3)
 
-        rec['active_s'] = rec['onset_s']
+        rec['observed_response_onset_s'] = rec['onset_s']
         for d in BACKCALC_S:
-            rec[f'request_s_d{int(d*1000):03d}'] = round(
-                float(time[onset]) - d, 3)
+            proxy = round(float(time[onset]) - d, 3)
+            rec[f'aeb_request_proxy_s_d{int(d*1000):03d}'] = proxy
+            rec[f'aeb_active_proxy_s_d{int(d*1000):03d}'] = proxy
         return rec
     except Exception as exc:
         rec['stopped'] = f'parse_error:{type(exc).__name__}'
@@ -131,12 +136,12 @@ def _score(task):
 def _stats(values):
     if not values:
         return {'n': 0}
-    v = sorted(values)
-    return {'n': len(v), 'min': round(v[0], 3),
-            'p5': round(v[max(0, int(.05 * len(v)) - 1)], 3),
-            'median': round(v[len(v) // 2], 3),
-            'p95': round(v[min(len(v) - 1, int(.95 * len(v)))], 3),
-            'max': round(v[-1], 3)}
+    v = np.asarray(values, dtype=float)
+    return {'n': len(v), 'min': round(float(v.min()), 3),
+            'p5': round(float(np.quantile(v, .05)), 3),
+            'median': round(float(np.median(v)), 3),
+            'p95': round(float(np.quantile(v, .95)), 3),
+            'max': round(float(v.max()), 3)}
 
 
 def main():
@@ -158,7 +163,8 @@ def main():
     out.sort(key=lambda r: order[r['run']])
     with (OUT_DIR / 'timing.csv').open('w', encoding='utf-8-sig',
                                        newline='') as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(out[0].keys()))
+        writer = csv.DictWriter(handle, fieldnames=list(out[0].keys()),
+                                lineterminator='\n')
         writer.writeheader()
         writer.writerows(out)
 
@@ -176,6 +182,13 @@ def main():
 
     summary = {
         'n_runs': len(out),
+        'n_vehicles': len({r['vehicle'] for r in out}),
+        'n_operator_confirmed': sum(
+            r['operator_label'] in ('none_confirmed', 'manual_after_aeb_stop')
+            for r in v1),
+        'n_machine_screened': sum(
+            r['operator_label'] not in ('none_confirmed', 'manual_after_aeb_stop')
+            for r in v1),
         'parse_errors': sum(1 for r in out
                             if str(r['stopped']).startswith('parse_error')
                             or str(r['stopped']) == 'no_event'),
@@ -186,6 +199,9 @@ def main():
         'margin_time_proxy': _stats(margin),
         'ttc_coverage': ttc_cov,
         'backcalc_delay_bands_s': list(BACKCALC_S),
+        'proxy_before_log_start': sum(
+            any(float(r[f'aeb_request_proxy_s_d{int(d*1000):03d}']) < 0
+                for d in BACKCALC_S) for r in out),
         'outcome_counts': dict(Counter(r['outcome'] for r in out)),
     }
     (OUT_DIR / 'summary.json').write_text(
@@ -198,23 +214,25 @@ def main():
     config = {
         'version': 'abd_derived_v2_sensitivity',
         'created': '2026-09-13',
-        'purpose': 'scenario_lab perturb_spec calibrated parameter draws',
-        'dataset': 'aeb_dataset_v1 (680 unique pedal-signature runs; '
-                   'operator residual-risk removals applied)',
+        'purpose': 'scenario_lab ABD-supported sensitivity parameter draws',
+        'dataset': 'aeb_dataset_v1 (680 unique pedal-signature-screened '
+                   'response candidates; 43 operator-confirmed and 637 '
+                   'machine-screened after residual-risk removals)',
         'parameters': {
             'brake_deceleration': {
                 'dist': 'uniform',
                 'low': env['p5'],
                 'high': env['p95'],
                 'unit': 'm/s2 (positive distance-equivalent constant magnitude)',
-                'status': 'abd_v1_measured_envelope_p5_p95_excluding_contact_runs',
+                'status': 'abd_supported_observed_response_envelope_p5_p95',
                 'summary_distance_equivalent_mps2': env,
                 'n_source_runs': env['n'],
                 'mapping': 'a_eff=(v_onset^2-v_end^2)/(2*integral(v dt)); '
                            'stop <=1 kph within 10 s of onset',
-                'evidence': 'aeb_dataset_v1 stopped runs with outcome != '
-                            'contact_and_stopped (contact deceleration is '
-                            'partly collision dynamics). Sampling bounds are '
+                'evidence': 'aeb_dataset_v1 stopped runs not classified as '
+                            'contact_and_stopped by the longitudinal-distance '
+                            'proxy (contact deceleration is partly collision '
+                            'dynamics). Sampling bounds are '
                             'the 5-95 percentile envelope: at n=612 the raw '
                             'minimum (1.405 m/s2, 10 runs <4.5) reflects '
                             'segmented intermittent braking (CPLA/CPTA '
@@ -224,31 +242,43 @@ def main():
                             'Sensitivity envelope, not a fitted fleet '
                             'distribution.'
             },
-            'response_delay': {
+            'aeb_actuation_delay': {
                 'dist': 'uniform',
                 'low': 0.15,
                 'high': 0.35,
                 'status': 'synthetic_backcalculation_operator_prior',
-                'backcalculation': 'request_time = observed_onset - delay; '
-                                   'active_time = observed_onset. Bands '
-                                   '{0.15, 0.25, 0.35} s tabulated per run in '
-                                   'timing.csv',
+                'backcalculation': 'request/active proxy = observed response '
+                                   'onset - delay. Request and ECU-active '
+                                   'cannot be separated without CAN; bands '
+                                   '{0.15, 0.25, 0.35} s are tabulated per '
+                                   'run in timing.csv',
                 'evidence': 'operator decision 2026-09-13: no vehicle CAN / '
                             'AEB request channel exists; the 0.15-0.35 s '
                             'actuation-delay prior is INJECTED, not measured. '
-                            'This config unblocks the request-to-response '
-                            'calibration METHOD; consumers must keep the '
+                            'This config supports a request-to-response '
+                            'sensitivity mechanism; consumers must keep the '
                             'synthetic-request labeling and never report the '
                             'delay as an AEB timing measurement',
                 'observed_margin_proxy_v1': summary['margin_time_proxy']
+            },
+            'controller_preview_delay': {
+                'dist': 'uniform',
+                'low': 0.25,
+                'high': 0.25,
+                'status': 'frozen_controller_assumption_not_abd_identified',
+                'evidence': 'fixed nominal preview for the frozen simulated '
+                            'ego controller; held separate from sampled AEB '
+                            'actuation delay so the controller does not know '
+                            'each perturbation draw'
             },
             'action_delay_steps': {
                 'dist': 'integers',
                 'low': 0,
                 'high': 2,
                 'status': 'retained_assumed_not_identifiable',
-                'evidence': '0-2 decision steps (<=40 ms) below 100 Hz log '
-                            'resolution without the AEB request signal'
+                'evidence': '0-2 scenario_lab decision steps (0-200 ms at '
+                            'DECISION_DT=0.1 s); retained assumption because '
+                            'the VUT logs do not identify NPC action delay'
             },
             'target_accel_scale': {
                 'dist': 'uniform',
@@ -261,20 +291,28 @@ def main():
             }
         },
         'limitations': [
-            'response_delay is an injected prior; timing.csv request columns '
-            'are synthetic, derived by subtracting fixed bands from onset',
-            'brake_deceleration bounds are p5-p95 of 612 clean stopped runs; '
-            'contact runs excluded (collision dynamics); 10 runs below '
+            'aeb_actuation_delay is an injected prior; timing.csv request and '
+            'active proxy columns are synthetic, derived by subtracting fixed '
+            'bands from observed response onset',
+            'brake_deceleration bounds are p5-p95 of 612 stopped runs outside '
+            'the longitudinal contact proxy; 10 runs below '
             '4.5 m/s2 are segmented-braking dilution, kept in the recorded '
             'extrema but outside the sampling bounds',
             'equiv deceleration assumes constant-deceleration stopping '
             'distance; mid-event AEB release runs still included when they '
             'stopped within 10 s',
-            'margin_time_proxy has negative tail (p5 -0.349 s): trigger '
+            'margin_time_proxy has negative tail (p5 about -0.35 s): trigger '
             'occurred later than the ideal braking point at some speed '
             'regimes; descriptive only',
+            'one 0.35 s proxy precedes the available log start and is retained '
+            'as an explicit extrapolation rather than clipped',
+            'the pooled envelope is dominated by the two largest vehicle '
+            'groups and is a sensitivity domain, not a fleet probability '
+            'distribution',
+            '637 of 680 response candidates are machine-screened from ABD '
+            'pedal mechanics rather than operator-confirmed or ECU-labelled',
             'this is a method-pipeline deliverable, not an AEB timing '
-            'measurement'
+            'measurement or a sim-real bias estimate'
         ]
     }
     (OUT_DIR / 'abd_derived_v2_sensitivity.json').write_text(

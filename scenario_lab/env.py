@@ -37,7 +37,18 @@ class ScenarioEnv:
         self.tracks = [{} for _ in self.bodies]
         self.mask = np.array([1., float(s.branch == 'dual')], dtype=np.float32)
         self.action_queue = deque([np.zeros((2, 2)) for _ in range(s.action_delay_steps)])
-        self.brake_queue = deque([0.] * int(round(s.response_delay / DT)))
+        # Historical specs used one response_delay for both the controller's
+        # stopping-distance preview and physical brake actuation.  The split
+        # fields let new sensitivity studies perturb actuation without giving
+        # the controller advance knowledge of the sampled execution delay.
+        self.controller_preview_delay = (
+            s.response_delay if s.controller_preview_delay is None
+            else s.controller_preview_delay)
+        self.aeb_actuation_delay = (
+            s.response_delay if s.aeb_actuation_delay is None
+            else s.aeb_actuation_delay)
+        self.brake_queue = deque(
+            [0.] * int(round(self.aeb_actuation_delay / DT)))
         self.last_actions = np.zeros((2, 2))
         self.min_clearance = float('inf')
         self.peak_risk = 0.
@@ -144,7 +155,9 @@ class ScenarioEnv:
                 trigger = ttc <= self.spec.controller_threshold
             else:
                 stopping = ego.speed ** 2 / (2 * self.spec.brake_deceleration)
-                trigger = dx - 2.6 <= stopping + ego.speed * self.spec.response_delay + self.spec.controller_threshold
+                trigger = (dx - 2.6 <= stopping
+                           + ego.speed * self.controller_preview_delay
+                           + self.spec.controller_threshold)
             if trigger:
                 return -self.spec.brake_deceleration
         return 0.
