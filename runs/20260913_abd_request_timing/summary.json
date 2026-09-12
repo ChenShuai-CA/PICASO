@@ -1,0 +1,49 @@
+{
+  "n_runs": 680,
+  "parse_errors": 0,
+  "stopped_within_10s": 670,
+  "equiv_decel_clean_stop": {
+    "n": 612,
+    "min": 1.405,
+    "p5": 5.772,
+    "median": 7.868,
+    "p95": 8.952,
+    "max": 9.322
+  },
+  "equiv_decel_all_stopped": {
+    "n": 667,
+    "min": 0.609,
+    "p5": 5.573,
+    "median": 7.81,
+    "p95": 8.932,
+    "max": 9.322
+  },
+  "peak_decel_signed": {
+    "n": 680,
+    "min": -20.333,
+    "p5": -14.551,
+    "median": -11.783,
+    "p95": -10.536,
+    "max": -5.67
+  },
+  "margin_time_proxy": {
+    "n": 677,
+    "min": -0.718,
+    "p5": -0.349,
+    "median": 0.066,
+    "p95": 0.858,
+    "max": 7.506
+  },
+  "ttc_coverage": 677,
+  "backcalc_delay_bands_s": [
+    0.15,
+    0.25,
+    0.35
+  ],
+  "outcome_counts": {
+    "clear": 516,
+    "contact_and_stopped": 56,
+    "near_contact_0_5": 24,
+    "passed_or_swept": 84
+  }
+}

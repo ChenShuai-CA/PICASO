@@ -119,6 +119,12 @@ force_min_win/force_max_win/cmd_abs_max_win/tension/screen_flag_noisy/operator_l
 AEB ECU 信号观测；无车辆 CAN 边界不变。foot/裁决/中途接管未入集。张力+压缩同窗、
 阈值边缘（如 V15_T5222_R1 fmax 50.88 N、fmin −8.28 N）共 6 条在队列中等操作员。
 
+**v1 升级（2026-09-13，操作员决策）**：46 条队列永久排除（不再复核）；v0 内剔除
+foot_pre_event=1（12 条）与无张力 force≥30 N 且无操作员确认（15 条）两类轻脚力
+残余风险 → **aeb_dataset_v1 = 680 unique**（dragged 672 + static 8，确认 43）。
+明细 `aeb_dataset_v1_removed.csv`；倒推 request/active 时间戳与时延校准配置见
+`runs/20260913_abd_request_timing/REPORT.md`。
+
 ## 8. 碰撞结局扫描（scripts/scan_abd_contact_outcome.py，1,160 run 全量）
 
 事件窗 ±2 s 内 Relative longitudinal distance 最小值分类；**过零类再按"过零时车速

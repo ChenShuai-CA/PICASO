@@ -1,0 +1,63 @@
+{
+  "version": "abd_derived_v2_sensitivity",
+  "created": "2026-09-13",
+  "purpose": "scenario_lab perturb_spec calibrated parameter draws",
+  "dataset": "aeb_dataset_v1 (680 unique pedal-signature runs; operator residual-risk removals applied)",
+  "parameters": {
+    "brake_deceleration": {
+      "dist": "uniform",
+      "low": 5.772,
+      "high": 8.952,
+      "unit": "m/s2 (positive distance-equivalent constant magnitude)",
+      "status": "abd_v1_measured_envelope_p5_p95_excluding_contact_runs",
+      "summary_distance_equivalent_mps2": {
+        "n": 612,
+        "min": 1.405,
+        "p5": 5.772,
+        "median": 7.868,
+        "p95": 8.952,
+        "max": 9.322
+      },
+      "n_source_runs": 612,
+      "mapping": "a_eff=(v_onset^2-v_end^2)/(2*integral(v dt)); stop <=1 kph within 10 s of onset",
+      "evidence": "aeb_dataset_v1 stopped runs with outcome != contact_and_stopped (contact deceleration is partly collision dynamics). Sampling bounds are the 5-95 percentile envelope: at n=612 the raw minimum (1.405 m/s2, 10 runs <4.5) reflects segmented intermittent braking (CPLA/CPTA decel-release-restop) diluting the full-window average, not weak actuators; full extrema are recorded in summary_distance_equivalent_mps2. Sensitivity envelope, not a fitted fleet distribution."
+    },
+    "response_delay": {
+      "dist": "uniform",
+      "low": 0.15,
+      "high": 0.35,
+      "status": "synthetic_backcalculation_operator_prior",
+      "backcalculation": "request_time = observed_onset - delay; active_time = observed_onset. Bands {0.15, 0.25, 0.35} s tabulated per run in timing.csv",
+      "evidence": "operator decision 2026-09-13: no vehicle CAN / AEB request channel exists; the 0.15-0.35 s actuation-delay prior is INJECTED, not measured. This config unblocks the request-to-response calibration METHOD; consumers must keep the synthetic-request labeling and never report the delay as an AEB timing measurement",
+      "observed_margin_proxy_v1": {
+        "n": 677,
+        "min": -0.718,
+        "p5": -0.349,
+        "median": 0.066,
+        "p95": 0.858,
+        "max": 7.506
+      }
+    },
+    "action_delay_steps": {
+      "dist": "integers",
+      "low": 0,
+      "high": 2,
+      "status": "retained_assumed_not_identifiable",
+      "evidence": "0-2 decision steps (<=40 ms) below 100 Hz log resolution without the AEB request signal"
+    },
+    "target_accel_scale": {
+      "dist": "uniform",
+      "low": 0.85,
+      "high": 1.15,
+      "status": "retained_assumed_npc_side_not_in_vut_logs",
+      "evidence": "parameter scales NPC actions; VUT-side exports have tracker reference/actual channels but no NPC execution-error mapping was fitted"
+    }
+  },
+  "limitations": [
+    "response_delay is an injected prior; timing.csv request columns are synthetic, derived by subtracting fixed bands from onset",
+    "brake_deceleration bounds are p5-p95 of 612 clean stopped runs; contact runs excluded (collision dynamics); 10 runs below 4.5 m/s2 are segmented-braking dilution, kept in the recorded extrema but outside the sampling bounds",
+    "equiv deceleration assumes constant-deceleration stopping distance; mid-event AEB release runs still included when they stopped within 10 s",
+    "margin_time_proxy has negative tail (p5 -0.349 s): trigger occurred later than the ideal braking point at some speed regimes; descriptive only",
+    "this is a method-pipeline deliverable, not an AEB timing measurement"
+  ]
+}

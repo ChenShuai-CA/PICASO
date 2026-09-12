@@ -1677,3 +1677,43 @@ tracker 疑换目标，交裁决）；V15_T5258_R1 属 robot_braked_main_window
 是独立维度列于 contact_outcome.csv）；aeb_dataset_v0 不变。AEB 签名集中 66 条
 真接触 + 30 条近接触构成"签名成立但未能避免接触"难例子集，供 observed-braking-
 response 分析优先使用（须 sha256 去重）。
+
+## 2026-09-13 · aeb_dataset_v1（残余风险剔除）+ 倒推 AEB request 时间戳与时延校准配置
+
+**操作员三项决策**：1) 46 条复核队列永久排除（不再等人工复核；mid-window 5 条
+"截尾可用"提议撤销）；2) 机器分类条目中人工无法排除人干预的残余风险直接剔除；
+3) 无车辆 CAN 不构成阻塞——从观测 onset 倒推 0.15~0.35 s 合成 AEB request 时刻，
+跑通 request-to-response 时延校准方法。
+
+**aeb_dataset_v1 = 680 unique**（`scripts/build_aeb_dataset_v1.py`）：v0 的 707 条
+剔除 27 = foot_pre_event=1 ×12（确认集 44/44 全为 0）+ 无张力且 force_max_win≥30 N
+且无操作员确认标签 ×15（确认集主力带中位 12.7/p90~25 N 之上；确认条目豁免——
+剔除目的即"无法人工排除"，确认集内该区间 2 条反例 V2_T76/V2_T1170 保留）。
+构成：dragged 672 + static 8、确认 43；结局 clear 516/passed 84/contact 56/near 24。
+
+**倒推时间戳**（`scripts/derive_aeb_request_timing.py`，52 s，0 解析错误；
+产物 runs/20260913_abd_request_timing/timing.csv 680 行）：每条 run 的
+`active_s`=观测 onset、`request_s_d150/d250/d350`=onset−{0.15,0.25,0.35} 三档
+敏感性带；诊断列含 peak 减速度（670/680 在 10 s 内停稳）、等效恒定减速度
+a_eff=(v₀²−v_end²)/(2∫v dt)、onset TTC（覆盖 677/680）、margin 代理
+（中位 0.066 s、p5 −0.349 s，部分速度档触发晚于理想制动点，仅描述）。
+
+**校准配置**（abd_derived_v2_sensitivity.json，通过 load_perturb_config 校验）：
+- brake_deceleration **U(5.772, 8.952)** m/s² = 612 条干净停车（非接触）等效减速度
+  p5–p95。与 10 条时代的 U(5.455,8.174) 比：域上移且收紧。**下尾处置留痕**：
+  10 条 equiv<4.5（1.6%，CPLA/CPTA 为主）为分段间歇制动摊薄（peak −12~−16），
+  完整极值 1.405 记录于 JSON、不入采样域——10 条用极值/612 条用分位数的理由：
+  极值包络在大样本下被单离群主导。
+- response_delay **U(0.15, 0.35)** s = 操作员倒推先验。**合成非测量**：下游不得
+  把它写成 AEB 时延测量；这解锁的是校准方法闭环（observed onset → 合成
+  request/active → response_delay 域 → perturb_spec 消费）。
+- action_delay_steps 0–2、target_accel_scale 0.85–1.15 保留假定（理由不变）。
+
+**过程中的失败与修复**：timing 脚本首跑 summary 统计比较 int 1 与字符串 '1' 导致
+stopped 计数 0、config 构造 KeyError 崩溃（timing.csv 本身正确）；修复后加
+n=0 拒绝写配置的保护重跑，全量通过。
+
+**本轮文件**：新增 scripts/build_aeb_dataset_v1.py、scripts/derive_aeb_request_timing.py；
+产物 runs/20260913_abd_request_timing/（timing.csv、abd_derived_v2_sensitivity.json、
+summary.json、REPORT.md）+ runs/20260912_abd_aeb_pedal_screen/{aeb_dataset_v1.csv,
+aeb_dataset_v1_removed.csv}；pedal_screen REPORT §7 补 v1 段。
