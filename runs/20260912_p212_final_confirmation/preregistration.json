@@ -1,0 +1,104 @@
+{
+  "protocol": "P2.12 one-time heldout confirmation of frozen P2.11 router-1",
+  "created_before_p212_conditions_and_outcomes": true,
+  "paper_scope": "conditional safety-critical scenario generation and budgeted candidate selection",
+  "scientific_scope": "one condition-adaptive prototype selection followed by one episode; not a continuously reactive actor and not AEB-calibrated validation",
+  "frozen_inputs": {
+    "prototype_library": {
+      "path": "runs/20260912_p28_conditional_router/frozen_library.json",
+      "sha256": "d4303d5eb7324de304825322a5f64d2e78c0451057826ff9b6aa99a1be34e5e7"
+    },
+    "single_ridge": {
+      "path": "runs/20260912_p28_conditional_router/router_single.npz",
+      "sha256": "d66de2683f49094c281290af98f2e7b17fc26854f9ca5506f99527829702c08b"
+    },
+    "dual_ridge": {
+      "path": "runs/20260912_p28_conditional_router/router_dual.npz",
+      "sha256": "cfa7a215dbea3598737f3cc5f68038df98cd47eaab4281fb1731a0d3af01e9ab"
+    },
+    "perturbation_config": {
+      "path": "runs/20260912_abd_calibration/abd_supported_v1.json",
+      "sha256": "051e304a0d8ec2db4e3fcfd9dae802f06f5ec18a23064b9ff38bfe395a0d2290",
+      "interpretation": "historically reproducible numerical sensitivity envelope; AEB calibration attribution withdrawn"
+    },
+    "p211_preregistration": {
+      "path": "runs/20260912_p211_single_candidate/preregistration.json",
+      "sha256": "3cdd44f3e9c877f9f40beb85211a5fc77fd5bd57ade94562f25e3f75aa75e6e3"
+    },
+    "p211_summary": {
+      "path": "runs/20260912_p211_single_candidate/summary.json",
+      "sha256": "67349bcc1b5338c0136ddc437cc82b53278273b0973a0c426fa132cd17c97fa0"
+    },
+    "p211_completed": {
+      "path": "runs/20260912_p211_single_candidate/completed.json",
+      "sha256": "ea09523edac7a63b0cd5a73993d9b95c2dd235efca6084d4ab148e586575900b"
+    },
+    "p211_fingerprint_audit": {
+      "path": "runs/20260912_p211_single_candidate/condition_fingerprint_audit.json",
+      "sha256": "918e7c0bdadf0a38a19f5fc1cd7a6150a31822cf8ca76556ad72cfd94007b34e"
+    }
+  },
+  "frozen_source_hashes": {
+    "scripts/run_p212_final_confirmation.py": "c980955ad342a22ddfdf04500c2a8842a11bdab68cc0ce5e7492d1f9c4e211ca",
+    "scripts/run_p211_single_candidate.py": "a35f0ad5e47f2507f7cf1777cd9a6dccd512c1ad64aed54a2f545f300723c6cd",
+    "scenario_lab/env.py": "cf8b2ea6f73b93f009e0ad7bc32470a624e4e1bdb68d8a50de6eefdaa9e10e22",
+    "scenario_lab/evaluate.py": "70550a40b33f5ef137e9c134d965bd3c0093535127c2d4b30357991dd2c44939",
+    "scenario_lab/train.py": "d714c80a5c9394c66cb3a8083a63a96319bb0560743b3ce5168ec13c894914e1",
+    "scenario_lab/pulse_router.py": "33fcd32420561a3d7df968a1849e2b1e2610d0229bbfb818da9e0eef6f577657",
+    "scenario_lab/routing_diagnostics.py": "47c7fb486236f43c3be7e39f1a03bb6d4c8b21bd8a3cbce8368b244d80ea5d0b",
+    "scenario_lab/pulse_set_data.py": "d3633c93b26017ecf391d2d787cd224143da3db3f1bd019f47ea110a27f22eac",
+    "scenario_lab/sampling.py": "57c5c8f564031cd20f078fa72e61b5b34597fe84d139155af0721e3ab6ff5f0f",
+    "scenario_lab/teacher.py": "c7b5f30fd231979560598cfe8b29719814aa588aa9694b204ad2fff7775075a0"
+  },
+  "frozen_method": {
+    "router": "P2.8 branch-specific ridge models with no refit or recalibration",
+    "router_input": "first five actor-visible history frames with visibility and presence masks; no hidden-target truth-fill",
+    "candidate_budget": 1,
+    "fixed_single_prototype": {
+      "single": 1,
+      "dual": 1
+    },
+    "role_action_mode": "lane_locked"
+  },
+  "heldout": {
+    "seed": 77000,
+    "generated_count_per_branch": 360,
+    "minimum_eligible_conditions_per_branch": 220,
+    "sampler_version": 2,
+    "purpose": "heldout",
+    "perturbations_per_condition": 5,
+    "eligibility": "nominal script episode is complete, valid, and safe; router, fixed-prototype, and perturbed-script outcomes never filter conditions",
+    "single_attempt": "generate exactly this seed once after explicit user authorization; interrupted execution may resume deterministic cached artifacts but completed results may not be rerun or replaced",
+    "legacy_seed41000": "remain sealed and unused because its smaller legacy P2 design does not match the P2.11 minimum eligible sample and final evaluation protocol"
+  },
+  "comparators": {
+    "primary_equal_budget": "strongest frozen training-rate fixed single prototype, head 1",
+    "secondary": "zero-action script under the same perturbation draw",
+    "negative_control": "5000 branch-wise permutations of frozen router top-1 assignments across conditions"
+  },
+  "inference": {
+    "condition_bootstrap_rounds": 5000,
+    "permutation_rounds": 5000,
+    "seed": 2041,
+    "alpha": 0.05,
+    "minimum_practical_alignment_delta": 0.05
+  },
+  "gate_each_branch": {
+    "minimum_eligible_conditions": 220,
+    "router1_minus_fixed1_condition_bootstrap_ci95_lower_strictly_above": 0,
+    "router1_minus_script_condition_bootstrap_ci95_lower_strictly_above": 0,
+    "router1_minus_permutation_mean_at_least": 0.05,
+    "permutation_p_one_sided_at_most": 0.05,
+    "router_candidate_valid_rate_at_least": 0.8,
+    "router_role_invalid_equals": 0,
+    "distinct_router_top1_heads_at_least": 2,
+    "modal_router_top1_share_at_most": 0.9
+  },
+  "decision": {
+    "both_branches_pass": "C3 becomes heldout-confirmed under the frozen numerical sensitivity protocol",
+    "either_branch_fails": "record final confirmation as a negative result; do not change model, seed, K, eligibility, denominator, or gate",
+    "k2_status": "P2.10 remains development evidence only and is not substituted after seeing P2.12"
+  },
+  "authorization_required": "--authorize-one-time-heldout",
+  "heldout_read": false
+}

@@ -1444,3 +1444,17 @@ router-1 / fixed-1 / script 为 0.352 / 0.308 / 0.000，router-1 相对 fixed-1 
 最终方法并具备之后一次性 heldout 评价资格。该结论仍限定为一次场景级条件选择加一次 rollout 的
 dangerous-and-valid 覆盖率；router 不是持续反应式 actor，当前扰动是数值敏感性域而非 AEB 校准分布。
 heldout 在 P2.11 中未检查、未读取。
+
+## 2026-09-12 · P2.12 一次性 final confirmation 预注册与授权门
+
+P2.11 通过并提交后，冻结一次性最终确认协议与执行脚本，但未生成、检查或读取 heldout 条件。
+P2.12 固定使用 seed77000、sampler/physics v2、`lane_locked`、每分支一次性生成 360 条条件、每条件
+5 个配对数值扰动，并要求每分支至少 220 个 nominal-script-safe 合格条件。最终方法保持 P2.11
+router-1；等预算基线为训练域最强 fixed-1，script 为次基线，5000 次条件置换为负控。统计门槛与
+P2.11 完全一致，任一分支失败都如实记为最终确认 FAIL，不允许改模型、改 K、改 seed、改分母或
+回退到 P2.10 router-2 重新解释。
+
+执行器在无参数时只验证冻结模型、P2.11 结果和仿真源文件哈希，并确认 heldout 尚未创建；只有收到
+明确授权并传入 `--authorize-one-time-heldout` 才会写入 attempt marker、生成条件和开始 rollout。
+完成标记存在后拒绝重跑；中断时只允许在同一预注册哈希与确定性缓存上恢复。旧
+`heldout_seed41000` 因较早 P2 设计的规模与筛选协议不匹配，继续封存且 P2.12 明确不读取。
