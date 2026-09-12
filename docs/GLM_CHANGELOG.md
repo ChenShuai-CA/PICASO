@@ -1481,3 +1481,36 @@ CI 下界 0.0009、置换增益 0.057，虽过预注册门槛但余量较窄，�
 最终结论限定为：冻结的场景级条件路由在每条件一个候选 rollout 的等预算下，提高 single/dual 的
 dangerous-and-valid 覆盖率。它不是持续反应式 actor；扰动仍是数值敏感性域，不是 AEB 校准分布，
 也不构成车辆/车型级验证。完成标记设为 `rerun_forbidden=true`，不得再运行或替换本 heldout。
+
+## 2026-09-12 · 目标端（GST/LaunchPad）数据调查与 target_accel_scale 论断修正
+
+**动机**：用户质询"ABD 数据集里面只有主车端（机器人）的数据吗？目标端 GST 和 LaunchPad 的
+数据都不在里面吗"。
+
+**方法**：临时脚本（runs/tmp_chans.py，用后已删）逐车型抽前 40 个 txt 稳健解析得到通道并集；
+对 4 个代表 run（V14_T56/V9_T52 CCRs、V15_T3400 CCFT、V15_T5195 CPTA）验证 tracker 通道
+数据存在性；盘点 BYD_Bao5/C-NCAP_2024 文件性质。
+
+**发现（证据全文：runs/20260911_abd_review/MANUAL_EVIDENCE.md E9）**：
+1. 5,543 个 txt 全部为 VUT 端单控制器 100 Hz 导出（13 文件夹 txt 计数见 E9）；LaunchPad80
+   专属通道组（Servo Brakes 等，RC §6.12.11.11.6）在全部车型缺席——GST/LaunchPad **自身**的
+   导出文件不在数据集内。
+2. 但 VUT 日志经 Synchro 中继含目标端实时状态与**指令**通道（Head tracker reference/actual
+   X/Y、forward velocity/acceleration、lateral error、Pedestrian articulation、Tracker
+   status/time error；RC p.112-113）：CCFT V15_T3400 actual+reference 全程有值
+   （lateral error ≤0.105 m）、CPTA V15_T5195 lateral error 0.009–0.043 m；CCRs（GVT 静止）
+   tracker 通道全零，与 AN-6092 p.15 "no test is run in RC on the GVT" 一致；Tracker
+   status=9、Tracker time error 全零（CCFtap 非 full-sync 模式，AN-6092 Appendix 2）。
+3. BYD_Bao5 文件夹 = 129 .pmc（路径表 Distance/Time/X/Y/Curvature）+129 .tem（测试方法）
+   +21 .spf（速度剖面 T/V/D），无 txt；C-NCAP_2024 = 3 份 PDF。
+
+**修正**：P3.2 `target_accel_scale` 证据中 "VUT-side ABD exports contain no NPC execution
+channels" 论断**错误**。`scripts/calibrate_abd_v1.py` evidence 文字与 status 已更正为
+`retained_assumed_not_fitted_v1_tracker_channels_exist`（v1 仍保留假定域：10 条入选 run 中
+运动目标仅 2 条、ref-actual 位置差映射到加速度缩放需专门建模；标注为未来版本候选数据源）。
+`abd_supported_v1.json` 属归因撤回后的历史复现产物，脚本现按 driver-intervention 确认门拒绝在
+无 `none_confirmed` 记录时重新生成（本次重跑确认报错 "driver intervention ... not confirmed-none
+for 10 eligible runs"，为 P3 归因撤回的设计行为，不绕过），JSON 内旧措辞不改动，以
+`runs/20260912_abd_calibration/REPORT.md` 同日更正为准。
+
+**测试**：pytest 全量 **106 passed**（本轮无 scenario_lab 代码改动，仅证据文字修正）。

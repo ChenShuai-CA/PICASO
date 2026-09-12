@@ -305,10 +305,19 @@ def main():
             },
             'target_accel_scale': {
                 'dist': 'uniform', 'low': 0.85, 'high': 1.15,
-                'status': 'retained_assumed_npc_side_not_in_vut_logs',
-                'evidence': ('parameter scales NPC (pedestrian/occluder) actions; VUT-side '
-                             'ABD exports contain no NPC execution channels; measured '
-                             'cross-run peak spread normalised to pooled median: '
+                'status': 'retained_assumed_not_fitted_v1_tracker_channels_exist',
+                'evidence': ('parameter scales NPC (pedestrian/occluder) actions. Correction '
+                             '(2026-09-12): VUT logs DO carry target-side execution channels '
+                             'relayed via Synchro (Head tracker reference vs actual X/Y, '
+                             'forward velocity/acceleration, lateral error, Pedestrian '
+                             'articulation; RC p.112-113) - populated when the target moves '
+                             '(CCFT/CPTA), zero when the GVT is stationary (CCRs, consistent '
+                             'with AN-6092 p.15 "no test is run in RC on the GVT"). v1 keeps '
+                             'the assumed range because only 2 of 10 eligible runs have a '
+                             'moving target and mapping reference-actual position error to '
+                             'an acceleration scale needs its own model; flagged as the '
+                             'candidate data source for a future version. VUT-side peak '
+                             'decel spread (normalized to pooled median, reference only): '
                              f"{min(r['normalized_peak'] for r in records):.3f}-"
                              f"{max(r['normalized_peak'] for r in records):.3f}"),
             },
