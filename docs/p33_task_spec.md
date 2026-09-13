@@ -183,7 +183,7 @@ source 的历史置零，再进入 attention。`scenario_lab` 闭环改用环境
 
 ## 5. 运动 token
 
-每个 token 表示 0.5 s、5 个 10 Hz 点的 agent-local `delta_xy`，原始向量维度为 10。codebook 由
+每个 token 表示 0.5 s、5 个 10 Hz 点的 anchor-local `delta_xy`，原始向量维度为 10。codebook 由
 train split 上 source×agent-type 平衡抽样后使用 mini-batch k-means 学习，词表大小固定为 128，随机
 种子为 7。
 
