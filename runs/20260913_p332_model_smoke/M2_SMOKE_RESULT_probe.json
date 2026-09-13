@@ -1,0 +1,66 @@
+{
+  "mode": "m2_gpu_smoke_and_resume",
+  "seed": 7,
+  "device": "cuda",
+  "updates": 40,
+  "parameter_count": 13126282,
+  "effective_batch_size": 256,
+  "precision": "bf16",
+  "deterministic_algorithms": true,
+  "loss_first": 10.246457755565643,
+  "loss_update20": 6.2670444548130035,
+  "loss_final": 4.2022591680288315,
+  "elapsed_seconds": 151.01988768577576,
+  "samples_per_second": 101.70845687038398,
+  "peak_vram_mb": 976.572928,
+  "resume_check": {
+    "restored_from_update": 20,
+    "tail_losses_match": true,
+    "tail_max_abs_difference": 0.0008798688650131226,
+    "tail_first_difference": 0.0,
+    "tail_diff_trend": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.1e-05,
+      8.2e-05
+    ],
+    "sample_stream_matches_checkpoint": true,
+    "final_weights_match": true,
+    "worst_weight_differences": {
+      "decoder.2.cross_attention.in_proj_bias": 7.608230225741863e-05,
+      "decoder.4.cross_attention.in_proj_bias": 6.310525350272655e-05,
+      "decoder.3.cross_attention.in_proj_bias": 5.9543439419940114e-05,
+      "decoder.0.cross_attention.in_proj_bias": 4.821503534913063e-05,
+      "decoder.1.cross_attention.in_proj_bias": 4.213838838040829e-05
+    }
+  },
+  "resume_gate_passed": true,
+  "exposure": {
+    "epoch_source": "waymo",
+    "epoch_pool": {
+      "interaction": 22298,
+      "waymo": 4501
+    },
+    "batches_emitted": 76,
+    "samples_emitted": {
+      "interaction": 616,
+      "waymo": 616
+    },
+    "passes_completed": {
+      "interaction": 0,
+      "waymo": 1
+    },
+    "shard_loads": {
+      "interaction": 3,
+      "waymo": 12
+    },
+    "max_resident_shards": 2,
+    "max_resident_shards_per_source": 1
+  }
+}

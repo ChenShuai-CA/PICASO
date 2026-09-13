@@ -1,0 +1,50 @@
+{
+  "interaction|truncated": {
+    "agent_records": 32000,
+    "samples": 2016,
+    "cv_ade": 1.0712972019400573,
+    "cv_fde": 2.856446431355099,
+    "agent_type_mix": {
+      "1": 24168,
+      "2": 0,
+      "3": 0,
+      "4": 7832
+    }
+  },
+  "interaction|untruncated": {
+    "agent_records": 12214,
+    "samples": 1919,
+    "cv_ade": 3.4651038468667754,
+    "cv_fde": 9.13810524720979,
+    "agent_type_mix": {
+      "1": 11354,
+      "2": 0,
+      "3": 0,
+      "4": 860
+    }
+  },
+  "waymo|truncated": {
+    "agent_records": 2268,
+    "samples": 383,
+    "cv_ade": 3.994374146344523,
+    "cv_fde": 11.031888753002272,
+    "agent_type_mix": {
+      "1": 1990,
+      "2": 231,
+      "3": 47,
+      "4": 0
+    }
+  },
+  "waymo|untruncated": {
+    "agent_records": 363,
+    "samples": 98,
+    "cv_ade": 4.413426241731774,
+    "cv_fde": 12.043268864851076,
+    "agent_type_mix": {
+      "1": 351,
+      "2": 10,
+      "3": 2,
+      "4": 0
+    }
+  }
+}

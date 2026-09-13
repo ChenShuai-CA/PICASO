@@ -1,0 +1,5 @@
+*.pt
+*.log
+M1_overfit_loss_curve.csv
+M2_smoke_loss_curve.csv
+M2_smoke_loss_curve_probe.csv

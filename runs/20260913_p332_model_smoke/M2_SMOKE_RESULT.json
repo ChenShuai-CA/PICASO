@@ -1,0 +1,72 @@
+{
+  "mode": "m2_gpu_smoke_and_resume",
+  "seed": 7,
+  "device": "cuda",
+  "updates": 200,
+  "parameter_count": 13126282,
+  "effective_batch_size": 256,
+  "precision": "bf16",
+  "deterministic_algorithms": true,
+  "loss_first": 10.246457755565643,
+  "loss_update100": 3.289879709482193,
+  "loss_final": 2.2028772085905075,
+  "elapsed_seconds": 715.9173076152802,
+  "samples_per_second": 107.27495889163134,
+  "peak_vram_mb": 976.572928,
+  "resume_check": {
+    "restored_from_update": 100,
+    "gate_semantics": "restore-point bitwise equality + short-window trajectory equality + stream match + resumed-branch training sanity; long-horizon drift is run-dependent chaos (0.27/0.39/1.12 max over the same 100-update tail across three runs) and recorded as diagnostic only -- see ALLOCATOR_PROBE_RESULT.json",
+    "restore_point_bitwise_equal": true,
+    "compare_window": 20,
+    "window_max_abs_difference": 0.007698386907577515,
+    "window_bound": 0.164733907841146,
+    "window_bounded": true,
+    "resumed_losses_finite": true,
+    "resumed_progress": true,
+    "tail_first_difference": 0.0,
+    "tail_max_abs_difference_diagnostic_only": 0.9846439212560654,
+    "tail_diff_trend": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      3e-06,
+      4e-06
+    ],
+    "sample_stream_matches_checkpoint": true,
+    "final_weight_drift_diagnostic_only": {
+      "token_head.weight": 0.01306892465800047,
+      "agent_projector.2.weight": 0.009094221517443657,
+      "agent_projector.0.weight": 0.00909203290939331,
+      "decoder.5.self_attention.in_proj_weight": 0.008957024663686752,
+      "token_embedding.weight": 0.008422031998634338
+    }
+  },
+  "resume_gate_passed": true,
+  "exposure": {
+    "epoch_source": "waymo",
+    "epoch_pool": {
+      "interaction": 22298,
+      "waymo": 4501
+    },
+    "batches_emitted": 384,
+    "samples_emitted": {
+      "interaction": 3080,
+      "waymo": 3080
+    },
+    "passes_completed": {
+      "interaction": 1,
+      "waymo": 5
+    },
+    "shard_loads": {
+      "interaction": 14,
+      "waymo": 56
+    },
+    "max_resident_shards": 2,
+    "max_resident_shards_per_source": 1
+  }
+}

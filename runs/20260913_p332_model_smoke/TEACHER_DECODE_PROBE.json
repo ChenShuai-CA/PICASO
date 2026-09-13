@@ -1,0 +1,58 @@
+{
+  "probe": "teacher_forced_decode_ground_truth_tokens_vs_argmax_tokens",
+  "checkpoint": "m2_final_checkpoint.pt",
+  "batches": 276,
+  "ground_truth_tokens_group_level": {
+    "interaction": {
+      "groups": 4,
+      "agent_records": 44214,
+      "ade": 1.2959319585266922,
+      "min_ade": 1.2959319585266922,
+      "fde": 2.4426549464877314,
+      "min_fde": 2.4426549464877314,
+      "pooled_ade": 1.186325011901335,
+      "pooled_min_ade": 1.186325011901335,
+      "pooled_fde": 2.2896032802826536,
+      "pooled_min_fde": 2.2896032802826536
+    },
+    "waymo": {
+      "groups": 481,
+      "agent_records": 2631,
+      "ade": 2.5400021013966247,
+      "min_ade": 2.5400021013966247,
+      "fde": 4.934640394757336,
+      "min_fde": 4.934640394757336,
+      "pooled_ade": 2.7177198692989095,
+      "pooled_min_ade": 2.7177198692989095,
+      "pooled_fde": 5.244572069687007,
+      "pooled_min_fde": 5.244572069687007
+    }
+  },
+  "argmax_tokens_group_level": {
+    "interaction": {
+      "groups": 4,
+      "agent_records": 44214,
+      "ade": 2.5234289025533814,
+      "min_ade": 2.5234289025533814,
+      "fde": 3.730425140850106,
+      "min_fde": 3.730425140850106,
+      "pooled_ade": 1.927720899018259,
+      "pooled_min_ade": 1.927720899018259,
+      "pooled_fde": 3.097827108954908,
+      "pooled_min_fde": 3.097827108954908
+    },
+    "waymo": {
+      "groups": 481,
+      "agent_records": 2631,
+      "ade": 3.7636351476866974,
+      "min_ade": 3.7636351476866974,
+      "fde": 4.804252704016373,
+      "min_fde": 4.804252704016373,
+      "pooled_ade": 3.665656171142085,
+      "pooled_min_ade": 3.665656171142085,
+      "pooled_fde": 4.777003597867821,
+      "pooled_min_fde": 4.777003597867821
+    }
+  },
+  "interpretation": "ground_truth row isolates decode path + residual head (token distribution perfect); argmax row adds greedy token error without sampling/autoregressive drift"
+}

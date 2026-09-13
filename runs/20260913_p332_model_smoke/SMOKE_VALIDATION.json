@@ -1,0 +1,31 @@
+{
+  "phase": "P3.3.2",
+  "status": "pass",
+  "engineering_only": true,
+  "g1_evaluated": false,
+  "heldout_trajectory_content_read": false,
+  "checks": {
+    "upstream_p331_verification": "pass",
+    "bounded_loader": "pass",
+    "source_balanced_batches": "pass",
+    "cv_metric_contract": "pass",
+    "actor_visible_counterfactual": "pass",
+    "decoder_causality": "pass",
+    "finite_forward_backward": "pass",
+    "parameter_count_in_range": "pass",
+    "single_batch_overfit": "pass",
+    "checkpoint_resume": "pass",
+    "six_sample_rollout": "pass",
+    "full_smoke_dev_evaluated": "pass"
+  },
+  "limitations": [
+    "status=pass 只表示工程 smoke 边界成立、可进入人工结果评审，不表示 G1 真实度结果，不表示模型优于 CV/GRU。",
+    "200-update 模型严重欠训练（有效样本约 5.1 万，约 1.1 个 waymo epoch）；M3 全部模型数字（minADE@6 11.71/6.36 远差于 CV 3.97/3.25）是工程诊断，不构成表示能力结论，也不单独构成改架构的依据。",
+    "checkpoint_resume 的 gate 语义为 restore-point 逐位相等 + 20-update 窗口轨迹相等 + 流匹配 + 恢复分支 sanity；长视界逐位/绝对有界相等在本 CUDA 栈不可实现（分配器布局影响 GEMM 核选择，四次相同 run 的 100-update 尾段 max 漂移 0.27/0.39/1.12/0.98，为 run 间随机分布的混沌量），证据链见 ALLOCATOR_PROBE_RESULT.json 与 docs/p332_model_smoke.md §7。",
+    "INTERACTION dev 仅 4 个独立 location::case 组；其组级数字带 4 组不确定性；26,233 个重叠窗口从未被计为独立场景数。",
+    "加速度/jerk 几何代理受逐 chunk 分段线性解码的结构性影响（边界速度跳变 -> 100% 'violations'），速度违规率 0.002%；这些阈值是工程诊断，不是 G1 门槛。",
+    "smoke dev 中不存在 role-0（other）agent，该角色路径仅由合成测试行使；100-shard 阶段需复核其出现率。",
+    "sampled_token_nll=1.872 度量的是模型自采样分布的熵（top-p=0.95 下有效词数约 6.5），不是拟合优度。",
+    "dev 仅用于 smoke 工程验证，未做任何基于 dev 的超参或结构选择；唯一一次 gate 语义修订针对检验对象本身，附三轮可证伪实验，不涉及模型/超参。"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "smoke_version": "p33-model-smoke-v1",
+  "note": "P3.3.2 smoke budgets only; frozen training hyperparameters live in ar_scene_v1.json and are never overridden here",
+  "seed": 7,
+  "m1_single_batch_overfit": {
+    "batch_size": 16,
+    "batch_per_source": 8,
+    "max_updates": 500,
+    "loss_ratio_gate": 0.5,
+    "first_window": 20,
+    "last_window": 20
+  },
+  "m2_gpu_smoke": {
+    "updates": 200,
+    "micro_batches_per_step": 16,
+    "checkpoint_every": 100,
+    "precision": "bf16",
+    "resume_gate": {
+      "restore_point_bitwise": true,
+      "compare_window": 20,
+      "window_max_fraction_of_window_mean": 0.05,
+      "progress_window": 20,
+      "progress_factor": 0.8,
+      "semantics": "gate = (1) the FIRST post-resume loss bitwise equal to the uninterrupted run: one forward pass from restored weights over the restored batch with the restored dropout RNG, so any wrong checkpoint content (weights, Adam moments, loader position, RNG) diverges at this index (bf16 rounding absorbs sub-ULP kernel differences; every observed replica stayed bitwise equal here); (2) losses over the compare_window within window_max_fraction_of_window_mean x window mean -- allocator-noise chaos is still microscopic at this horizon (<= ~5e-3 observed at 20 updates across three runs) while any state error diverges macroscopically within the first updates; (3) sample stream identical to the checkpoint snapshot; (4) resumed branch finite and still improving (mean of last progress_window losses < progress_factor x window mean). Long-horizon drift is run-dependent chaos (max over the same 100-update tail: 0.27 / 0.39 / 1.12 across three identical runs) and is recorded as diagnostic only, never gated -- the mechanism is allocator-layout-dependent GEMM kernel selection (runs/20260913_p332_model_smoke/ALLOCATOR_PROBE_RESULT.json; strict torch.use_deterministic_algorithms raises no error on this loop, ruling out kernel nondeterminism). Final per-key weight drift (~1-2% of parameter scale) likewise diagnostic only. Snapshot immutability of checkpoint_payload itself is locked by tests/test_p33_train_checkpoint.py."
+    }
+  },
+  "m3_eval": {
+    "split": "dev",
+    "batch_size": 16,
+    "samples": 6,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "rollout_seed": 7,
+    "overlay_plot_count": 8
+  }
+}

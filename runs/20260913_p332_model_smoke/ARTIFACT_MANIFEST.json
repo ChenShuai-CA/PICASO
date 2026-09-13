@@ -1,0 +1,40 @@
+{
+  "note": "git-excluded artifacts; local paths are relative to runs/20260913_p332_model_smoke/",
+  "artifacts": {
+    "m2_final_checkpoint.pt": {
+      "sha256": "cf40e7b0f80a70974067017e6f9b9708312f5448ea267517ddc980ddee18e4fb",
+      "bytes": 157960812,
+      "description": "M2 final checkpoint (update 200, model/optimizer/loader/RNG snapshot) \u2014 P3.3.2 M3 evaluation input"
+    },
+    "M1_overfit_loss_curve.csv": {
+      "sha256": "bd5b62b8c83e8578cbd1e1ce51335bdb645cd85ae6b1abf891c9dddddd97352c",
+      "bytes": 62573,
+      "description": "M1 per-update loss curve (500 rows)"
+    },
+    "M2_smoke_loss_curve.csv": {
+      "sha256": "c4c3fd0f1f760a69292c3a63e73de44beeed21376671a5dabcdcb0d1140ddb7a",
+      "bytes": 25073,
+      "description": "M2 uninterrupted per-update loss curve (200 rows)"
+    },
+    "M2_smoke_loss_curve_probe.csv": {
+      "sha256": "958b8632cd3cb7081e200f838abf25766634921df891db0f8bcf11baa7815089",
+      "bytes": 5073,
+      "description": "M2 40-update probe loss curve (pre-gate-rework evidence)"
+    },
+    "m2_run.log": {
+      "sha256": "c00c63a1d0c37334573f35cba8fc801e9b001a432d2227186646d11ab33a470c",
+      "bytes": 3849,
+      "description": "M2 run 4 console log"
+    },
+    "m3_run.log": {
+      "sha256": "a810072e63c00813276e6ee890368917c8523559122ed9bdffe2ab0e4617dd3a",
+      "bytes": 603,
+      "description": "M3 run 2 console log (kinematics dict fix)"
+    },
+    "teacher_decode_probe.log": {
+      "sha256": "64d973861c2fe9d5bfbac7e79c2ffc4caf4762d6b6b698afe2b7b4fd359733c4",
+      "bytes": 746,
+      "description": "teacher-decode probe run 1 console log (chain-validity mask, superseded)"
+    }
+  }
+}
