@@ -1,0 +1,37 @@
+{
+  "phase": "P3.3.2a",
+  "supersedes": "runs/20260913_p332_model_smoke/SMOKE_VALIDATION.json",
+  "trigger": "independent review REQUIRES_CORRECTION (CODEX_REVIEW.md, commit 0f28bcc): temporal visibility leak, unsound allocator attribution, shard lifetime, role/type conflation, exposure/NLL wording, missing joint-scene metric",
+  "status": "pass",
+  "engineering_only": true,
+  "g1_evaluated": false,
+  "heldout_trajectory_content_read": false,
+  "checks": {
+    "upstream_p331_verification": "pass",
+    "bounded_loader": "pass",
+    "source_balanced_batches": "pass",
+    "cv_metric_contract": "pass",
+    "partial_history_counterfactual_bitwise": "pass",
+    "past_frames_flow_under_t0_occlusion": "pass",
+    "decoder_causality": "pass",
+    "finite_forward_backward": "pass",
+    "parameter_count_in_range": "pass",
+    "single_batch_overfit": "pass",
+    "checkpoint_resume": "pass",
+    "cross_process_bitwise_reproducibility": "pass",
+    "shard_backing_array_release": "pass",
+    "joint_scene_best_of_k_contract": "pass",
+    "six_sample_rollout": "pass",
+    "full_smoke_dev_evaluated": "pass"
+  },
+  "limitations": [
+    "status=pass 只表示工程 smoke 边界成立、可进入人工结果评审，不表示 G1 真实度结果，不表示模型优于 CV/GRU。",
+    "200-update 模型严重欠训练（25,600 有效样本/来源 = 5.69 个 waymo train pass / 1.15 个 interaction train pass）；M3 全部模型数字是工程诊断，不构成表示能力结论。",
+    "跨进程逐位复现的成立条件 = strict torch.use_deterministic_algorithms(warn_only=False) + math SDPA 后端（吞吐代价 ~8%）；该结论限定于本机 CUDA 栈。旧 P3.3.2 的分配器→核选择归因已撤回（旧探针受优化器 payload 存储别名污染；干净探针三配置 30/30 update 逐位相等）。",
+    "INTERACTION dev 仅 4 个独立 location::case 组；其组级数字带 4 组不确定性；26,233 个重叠窗口从未被计为独立场景数。",
+    "加速度/jerk 几何代理受逐 chunk 分段线性解码的结构性影响（100% 'violations'），速度违规率 0.011%；这些阈值是工程诊断，不是 G1 门槛。",
+    "sampled_token_nll=1.646 是 top-p 截断后采样 token 按全 softmax log-prob 的均值 NLL（平均采样熵的单样本 MC 估计），不是拟合优度，exp(·) 不称有效词数。",
+    "joint-scene best-of-6 是次级诊断指标；主端点仍为 spec 冻结的 per-agent minADE@6。",
+    "dev 仅用于 smoke 工程验证；模型改动仅落实复核指出的 spec §4.5 违反，未做任何基于 dev 的超参/结构选择。"
+  ]
+}

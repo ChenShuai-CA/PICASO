@@ -21,10 +21,17 @@ from pathlib import Path
 import numpy as np
 import torch
 
-# resume equality needs kernel-level determinism (embedding backward atomics
-# otherwise accumulate gradients in a nondeterministic order)
+# resume equality needs kernel-level determinism.  The first M2 run log showed
+# that the bf16 memory-efficient attention backward is nondeterministic (the
+# warn_only=True setting downgraded the strict-mode error to a UserWarning);
+# disable the nondeterministic SDPA backends and use strict mode so that any
+# remaining nondeterministic op raises instead of silently perturbing the
+# resume comparison.
 os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
-torch.use_deterministic_algorithms(True, warn_only=True)
+if torch.cuda.is_available():
+    torch.backends.cuda.enable_mem_efficient_sdp(False)
+    torch.backends.cuda.enable_flash_sdp(False)
+torch.use_deterministic_algorithms(True, warn_only=False)
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
@@ -34,7 +41,7 @@ from scenario_lab.p33_model import ARSceneV1, ar_scene_loss, to_torch_batch  # n
 from scenario_lab.p33_spec import load_p33_config  # noqa: E402
 
 MANIFEST = REPO / "runs/20260913_p331_data_pipeline/smoke/DATASET_MANIFEST.json"
-OUTPUT_DIR = REPO / "runs/20260913_p332_model_smoke"
+OUTPUT_DIR = REPO / "runs/20260913_p332a_visibility_fix"
 
 
 def load_codebook(manifest_path: Path) -> np.ndarray:
@@ -97,6 +104,22 @@ def checkpoint_payload(model, optimizer, loader: SceneLoader, history: list[dict
     if extra:
         payload.update(extra)
     return payload
+
+
+def restore_optimizer_isolated(optimizer, payload: dict) -> None:
+    """Restore optimizer state without storage aliasing.
+
+    ``Optimizer.load_state_dict`` keeps the payload's tensors when device and
+    dtype already match, so a later ``step`` would mutate the checkpoint
+    payload in place — the aliasing bug that invalidated the first allocator
+    probe (R0 training polluted the state later loaded into R2).  Clone every
+    restored state tensor so optimizer and payload are fully independent.
+    """
+    optimizer.load_state_dict(payload)
+    for state in optimizer.state.values():
+        for key, value in state.items():
+            if torch.is_tensor(value):
+                state[key] = value.clone()
 
 
 def run_overfit(args: argparse.Namespace) -> dict:
@@ -251,7 +274,7 @@ def run_smoke(args: argparse.Namespace) -> dict:
     loader_b = SceneLoader(catalog, split="train", batch_per_source=8, seed=seed)
     model_b, optimizer_b = build(config, codebook, device)
     model_b.load_state_dict({key: value.to(device) for key, value in mid["model"].items()})
-    optimizer_b.load_state_dict(mid["optimizer"])
+    restore_optimizer_isolated(optimizer_b, mid["optimizer"])
     loader_b.set_state(mid["loader_state"])
     set_rng_state(mid["rng"])
     resumed_history = [dict(row) for row in mid["history"]]
@@ -272,16 +295,14 @@ def run_smoke(args: argparse.Namespace) -> dict:
     # the uninterrupted run. It is computed by one forward pass from the
     # restored weights over the restored batch with the restored dropout RNG,
     # so any wrong checkpoint content (weights, Adam moments, loader position,
-    # RNG) diverges here; bf16 rounding absorbs sub-ULP kernel differences,
-    # and every observed replica stayed bitwise equal at this index.
+    # RNG) diverges here.
     restore_point_bitwise = tail_diffs[0] == 0.0
-    # short-horizon trajectory equality: over the compare window the chaotic
-    # allocator-noise amplification is still microscopically small (<= ~5e-3
-    # observed at 20 updates, across three runs), while any state error
-    # diverges macroscopically within the first updates. Beyond the window the
-    # drift amplitude is run-dependent chaos (max over a 100-update tail was
-    # 0.27 / 0.39 / 1.12 across three otherwise identical runs), so it is
-    # recorded as a diagnostic, never gated.
+    # short-horizon trajectory equality: a safety net against sub-ULP effects
+    # that strict determinism might still allow (e.g. allocator-dependent
+    # kernel selection); any state error diverges macroscopically within the
+    # first updates. Beyond the window, residual drift (if any remains under
+    # the deterministic configuration) is recorded as a diagnostic, never
+    # gated.
     window = gate["compare_window"]
     window_diffs = tail_diffs[:window]
     window_mean = float(np.mean(tail_uninterrupted[:window]))
@@ -306,7 +327,9 @@ def run_smoke(args: argparse.Namespace) -> dict:
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
         "effective_batch_size": 16 * m2["micro_batches_per_step"],
         "precision": m2["precision"] if device.type == "cuda" else "fp32_cpu_fallback",
-        "deterministic_algorithms": True,
+        "deterministic_algorithms": "strict (warn_only=False)",
+        "sdpa_backends": ({"mem_efficient": False, "flash": False, "math": True}
+                          if device.type == "cuda" else "cpu_default"),
         "loss_first": uninterrupted[0],
         f"loss_update{resume_from}": uninterrupted[resume_from - 1],
         "loss_final": uninterrupted[-1],
@@ -320,10 +343,9 @@ def run_smoke(args: argparse.Namespace) -> dict:
             "restored_from_update": resume_from,
             "gate_semantics": "restore-point bitwise equality + short-window "
                               "trajectory equality + stream match + resumed-branch "
-                              "training sanity; long-horizon drift is run-dependent "
-                              "chaos (0.27/0.39/1.12 max over the same 100-update "
-                              "tail across three runs) and recorded as diagnostic "
-                              "only -- see ALLOCATOR_PROBE_RESULT.json",
+                              "training sanity; deterministic SDPA (math backend) "
+                              "under strict use_deterministic_algorithms; "
+                              "long-horizon drift diagnostic only",
             "restore_point_bitwise_equal": bool(restore_point_bitwise),
             "compare_window": window,
             "window_max_abs_difference": max(window_diffs),

@@ -37,14 +37,15 @@ from scenario_lab.p33_model import ARSceneV1, ar_scene_loss, to_torch_batch  # n
 from scenario_lab.p33_spec import load_p33_config  # noqa: E402
 
 MANIFEST = REPO / "runs/20260913_p331_data_pipeline/smoke/DATASET_MANIFEST.json"
-OUTPUT_DIR = REPO / "runs/20260913_p332_model_smoke"
+OUTPUT_DIR = REPO / "runs/20260913_p332a_visibility_fix"
 
 
 def _groups_csv(records: list) -> str:
     grouped: dict[tuple[str, str], list] = defaultdict(list)
     for record in records:
         grouped[(record.source, record.group_id)].append(record)
-    lines = ["source,group_id,agent_records,ade,fde,min_ade,min_fde,endpoint_missing"]
+    lines = ["source,group_id,agent_records,ade,fde,min_ade,min_fde,"
+             "min_ade_joint,min_fde_joint,endpoint_missing"]
     for (source, group_id), rows in sorted(grouped.items()):
         endpoints = [row for row in rows if row.endpoint_valid]
         def mean(values):
@@ -55,6 +56,10 @@ def _groups_csv(records: list) -> str:
             f"{mean([r.fde for r in endpoints]):.6f}" if endpoints else "nan",
             f"{mean([r.min_ade for r in rows]):.6f}",
             f"{mean([r.min_fde for r in endpoints]):.6f}" if endpoints else "nan",
+            f"{mean([r.min_ade_joint for r in rows if not np.isnan(r.min_ade_joint)]):.6f}"
+            if any(not np.isnan(r.min_ade_joint) for r in rows) else "nan",
+            f"{mean([r.min_fde_joint for r in endpoints if not np.isnan(r.min_fde_joint)]):.6f}"
+            if any(not np.isnan(r.min_fde_joint) for r in endpoints) else "nan",
             sum(1 for r in rows if not r.endpoint_valid)])))
     return "\n".join(lines) + "\n"
 
@@ -186,6 +191,10 @@ def run_model(args: argparse.Namespace) -> dict:
                   "agent_trajectories": 0}
     batches = 0
     plots_written = 0
+    plot_quota = defaultdict(int)
+    plot_limit = defaultdict(int)
+    for source, count in m3.get("overlay_plot_per_source", {}).items():
+        plot_limit[source] = int(count)
     started = time.time()
     full_run = args.limit is None
     if full_run:
@@ -222,15 +231,24 @@ def run_model(args: argparse.Namespace) -> dict:
                     kinematics[key] += report[key]
                 kinematics["agent_trajectories"] += report["agent_count"]
         if full_run and plots_written < m3["overlay_plot_count"]:
-            cv = np.stack([constant_velocity_prediction(batch_raw["agent_history"][i],
-                                                        batch_raw["state_valid_mask"][i])
-                           for i in range(len(batch_raw["sample_id"]))])
-            per_batch = 2
-            for index in range(min(per_batch, trajectories.shape[0])):
+            # source-stratified selection: fill each source's quota (P3.3.2a —
+            # the first submission drew all plots from the leading waymo batches)
+            wanted = [index for index in range(trajectories.shape[0])
+                      if plot_quota[batch_raw["sample_source"][index]]
+                      < plot_limit[batch_raw["sample_source"][index]]]
+            if wanted:
+                cv = np.stack([constant_velocity_prediction(batch_raw["agent_history"][i],
+                                                            batch_raw["state_valid_mask"][i])
+                               for i in range(len(batch_raw["sample_id"]))])
+            for index in wanted:
                 if plots_written >= m3["overlay_plot_count"]:
                     break
-                _overlay_plot(plots_dir / f"overlay_{plots_written:02d}.png", batch_raw,
-                              trajectories, cv, index)
+                source = batch_raw["sample_source"][index]
+                if plot_quota[source] >= plot_limit[source]:
+                    continue
+                _overlay_plot(plots_dir / f"overlay_{source}_{plots_written:02d}.png",
+                              batch_raw, trajectories, cv, index)
+                plot_quota[source] += 1
                 plots_written += 1
         batches += 1
         if args.limit and batches * args.batch_size >= args.limit:
@@ -260,6 +278,14 @@ def run_model(args: argparse.Namespace) -> dict:
         "token_nll": nll_per_token,
         "token_accuracy": accuracy_weighted / max(1, ce_tokens),
         "sampled_token_nll": sampled_nll,
+        "sampled_token_nll_definition": "mean negative full-softmax log-probability "
+                                        "of rollout tokens that were drawn after "
+                                        "top-p truncation and renormalization; a "
+                                        "single-sample Monte-Carlo estimate of the "
+                                        "mean sampling entropy -- not the exact "
+                                        "entropy of the sampling distribution and "
+                                        "not a goodness-of-fit measure (P3.3.2a "
+                                        "wording correction)",
         "token_frequency": token_frequency_report(truth, validity, argmax),
         "sampled_token_frequency": token_frequency_report(truth, validity, sampled),
         "kinematic_violation_rates": kinematic_violation_rates,
@@ -289,7 +315,8 @@ def main() -> None:
     for source, row in result.get("group_level", {}).items():
         summary[f"group_{source}"] = {key: row[key] for key in
                                       ("groups", "agent_records", "ade", "min_ade",
-                                       "fde", "min_fde")}
+                                       "min_ade_joint", "fde", "min_fde",
+                                       "min_fde_joint")}
     for key in ("token_nll", "token_accuracy", "sampled_token_nll"):
         if key in result:
             summary[key] = result[key]

@@ -1,0 +1,77 @@
+{
+  "mode": "m2_gpu_smoke_and_resume",
+  "seed": 7,
+  "device": "cuda",
+  "updates": 200,
+  "parameter_count": 13126282,
+  "effective_batch_size": 256,
+  "precision": "bf16",
+  "deterministic_algorithms": "strict (warn_only=False)",
+  "sdpa_backends": {
+    "mem_efficient": false,
+    "flash": false,
+    "math": true
+  },
+  "loss_first": 10.244291245937347,
+  "loss_update100": 3.392722725868225,
+  "loss_final": 1.8666981607675552,
+  "elapsed_seconds": 863.7736954689026,
+  "samples_per_second": 88.9121770288811,
+  "peak_vram_mb": 1371.752448,
+  "resume_check": {
+    "restored_from_update": 100,
+    "gate_semantics": "restore-point bitwise equality + short-window trajectory equality + stream match + resumed-branch training sanity; deterministic SDPA (math backend) under strict use_deterministic_algorithms; long-horizon drift diagnostic only",
+    "restore_point_bitwise_equal": true,
+    "compare_window": 20,
+    "window_max_abs_difference": 0.0,
+    "window_bound": 0.16125930074602368,
+    "window_bounded": true,
+    "resumed_losses_finite": true,
+    "resumed_progress": true,
+    "tail_first_difference": 0.0,
+    "tail_max_abs_difference_diagnostic_only": 0.0,
+    "tail_diff_trend": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sample_stream_matches_checkpoint": true,
+    "final_weight_drift_diagnostic_only": {
+      "null_agent_key": 0.0,
+      "null_map_key": 0.0,
+      "codebook": 0.0,
+      "codebook_padded": 0.0,
+      "time_table": 0.0
+    }
+  },
+  "resume_gate_passed": true,
+  "exposure": {
+    "epoch_source": "waymo",
+    "epoch_pool": {
+      "interaction": 22298,
+      "waymo": 4501
+    },
+    "batches_emitted": 384,
+    "samples_emitted": {
+      "interaction": 3080,
+      "waymo": 3080
+    },
+    "passes_completed": {
+      "interaction": 1,
+      "waymo": 5
+    },
+    "shard_loads": {
+      "interaction": 14,
+      "waymo": 56
+    },
+    "max_resident_shards": 2,
+    "max_resident_shards_per_source": 1
+  }
+}

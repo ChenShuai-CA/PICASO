@@ -171,11 +171,14 @@ class ShardReader:
         self._arrays, self._rows, self._entry = arrays, rows, entry
 
     def get(self, index: int) -> tuple[dict[str, np.ndarray], dict]:
+        """Return row copies, not views: a view would pin the full shard backing
+        arrays alive after the reader swaps to the next shard."""
         if self._arrays is None or self._entry is None:
             raise RuntimeError("no shard is resident")
         if not 0 <= index < self._entry.examples:
             raise IndexError(index)
-        return {key: value[index] for key, value in self._arrays.items()}, self._rows[index]
+        return ({key: value[index].copy() for key, value in self._arrays.items()},
+                self._rows[index])
 
     def release(self) -> None:
         self._arrays = None

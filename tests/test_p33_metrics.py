@@ -6,6 +6,7 @@ from scenario_lab.p33_metrics import (
     constant_velocity_prediction,
     displacement_errors,
     evaluate_agent_mask,
+    joint_scene_min_k_displacement_errors,
     min_k_displacement_errors,
     summarize_records,
     AgentErrorRecord,
@@ -157,3 +158,33 @@ def test_kinematic_diagnostics_flags_thresholds():
     assert report["agent_count"] == 2
     assert report["speed_violations"] >= 1
     assert report["accel_violations"] >= 1
+
+
+def test_joint_scene_best_of_k_uses_one_sample_index():
+    """P3.3.2a secondary metric: all agents are scored from ONE joint sample,
+    selected by scene-mean ADE over evaluated agents (per-agent min@K may mix
+    different joint samples)."""
+    rng = np.random.default_rng(5)
+    truth = rng.normal(size=(3, 50, 2))
+    valid = np.ones((3, 50), dtype=bool)
+    predictions = truth[None] + rng.normal(scale=0.3, size=(2, 3, 50, 2))
+    predictions[0, 0] = truth[0] + 0.01   # sample 0 near-perfect for agent 0
+    predictions[1, 1] = truth[1] + 0.01   # sample 1 near-perfect for agent 1
+    predictions[0, 1] = truth[1] + 5.0    # and bad for the other agent
+    predictions[1, 0] = truth[0] + 5.0
+    predictions[1, 2] = truth[2] + 0.05   # tips the scene mean toward sample 1
+    predictions[0, 2] = truth[2] + 0.2
+    per_agent = min_k_displacement_errors(predictions, truth, valid)
+    joint = joint_scene_min_k_displacement_errors(predictions, truth, valid)
+    # per-agent oracle exploits both samples independently
+    assert per_agent["min_ade"][0] < 0.05 and per_agent["min_ade"][1] < 0.05
+    # joint k* = 1 (scene-mean argmin): agent 0 pays for the scene-level choice
+    assert joint["min_ade_joint"][1] < 0.05
+    assert joint["min_ade_joint"][0] > 4.0
+    # joint is never better than the per-agent oracle
+    for slot in range(3):
+        assert joint["min_ade_joint"][slot] >= per_agent["min_ade"][slot] - 1e-9
+    # the eval mask restricts the selection: scoring only agent 0 picks k*=0
+    only_first = joint_scene_min_k_displacement_errors(
+        predictions, truth, valid, np.array([True, False, False]))
+    assert only_first["min_ade_joint"][0] < 0.05

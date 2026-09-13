@@ -1,0 +1,4 @@
+CROSS_PROCESS_BITWISE True
+method: byte compare (cmp) + sha256 of M2_smoke_loss_curve.csv vs M2_smoke_loss_curve_probe.csv (two independent processes, strict determinism + math SDPA)
+68502288bcc35d2efbd3857245530f96482ef8f40dbd5918f2ffcb21abaf52b9 *M2_smoke_loss_curve.csv
+68502288bcc35d2efbd3857245530f96482ef8f40dbd5918f2ffcb21abaf52b9 *M2_smoke_loss_curve_probe.csv

@@ -1,5 +1,7 @@
 """P3.3.2 loader contract tests: bounded reads, hashes, balance, determinism."""
+import gc
 import json
+import weakref
 from hashlib import sha256
 
 import numpy as np
@@ -239,3 +241,21 @@ def test_reader_keeps_one_resident_shard_per_source_and_validates_contract(data_
     assert reader.resident == other.path
     reader.release()
     assert reader.resident is None
+
+
+def test_row_copies_do_not_pin_previous_shard_backing_arrays(data_root):
+    """P3.3.2a: rows must be copies, not views.  Holding a returned row across a
+    shard swap must not keep the previous shard's full backing arrays alive
+    (the transient two-shards-per-source retention found in review)."""
+    catalog = _catalog(data_root)
+    reader = ShardReader(CONFIG)
+    entries = catalog.entries(split="train")
+    reader.load(entries[0])
+    refs = [weakref.ref(array) for array in reader._arrays.values()]
+    held_row, _ = reader.get(0)  # kept alive across the swap below
+    reader.load(entries[2])
+    gc.collect()
+    assert all(ref() is None for ref in refs), "previous shard backing arrays still alive"
+    # the held row itself is an independent copy
+    assert held_row["agent_history"].shape == (16, 11, 8)
+    assert held_row["agent_history"].flags["OWNDATA"]

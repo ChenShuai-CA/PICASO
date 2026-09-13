@@ -1,5 +1,11 @@
 # P3.3.2 名义模型与训练管线工程 smoke
 
+> **P3.3.2a 修正（2026-09-13）**：独立复核确认本阶段模型存在时序可见性泄漏（§3 描述的
+> "静态 token + t=0 门控"实现违反 spec §4.5 逐 query 逐时刻掩码），§4/§7.6 的确定性归因
+> （分配器→核选择）也被干净探针否定；§8 的 role-0 监测项基于 role/type 混淆。修正后的
+> 模型、探针、重跑结果与勘误清单见 `docs/p332a_visibility_fix.md` 与
+> `runs/20260913_p332a_visibility_fix/`。本文其余部分保留为当时的历史记录。
+
 - 阶段文档：`docs/p332_model_smoke.md`；配置版本 p33.0-v1.1 + `p33-model-smoke-v1`，2026-09-13；
   状态：工程 smoke 完成（见 `runs/20260913_p332_model_smoke/SMOKE_VALIDATION.json`）。
 - 本阶段只证明模型/训练/评估的**工程边界**成立；`status=pass` 不代表 G1 真实度结果，
@@ -151,3 +157,31 @@ REPORT.md §8）：工程边界 12/12 成立；teacher-decode 探针证明表示
 护栏：固定间隔记录 teacher-argmax vs rollout 指标比为漂移预警；若正式训练量下差距
 仍 >2×，先评估采样策略与暴露偏差缓解，不动表示。监测项：role-0 agent 出现率
 （smoke dev 为 0）、稀有 token 频率、两来源组数均衡。
+
+## 9. P3.3.2a 勘误与修正（2026-09-13）
+
+独立复核（`runs/20260913_p332_model_smoke/CODEX_REVIEW.md`，commit 0f28bcc）确认的
+问题与 P3.3.2a 落实的更正：
+
+1. **§3 模型描述已过时**：原实现把每个 source 的全部历史帧池化成静态 token、仅按 t=0
+   可见性门控注意力——t=0 可见但过去被遮挡的 source 会把遮挡帧信息泄漏给 query（部分
+   历史反事实 logits 改变 ~e-5..e-4 量级；dev ~90% 样本存在此类 pair）。修正为逐查询
+   视图键：pair (q,s) 的键按 `pairwise_visibility[q,:,s] ∧ state_valid[s,:]` 逐帧加权
+   池化，隐藏帧权重恰为 0（部分历史反事实**逐位**不变）。
+2. **§4/§7 缺陷 6 的机制叙述错误**：m2_run.log 实际包含 "Memory Efficient attention
+   defaults to a non-deterministic algorithm" 警告（warn_only=True 把严格模式报错降级
+   为警告），"严格模式不报错→排除内核非确定性"不成立；且分配器探针的 R0/R2 共用同一
+   优化器 payload，`load_state_dict` 的存储别名使 R2 初始状态被 R0 训练污染——旧探针的
+   大分歧由状态污染解释，与分配器无关。修正后探针（strict `warn_only=False` +
+   math SDPA + `restore_optimizer_isolated`）显示：干净重建、分配器扰动、活体继续三者
+   30/30 update 逐位相等；确定性配置吞吐代价 ~8%（95.2 vs 103.7 样本/s）。
+3. **§8 监测项勘误**：role-0 是 padding；"other" 是 agent_type=4 且 smoke dev 有
+   8,692 条记录——该路径在真实数据上已被行使，不作为"未行使路径"监测。
+4. **exposure 口径**：M2 有效样本 25,600/来源 = **5.69 个 waymo train pass / 1.15 个
+   interaction train pass**（不是 "1.1 个 waymo epoch"）；715.9 s 覆盖主分支 200 +
+   恢复分支 100 = **300 update 当量**。
+5. **指标补充**：per-agent minADE@6 可为不同 agent 选中不同的联合样本；已加 joint-scene
+   best-of-6 次级指标（同一 k* 服务场景内全部 eval agent；主端点仍为 spec 冻结的
+   per-agent minADE@6）。sampled_token_nll 是 top-p 截断后采样、按全 softmax log-prob
+   计算的样本均值 NLL（平均熵的单样本无偏估计），不是采样分布的严格熵，
+   `exp(·)` 不可称有效词数。

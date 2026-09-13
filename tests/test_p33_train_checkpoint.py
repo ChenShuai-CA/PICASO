@@ -90,9 +90,31 @@ def test_resume_from_payload_reproduces_restore_point_bitwise():
     codebook = train.load_codebook(train.MANIFEST)
     model_b, optimizer_b = train.build(CONFIG, codebook, torch.device("cpu"))
     model_b.load_state_dict(payload["model"])
-    optimizer_b.load_state_dict(payload["optimizer"])
+    train.restore_optimizer_isolated(optimizer_b, payload["optimizer"])
     train.set_rng_state(payload["rng"])
     twin = _eval_losses(model_b, batches[2])
 
     for key, value in live.items():
         assert torch.equal(value, twin[key]), f"{key}: {value} != {twin[key]}"
+
+
+def test_optimizer_restore_does_not_alias_the_payload():
+    """P3.3.2a regression: Optimizer.load_state_dict shares tensor storage with
+    the payload when device/dtype already match, so a replica that trains after
+    restoring would silently mutate the checkpoint (the bug that invalidated
+    the first allocator probe)."""
+    model, optimizer, loader, batches = _setup()
+    _step(model, optimizer, batches[0])
+    payload = train.checkpoint_payload(model, optimizer, loader, [], 1)
+    frozen = copy.deepcopy(payload["optimizer"])
+
+    model_b, optimizer_b = train.build(CONFIG, train.load_codebook(train.MANIFEST),
+                                       torch.device("cpu"))
+    model_b.load_state_dict(payload["model"])
+    train.restore_optimizer_isolated(optimizer_b, payload["optimizer"])
+    _step(model_b, optimizer_b, batches[1])  # replica trains on the restored state
+
+    for key, state in payload["optimizer"]["state"].items():
+        for name, tensor in state.items():
+            if isinstance(tensor, torch.Tensor):
+                assert torch.equal(tensor, frozen["state"][key][name]), name

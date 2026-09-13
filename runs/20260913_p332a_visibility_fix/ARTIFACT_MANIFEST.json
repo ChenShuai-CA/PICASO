@@ -1,0 +1,55 @@
+{
+  "note": "git-excluded artifacts; local paths are relative to runs/20260913_p332a_visibility_fix/",
+  "artifacts": {
+    "m2_final_checkpoint.pt": {
+      "sha256": "9b77a07ce37ddcad7ea28f7a88198dbe8461a63a1554941923236feb0b65dae9",
+      "bytes": 157960812,
+      "description": "M2 final checkpoint (update 200, model/optimizer/loader/RNG snapshot) - M3 + teacher-probe input"
+    },
+    "M1_overfit_loss_curve.csv": {
+      "sha256": "52cf31d3d7921bcb4fa89a9816f51874dd93631bb6f91fab19f4adc564b38118",
+      "bytes": 62573,
+      "description": "M1 per-update loss curve (500 rows)"
+    },
+    "M2_smoke_loss_curve.csv": {
+      "sha256": "68502288bcc35d2efbd3857245530f96482ef8f40dbd5918f2ffcb21abaf52b9",
+      "bytes": 25073,
+      "description": "M2 run-1 per-update loss curve (200 rows)"
+    },
+    "M2_smoke_loss_curve_probe.csv": {
+      "sha256": "68502288bcc35d2efbd3857245530f96482ef8f40dbd5918f2ffcb21abaf52b9",
+      "bytes": 25073,
+      "description": "M2 run-2 (independent process) loss curve - byte-identical to run 1"
+    },
+    "m1_run.log": {
+      "sha256": "7abce8442423675594324aa1e347c5a068c0d1768d265cae18ed7e6c85d8dbdc",
+      "bytes": 1092,
+      "description": "M1 console log"
+    },
+    "m2_run.log": {
+      "sha256": "19de46dd16674ed68e6671a2f989e548ad5017f90a090836b3bc4a3ec6ae4c9c",
+      "bytes": 3224,
+      "description": "M2 run-1 console log"
+    },
+    "m2_run2.log": {
+      "sha256": "ac3be636b1fe32c2a949b7532cb370d83fc2e909568d7ef21fee2abdc3a43029",
+      "bytes": 3223,
+      "description": "M2 run-2 console log"
+    },
+    "m3_run.log": {
+      "sha256": "11fbded88fbd842decf0f64b7b3c1ed7752eb5cc7b570c88966169cef76136ed",
+      "bytes": 765,
+      "description": "M3 console log (final rerun, stratified plots)"
+    },
+    "cv_run.log": {
+      "sha256": "72d89ddc550c91191796172394f276d68fccba9222a10548578762626f4d7c01",
+      "bytes": 632,
+      "description": "CV baseline console log"
+    },
+    "teacher_decode_probe.log": {
+      "sha256": "498053e450aa20fe19d93f4ccb5fb58453cde0817646c678285910248750cebd",
+      "bytes": 1178,
+      "description": "teacher-decode probe console log"
+    }
+  }
+}

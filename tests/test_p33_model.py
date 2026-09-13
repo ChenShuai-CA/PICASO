@@ -135,6 +135,56 @@ def test_hidden_source_counterfactual_invariance():
     assert not torch.allclose(outputs["motion_token_logits"][:, 0], outputs_c["motion_token_logits"][:, 0])
 
 
+def test_partial_history_counterfactual_bitwise_invariance():
+    """P3.3.2a blocking case: source visible at t=0 but hidden at one past frame.
+
+    The t=0-visible gate is not sufficient — the hidden frame's state must have
+    exactly zero effect on the query logits (spec 4.5 per-time masking), so the
+    assertion is bitwise equality, not a tolerance.
+    """
+    model = _model().eval()
+    batch = _make_batch()
+    batch["pairwise_visibility_mask"][:, 0, 3, 6] = False  # frame 3 of source 6 hidden from query 0
+    base = model(to_torch_batch(batch), teacher_tokens=torch.from_numpy(batch["motion_token_target"].astype(np.int64)))
+    perturbed = {key: value.copy() for key, value in batch.items() if isinstance(value, np.ndarray)}
+    perturbed["agent_history"][:, 6, 3, :2] += 50.0   # huge state change at the hidden frame
+    perturbed["agent_history"][:, 6, 3, 2:4] += 20.0
+    outputs = model(to_torch_batch(perturbed), teacher_tokens=torch.from_numpy(batch["motion_token_target"].astype(np.int64)))
+    assert torch.equal(base["motion_token_logits"][:, 0], outputs["motion_token_logits"][:, 0])
+    assert torch.equal(base["delta_xy_residual"][:, 0], outputs["delta_xy_residual"][:, 0])
+    # other queries see agent 6 fully at frame 3, so their logits must move
+    assert not torch.equal(base["motion_token_logits"][:, 1], outputs["motion_token_logits"][:, 1])
+
+
+def test_past_visible_frames_flow_under_t0_occlusion():
+    """Any-frame visibility gate: a source hidden at t=0 but visible in the past
+    still informs the query through its visible frames (and only those)."""
+    model = _model().eval()
+    batch = _make_batch()
+    # source 6 visible to query 0 only at frames 0-4, occluded from frame 5 on
+    batch["pairwise_visibility_mask"][:, 0, 5:, 6] = False
+    base = model(to_torch_batch(batch), teacher_tokens=torch.from_numpy(batch["motion_token_target"].astype(np.int64)))
+    hidden_frames = {key: value.copy() for key, value in batch.items() if isinstance(value, np.ndarray)}
+    hidden_frames["agent_history"][:, 6, 5:, :2] += 50.0  # occluded frames: no effect
+    out_hidden = model(to_torch_batch(hidden_frames), teacher_tokens=torch.from_numpy(batch["motion_token_target"].astype(np.int64)))
+    assert torch.equal(base["motion_token_logits"][:, 0], out_hidden["motion_token_logits"][:, 0])
+    visible_frame = {key: value.copy() for key, value in batch.items() if isinstance(value, np.ndarray)}
+    visible_frame["agent_history"][:, 6, 2, :2] += 50.0   # visible frame: must flow
+    out_visible = model(to_torch_batch(visible_frame), teacher_tokens=torch.from_numpy(batch["motion_token_target"].astype(np.int64)))
+    assert not torch.equal(base["motion_token_logits"][:, 0], out_visible["motion_token_logits"][:, 0])
+
+
+def test_fully_occluded_query_stays_finite():
+    """A query that sees no other agent at any frame (only its own key remains
+    attendable) must still produce finite logits."""
+    model = _model().eval()
+    batch = _make_batch()
+    batch["pairwise_visibility_mask"][:, 0, :, 1:] = False  # query 0 sees nobody
+    outputs = model(to_torch_batch(batch), teacher_tokens=torch.from_numpy(batch["motion_token_target"].astype(np.int64)))
+    assert torch.isfinite(outputs["motion_token_logits"]).all()
+    assert torch.isfinite(outputs["delta_xy_residual"]).all()
+
+
 def test_padded_agents_never_affect_valid_queries():
     model = _model().eval()
     batch = _make_batch()

@@ -1,6 +1,8 @@
 {
   "phase": "P3.3.2",
   "status": "pass",
+  "superseded_by": "runs/20260913_p332a_visibility_fix/SMOKE_VALIDATION.json",
+  "superseded_reason": "independent review (CODEX_REVIEW.md in this directory, commit 0f28bcc) found the actor_visible_counterfactual check to be a false pass: the model pooled full source histories and gated access by t=0 visibility only, leaking past-occluded frames (spec 4.5 requires per-query per-time masking). Model-derived metrics and the checkpoint in this directory are superseded; CV results remain valid.",
   "engineering_only": true,
   "g1_evaluated": false,
   "heldout_trajectory_content_read": false,

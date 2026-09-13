@@ -1,5 +1,16 @@
 # P3.3.2 名义模型与训练管线 smoke 报告
 
+> **SUPERSEDED（2026-09-13，P3.3.2a）**：独立复核（`CODEX_REVIEW.md`，commit 0f28bcc）
+> 确认模型存在时序可见性泄漏（静态 token 池化全部历史帧、仅按 t=0 可见性门控，违反
+> spec §4.5 逐 query 逐时刻掩码），`actor_visible_counterfactual=pass` 为假阳性——本报告中
+> 全部模型侧数字（M1/M2/M3、teacher-decode 探针）与 checkpoint 由
+> `runs/20260913_p332a_visibility_fix/` 的修正重跑取代。CV 基线结果不受影响。
+> 已知勘误：role-0 是 padding（"other" = agent_type-4，dev 有 8,692 条）；exposure 应为
+> 5.69 个 waymo pass / 1.15 个 interaction pass；715.9 s = 300 update 当量；8 张图全部来自
+> waymo；sampled_token_nll 不是采样分布的严格熵；分配器→核选择归因已被干净探针否定
+> （真实机制 = bf16 mem-efficient attention 反向非确定 + 探针自身的优化器状态别名污染）。
+> 本文件保留为历史记录，正文不再修订。
+
 - 日期：2026-09-13；执行者：GLM 5.3（Claude Code）；配置版本 `p33.0-v1.1` + `p33-model-smoke-v1`
 - 结论一句话：**管线工程 smoke 全部通过（12/12 checks）**；模型本身按预期严重欠训练
   （200 updates × 256 有效批量 ≈ 5.1 万样本，约为 waymo train 一个 epoch 的 1.1 倍），

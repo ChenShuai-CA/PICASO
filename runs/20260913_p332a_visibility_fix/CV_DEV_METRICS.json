@@ -1,0 +1,183 @@
+{
+  "mode": "b0_cv_baseline",
+  "split": "dev",
+  "samples_covered": 4416,
+  "batches": 276,
+  "group_level": {
+    "interaction": {
+      "groups": 4,
+      "agent_records": 44214,
+      "ade": 3.24609275174885,
+      "min_ade": 3.24609275174885,
+      "min_ade_joint": 3.24609275174885,
+      "fde": 8.55690464359003,
+      "min_fde": 8.55690464359003,
+      "min_fde_joint": 8.55690464359003,
+      "pooled_ade": 1.7325799259897907,
+      "pooled_min_ade": 1.7325799259897907,
+      "pooled_min_ade_joint": 1.7325799259897907,
+      "pooled_fde": 4.591737985542669,
+      "pooled_min_fde": 4.591737985542669,
+      "pooled_min_fde_joint": 4.591737985542669
+    },
+    "waymo": {
+      "groups": 481,
+      "agent_records": 2631,
+      "ade": 3.9694928406077707,
+      "min_ade": 3.9694928406077707,
+      "min_ade_joint": 3.9694928406077707,
+      "fde": 10.96516667145915,
+      "min_fde": 10.96516667145915,
+      "min_fde_joint": 10.96516667145915,
+      "pooled_ade": 4.052190912070699,
+      "pooled_min_ade": 4.052190912070699,
+      "pooled_min_ade_joint": 4.052190912070699,
+      "pooled_fde": 11.17344253863725,
+      "pooled_min_fde": 11.17344253863725,
+      "pooled_min_fde_joint": 11.17344253863725
+    }
+  },
+  "strata": {
+    "source": {
+      "interaction": {
+        "count": 44214,
+        "ade": 1.7325799259897907,
+        "min_ade": 1.7325799259897907,
+        "min_ade_joint": 1.7325799259897907,
+        "fde": 4.591737985542669,
+        "min_fde": 4.591737985542669,
+        "min_fde_joint": 4.591737985542669,
+        "endpoint_missing": 0
+      },
+      "waymo": {
+        "count": 2631,
+        "ade": 4.052190912070699,
+        "min_ade": 4.052190912070699,
+        "min_ade_joint": 4.052190912070699,
+        "fde": 11.17344253863725,
+        "min_fde": 11.17344253863725,
+        "min_fde_joint": 11.17344253863725,
+        "endpoint_missing": 66
+      }
+    },
+    "agent_type": {
+      "1": {
+        "count": 37863,
+        "ade": 2.0916953676767953,
+        "min_ade": 2.0916953676767953,
+        "min_ade_joint": 2.0916953676767953,
+        "fde": 5.587056039264528,
+        "min_fde": 5.587056039264528,
+        "min_fde_joint": 5.587056039264528,
+        "endpoint_missing": 57
+      },
+      "2": {
+        "count": 241,
+        "ade": 0.8325820475915895,
+        "min_ade": 0.8325820475915895,
+        "min_ade_joint": 0.8325820475915895,
+        "fde": 1.9575443849718002,
+        "min_fde": 1.9575443849718002,
+        "min_fde_joint": 1.9575443849718002,
+        "endpoint_missing": 7
+      },
+      "3": {
+        "count": 49,
+        "ade": 1.930637789357041,
+        "min_ade": 1.930637789357041,
+        "min_ade_joint": 1.930637789357041,
+        "fde": 4.7009327460930335,
+        "min_fde": 4.7009327460930335,
+        "min_fde_joint": 4.7009327460930335,
+        "endpoint_missing": 2
+      },
+      "4": {
+        "count": 8692,
+        "ade": 0.8942116780805394,
+        "min_ade": 0.8942116780805394,
+        "min_ade_joint": 0.8942116780805394,
+        "fde": 2.2751649285323925,
+        "min_fde": 2.2751649285323925,
+        "min_fde_joint": 2.2751649285323925,
+        "endpoint_missing": 0
+      }
+    },
+    "agent_role": {
+      "1": {
+        "count": 4416,
+        "ade": 2.733336198394509,
+        "min_ade": 2.733336198394509,
+        "min_ade_joint": 2.733336198394509,
+        "fde": 7.308684784093492,
+        "min_fde": 7.308684784093492,
+        "min_fde_joint": 7.308684784093492,
+        "endpoint_missing": 0
+      },
+      "2": {
+        "count": 42429,
+        "ade": 1.772259315215076,
+        "min_ade": 1.772259315215076,
+        "min_ade_joint": 1.772259315215076,
+        "fde": 4.707028099941723,
+        "min_fde": 4.707028099941723,
+        "min_fde_joint": 4.707028099941723,
+        "endpoint_missing": 66
+      }
+    },
+    "agents_truncated": {
+      "False": {
+        "count": 12577,
+        "ade": 3.4924745258312337,
+        "min_ade": 3.4924745258312337,
+        "min_ade_joint": 3.4924745258312337,
+        "fde": 9.221057107444677,
+        "min_fde": 9.221057107444677,
+        "min_fde_joint": 9.221057107444677,
+        "endpoint_missing": 4
+      },
+      "True": {
+        "count": 34268,
+        "ade": 1.2647586969181512,
+        "min_ade": 1.2647586969181512,
+        "min_ade_joint": 1.2647586969181512,
+        "fde": 3.3836938663534517,
+        "min_fde": 3.3836938663534517,
+        "min_fde_joint": 3.3836938663534517,
+        "endpoint_missing": 62
+      }
+    },
+    "map_truncated": {
+      "False": {
+        "count": 181,
+        "ade": 3.155066182187325,
+        "min_ade": 3.155066182187325,
+        "min_ade_joint": 3.155066182187325,
+        "fde": 8.418029020626378,
+        "min_fde": 8.418029020626378,
+        "min_fde_joint": 8.418029020626378,
+        "endpoint_missing": 5
+      },
+      "True": {
+        "count": 46664,
+        "ade": 1.857846223178354,
+        "min_ade": 1.857846223178354,
+        "min_ade_joint": 1.857846223178354,
+        "fde": 4.93954059388361,
+        "min_fde": 4.93954059388361,
+        "min_fde_joint": 4.93954059388361,
+        "endpoint_missing": 61
+      }
+    }
+  },
+  "counts": {
+    "agents": 46845,
+    "endpoint_missing": 66,
+    "by_source": {
+      "interaction": 44214,
+      "waymo": 2631
+    },
+    "total_valid_future_steps": 2341148
+  },
+  "determinism_check_minade_equals_ade": true,
+  "elapsed_seconds": 8.226560831069946
+}

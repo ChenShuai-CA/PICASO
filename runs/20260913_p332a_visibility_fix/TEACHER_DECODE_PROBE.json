@@ -1,0 +1,74 @@
+{
+  "probe": "teacher_forced_decode_ground_truth_tokens_vs_argmax_tokens",
+  "checkpoint": "m2_final_checkpoint.pt",
+  "batches": 276,
+  "ground_truth_tokens_group_level": {
+    "interaction": {
+      "groups": 4,
+      "agent_records": 44214,
+      "ade": 1.109334982687246,
+      "min_ade": 1.109334982687246,
+      "min_ade_joint": NaN,
+      "fde": 1.8108530385401032,
+      "min_fde": 1.8108530385401032,
+      "min_fde_joint": NaN,
+      "pooled_ade": 1.0871532357817997,
+      "pooled_min_ade": 1.0871532357817997,
+      "pooled_min_ade_joint": NaN,
+      "pooled_fde": 1.8557747767785717,
+      "pooled_min_fde": 1.8557747767785717,
+      "pooled_min_fde_joint": NaN
+    },
+    "waymo": {
+      "groups": 481,
+      "agent_records": 2631,
+      "ade": 2.2531551343960112,
+      "min_ade": 2.2531551343960112,
+      "min_ade_joint": NaN,
+      "fde": 4.0555168150127585,
+      "min_fde": 4.0555168150127585,
+      "min_fde_joint": NaN,
+      "pooled_ade": 2.4377414564628683,
+      "pooled_min_ade": 2.4377414564628683,
+      "pooled_min_ade_joint": NaN,
+      "pooled_fde": 4.3958454767223385,
+      "pooled_min_fde": 4.3958454767223385,
+      "pooled_min_fde_joint": NaN
+    }
+  },
+  "argmax_tokens_group_level": {
+    "interaction": {
+      "groups": 4,
+      "agent_records": 44214,
+      "ade": 2.3482583614157275,
+      "min_ade": 2.3482583614157275,
+      "min_ade_joint": NaN,
+      "fde": 3.0414236415398612,
+      "min_fde": 3.0414236415398612,
+      "min_fde_joint": NaN,
+      "pooled_ade": 1.739338793867507,
+      "pooled_min_ade": 1.739338793867507,
+      "pooled_min_ade_joint": NaN,
+      "pooled_fde": 2.446108998684303,
+      "pooled_min_fde": 2.446108998684303,
+      "pooled_min_fde_joint": NaN
+    },
+    "waymo": {
+      "groups": 481,
+      "agent_records": 2631,
+      "ade": 4.0283269263106956,
+      "min_ade": 4.0283269263106956,
+      "min_ade_joint": NaN,
+      "fde": 5.027100492244772,
+      "min_fde": 5.027100492244772,
+      "min_fde_joint": NaN,
+      "pooled_ade": 3.871034168943501,
+      "pooled_min_ade": 3.871034168943501,
+      "pooled_min_ade_joint": NaN,
+      "pooled_fde": 4.891091050114034,
+      "pooled_min_fde": 4.891091050114034,
+      "pooled_min_fde_joint": NaN
+    }
+  },
+  "interpretation": "ground_truth row isolates decode path + residual head (token distribution perfect); argmax row adds greedy token error without sampling/autoregressive drift. Teacher-forced numbers are not rollout numbers and support exposure-error diagnosis only; 0.7^10-style calculations are heuristics, not measured rollout all-correct probabilities."
+}

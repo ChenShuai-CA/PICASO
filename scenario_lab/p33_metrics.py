@@ -43,6 +43,10 @@ class AgentErrorRecord:
     min_fde: float
     valid_steps: int
     endpoint_valid: bool
+    # secondary joint-scene best-of-K metrics (P3.3.2a): one shared sample
+    # index per scene; NaN when the caller did not compute them
+    min_ade_joint: float = float("nan")
+    min_fde_joint: float = float("nan")
 
 
 def constant_velocity_prediction(agent_history: np.ndarray,
@@ -111,6 +115,37 @@ def min_k_displacement_errors(predictions: np.ndarray, truth: np.ndarray,
     return {"min_ade": min_ade, "min_fde": min_fde}
 
 
+def joint_scene_min_k_displacement_errors(predictions: np.ndarray, truth: np.ndarray,
+                                          valid: np.ndarray,
+                                          eval_mask: np.ndarray | None = None
+                                          ) -> dict[str, np.ndarray]:
+    """Joint-scene best-of-K (secondary metric, P3.3.2a): ONE sample index per
+    scene serves all evaluated agents.
+
+    ``min_k_displacement_errors`` can pick a different joint sample for every
+    agent; for a joint multi-agent generator the scene-consistent counterpart
+    selects ``k* = argmin_k scene-mean ADE over evaluated agents`` and reports
+    every agent's ADE/FDE from sample ``k*``.
+    """
+    samples, agents = predictions.shape[0], predictions.shape[1]
+    per_step = np.linalg.norm(predictions - truth[None], axis=-1)  # [K, A, 50]
+    steps = valid.sum(axis=1)
+    ade = np.full((samples, agents), np.nan)
+    has_steps = steps > 0
+    ade[:, has_steps] = (per_step * valid[None]).sum(axis=2)[:, has_steps] / steps[None, has_steps]
+    endpoint_valid = valid[:, ENDPOINT_INDEX]
+    fde = np.where(endpoint_valid[None], per_step[:, :, ENDPOINT_INDEX], np.nan)
+    scored = (np.ones(agents, dtype=bool) if eval_mask is None
+              else np.asarray(eval_mask, dtype=bool))
+    with np.errstate(invalid="ignore"):
+        scene_ade = np.nanmean(np.where(scored[None], ade, np.nan), axis=1)  # [K]
+    if bool(np.all(np.isnan(scene_ade))):
+        return {"min_ade_joint": np.full(agents, np.nan),
+                "min_fde_joint": np.full(agents, np.nan)}
+    best = int(np.nanargmin(scene_ade))
+    return {"min_ade_joint": ade[best], "min_fde_joint": fde[best]}
+
+
 def _records_for_batch(trajectories: np.ndarray, batch: dict,
                        eval_mask: np.ndarray | None = None) -> list[AgentErrorRecord]:
     """Build per-agent records from [B, K, A, 50, 2] rollouts (K=1 allowed)."""
@@ -129,8 +164,12 @@ def _records_for_batch(trajectories: np.ndarray, batch: dict,
         if trajectories.shape[1] > 1:
             best = min_k_displacement_errors(trajectories[index], truth, valid)
             min_ade, min_fde = best["min_ade"], best["min_fde"]
+            joint = joint_scene_min_k_displacement_errors(trajectories[index], truth,
+                                                          valid, mask)
+            min_ade_joint, min_fde_joint = joint["min_ade_joint"], joint["min_fde_joint"]
         else:
             min_ade, min_fde = single["ade"], single["fde"]
+            min_ade_joint, min_fde_joint = single["ade"], single["fde"]
         for slot in np.flatnonzero(mask):
             records.append(AgentErrorRecord(
                 source=batch["sample_source"][index],
@@ -147,6 +186,8 @@ def _records_for_batch(trajectories: np.ndarray, batch: dict,
                 min_fde=float(min_fde[slot]),
                 valid_steps=int(single["valid_steps"][slot]),
                 endpoint_valid=bool(single["endpoint_valid"][slot]),
+                min_ade_joint=float(min_ade_joint[slot]),
+                min_fde_joint=float(min_fde_joint[slot]),
             ))
     return records
 
@@ -175,9 +216,11 @@ def group_level_table(records: list[AgentErrorRecord]) -> dict:
     for record in records:
         groups[record.source][record.group_id]["ade"].append(record.ade)
         groups[record.source][record.group_id]["min_ade"].append(record.min_ade)
+        groups[record.source][record.group_id]["min_ade_joint"].append(record.min_ade_joint)
         if record.endpoint_valid:
             groups[record.source][record.group_id]["fde"].append(record.fde)
             groups[record.source][record.group_id]["min_fde"].append(record.min_fde)
+            groups[record.source][record.group_id]["min_fde_joint"].append(record.min_fde_joint)
     table: dict[str, dict] = {}
     for source, source_groups in sorted(groups.items()):
         def across(metric: str, pooled: bool = False) -> float:
@@ -192,12 +235,16 @@ def group_level_table(records: list[AgentErrorRecord]) -> dict:
             "agent_records": sum(len(group["ade"]) for group in source_groups.values()),
             "ade": across("ade"),
             "min_ade": across("min_ade"),
+            "min_ade_joint": across("min_ade_joint"),
             "fde": across("fde"),
             "min_fde": across("min_fde"),
+            "min_fde_joint": across("min_fde_joint"),
             "pooled_ade": across("ade", pooled=True),
             "pooled_min_ade": across("min_ade", pooled=True),
+            "pooled_min_ade_joint": across("min_ade_joint", pooled=True),
             "pooled_fde": across("fde", pooled=True),
             "pooled_min_fde": across("min_fde", pooled=True),
+            "pooled_min_fde_joint": across("min_fde_joint", pooled=True),
         }
     return table
 
@@ -205,14 +252,18 @@ def group_level_table(records: list[AgentErrorRecord]) -> dict:
 def _stratum(values: list[AgentErrorRecord]) -> dict:
     def mean(metric: str) -> float:
         selected = [getattr(record, metric) for record in values
-                    if not (metric in ("fde", "min_fde") and not record.endpoint_valid)]
+                    if not (metric in ("fde", "min_fde", "min_fde_joint")
+                            and not record.endpoint_valid)]
+        selected = [value for value in selected if not np.isnan(value)]
         return float(np.mean(selected)) if selected else float("nan")
     return {
         "count": len(values),
         "ade": mean("ade"),
         "min_ade": mean("min_ade"),
+        "min_ade_joint": mean("min_ade_joint"),
         "fde": mean("fde"),
         "min_fde": mean("min_fde"),
+        "min_fde_joint": mean("min_fde_joint"),
         "endpoint_missing": sum(1 for record in values if not record.endpoint_valid),
     }
 

@@ -1,16 +1,21 @@
 """AR-Scene-v1: minimal autoregressive scene model per frozen spec p33.0-v1.1.
 
 Architecture decisions the frozen spec leaves open, forced by the strict
-hidden-information boundary (query logits must be exactly invariant to changes
-in invisible source-agent history):
+hidden-information boundary (spec 4.5 per-query, per-time actor visibility:
+query logits must be exactly invariant to changes of source-agent state at
+frames where that source is invisible to the query):
 
-* **Static-key isolation.**  Agent-agent attention uses keys/values that are
-  functions of the *source agent's own raw history only* (encoder) or of the
-  *token identity only* (decoder).  Layer-updated states are never shared as
-  keys: agent ``b``'s evolving representation could otherwise absorb hidden
-  agent ``s`` and relay it to ``a`` even though ``s`` is invisible to ``a``.
-  With static keys the only path from ``s`` into query ``a`` is a direct
-  attention edge, which the per-row visibility mask removes.
+* **Per-query view keys.**  Encoder agent-agent attention gives every query
+  its own key set: the key for pair (query a, source s) pools s's per-frame
+  encodings with weights ``pairwise_visibility[a, :, s] & state_valid[s, :]``,
+  so a frame hidden from a contributes exactly zero weight (bit-exact
+  invariance; masked mean divides by the visible-frame count).  Keys are
+  functions of the source's raw history and the (a, s) visibility only and are
+  never layer-updated, so agent ``b``'s evolving representation cannot relay
+  hidden ``s`` to ``a``: the only path from ``s`` into ``a`` is the direct
+  (a, s) key, which carries no hidden frame.  A pair with no visible frame is
+  blocked at attention; the own key (diagonal) pools the agent's full valid
+  history and is always attendable.
 * **NULL keys.**  Attention that can be fully masked for a row (agent-map,
   decoder inter-agent) carries one extra always-attendable learned NULL key so
   softmax never sees an all -inf row (map-less scenes, agents with no visible
@@ -73,7 +78,7 @@ class MaskedPool(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    """Pre-LN: agent-agent (static own-history keys) + agent-map + FFN."""
+    """Pre-LN: agent-agent (per-query view keys) + agent-map + FFN."""
 
     def __init__(self, config: dict):
         super().__init__()
@@ -89,14 +94,20 @@ class EncoderLayer(nn.Module):
         self.norm_map = nn.LayerNorm(d)
         self.norm_ffn = nn.LayerNorm(d)
 
-    def forward(self, x, static_agents, agent_mask, map_tokens, map_pad):
-        # x [B,A,d]; static_agents [B,A,d]; agent_mask [B*H,A,A] bool True=blocked;
-        # map_tokens [B,map+1,d] incl. NULL; map_pad [B,map+1] True=pad
+    def forward(self, x, pair_tokens, pair_blocked, map_tokens, map_pad):
+        # x [B,A,d]; pair_tokens [B,q,s,d] per-query view keys; pair_blocked
+        # [B,q,s] True=blocked (own key never blocked); map_tokens [B,map+1,d]
+        # incl. NULL; map_pad [B,map+1] True=pad
+        batch, agents, d = x.shape
         query = self.norm_query(x)
-        static = self.norm_static(static_agents)
-        attended, _ = self.agent_attention(query, static, static, attn_mask=agent_mask,
+        keys = self.norm_static(pair_tokens)
+        flat_query = query.reshape(batch * agents, 1, d)
+        flat_keys = keys.reshape(batch * agents, agents, d)
+        blocked = pair_blocked.reshape(batch * agents, agents)
+        attended, _ = self.agent_attention(flat_query, flat_keys, flat_keys,
+                                           key_padding_mask=blocked,
                                            need_weights=False)
-        x = x + attended
+        x = x + attended.reshape(batch, agents, d)
         attended, _ = self.map_attention(self.norm_map(x), map_tokens, map_tokens,
                                          key_padding_mask=map_pad, need_weights=False)
         x = x + attended
@@ -190,7 +201,6 @@ class ARSceneV1(nn.Module):
         self.null_map_key = nn.Parameter(torch.zeros(d))
 
         self.history_encoder = nn.Sequential(nn.Linear(8, d), nn.GELU(), nn.Linear(d, d))
-        self.agent_pool = MaskedPool()
         self.agent_projector = nn.Sequential(nn.Linear(2 * d, d), nn.GELU(), nn.Linear(d, d))
         self.map_encoder = nn.Sequential(nn.Linear(6, d), nn.GELU(), nn.Linear(d, d))
         self.map_pool = MaskedPool()
@@ -202,17 +212,49 @@ class ARSceneV1(nn.Module):
         self.residual_head = nn.Linear(d, 10)
 
     # ----------------------------------------------------------------- inputs
-    def _agent_static_tokens(self, batch: dict) -> torch.Tensor:
-        """Own-history-only agent tokens [B,A,d]; never mixed across agents."""
+    def _pair_weights(self, batch: dict) -> torch.Tensor:
+        """Frame weights W[b,q,t,s]: frame t of source s enters query q's view
+        iff s is visible to q at t and the state is valid.  The diagonal (own
+        history) uses the agent's full valid history regardless of visibility."""
+        valid = batch["state_valid_mask"].transpose(1, 2)          # [B, t, s]
+        visibility = batch["pairwise_visibility_mask"]              # [B, q, t, s]
+        own = torch.eye(self.agents, dtype=torch.bool,
+                        device=visibility.device)[None, :, None, :]
+        return (visibility | own) & valid[:, None, :, :]            # [B, q, t, s]
+
+    def _pair_view_tokens(self, batch: dict) -> tuple[torch.Tensor, torch.Tensor]:
+        """Per-query view keys [B,q,s,d] and attention blocks [B,q,s] (True=blocked).
+
+        Spec 4.5: the history of source s is masked per (query, time) before any
+        pooling or attention.  Hidden frames get exactly zero weight in both the
+        mean and the last-visible-step gather, so perturbing them cannot change
+        any downstream value; pairs with no visible frame are blocked entirely
+        (the own diagonal key is never blocked).
+        """
         history = (batch["agent_history"] / self.history_scale).clamp(-self.clip, self.clip)
-        valid = batch["state_valid_mask"].unsqueeze(-1).to(history.dtype)
-        steps = (self.history_encoder(history) + self.time_table[None, None]) * valid
-        mean = self.agent_pool(steps, batch["state_valid_mask"])
-        pooled = torch.cat([mean, steps[:, :, -1]], dim=-1)
+        valid = batch["state_valid_mask"]
+        steps = (self.history_encoder(history) + self.time_table[None, None]) * valid.unsqueeze(-1)
+        # steps [B, s, t, d]: invalid frames are exactly zero
+        weights = self._pair_weights(batch).to(steps.dtype)         # [B, q, t, s]
+        mean = torch.einsum("bqts,bstd->bqsd", weights, steps)
+        count = weights.sum(dim=2).clamp(min=1.0)                   # [B, q, s]
+        mean = mean / count[..., None]
+        positions = torch.arange(self.history_steps, device=steps.device)
+        masked_pos = torch.where(weights > 0, positions[None, None, :, None], -1)
+        last_visible = masked_pos.max(dim=2).values                 # [B, q, s]
+        gather = last_visible.clamp(min=0)
+        hot = (positions[None, None, :, None] == gather.unsqueeze(2)).to(steps.dtype)
+        last = torch.einsum("bqts,bstd->bqsd", hot, steps)
+        pooled = torch.cat([mean, last], dim=-1)
         token = self.agent_projector(pooled)
-        return (token + self.type_embedding(batch["agent_type"].long())
-                + self.role_embedding(batch["agent_role"].long())
-                + self.source_embedding(batch["source_id"])[:, None])
+        token = (token + self.type_embedding(batch["agent_type"].long())[:, None, :]
+                 + self.role_embedding(batch["agent_role"].long())[:, None, :]
+                 + self.source_embedding(batch["source_id"])[:, None, None, :])
+        present = batch["agent_present_mask"]
+        has_visible = weights.sum(dim=2) > 0                        # [B, q, s]
+        own_key = torch.eye(self.agents, dtype=torch.bool, device=present.device)
+        blocked = ~(present[:, None, :] & has_visible) & ~own_key[None]
+        return token, blocked
 
     def _map_tokens(self, batch: dict) -> tuple[torch.Tensor, torch.Tensor]:
         """Map tokens + key padding [B,map+1,d]/[B,map+1]; trailing NULL key."""
@@ -227,21 +269,13 @@ class ARSceneV1(nn.Module):
                                                   device=tokens.device)], dim=1)
         return tokens, pad
 
-    def _encoder_mask(self, batch: dict) -> torch.Tensor:
-        """[B,A,A] bool True=blocked: attend self + t=0-visible present sources."""
-        visibility = batch["pairwise_visibility_mask"][:, :, -1, :]
-        present = batch["agent_present_mask"]
-        allowed = visibility & present[:, None, :] | torch.eye(
-            self.agents, dtype=torch.bool, device=present.device)[None]
-        return ~allowed
-
     def encode_context(self, batch: dict) -> dict[str, torch.Tensor]:
-        static = self._agent_static_tokens(batch)
+        pair_tokens, pair_blocked = self._pair_view_tokens(batch)
         map_tokens, map_pad = self._map_tokens(batch)
-        attn_mask = self._encoder_mask(batch).repeat_interleave(self.heads, dim=0)
-        x = static
+        index = torch.arange(self.agents, device=pair_tokens.device)
+        x = pair_tokens[:, index, index]  # init from the own-history view token
         for layer in self.encoder:
-            x = layer(x, static, attn_mask, map_tokens, map_pad)
+            x = layer(x, pair_tokens, pair_blocked, map_tokens, map_pad)
         return {"agent_context": self.encoder_norm(x)}
 
     def _token_inputs(self, teacher: torch.Tensor) -> torch.Tensor:
