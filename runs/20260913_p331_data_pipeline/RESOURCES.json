@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-09-13T02:06:19.741769",
+  "os": {
+    "system": "Linux",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025",
+    "machine": "x86_64",
+    "python_version": "3.12.3"
+  },
+  "cpu": {
+    "physical_cores": 16,
+    "logical_cores": 32,
+    "max_frequency_mhz": 0.0,
+    "architecture": "x86_64",
+    "processor": "x86_64",
+    "current_frequency_mhz": 3400.0369999999975
+  },
+  "memory": {
+    "total_gb": 24.52,
+    "available_gb": 20.85,
+    "used_gb": 3.67,
+    "percent_used": 15.0,
+    "swap_total_gb": 7.0,
+    "swap_available_gb": 7.0
+  },
+  "disk": {
+    "path": "/mnt/d/Projects/Scenario_Generation_Research",
+    "total_gb": 3725.9,
+    "available_gb": 3208.59,
+    "used_gb": 517.31,
+    "percent_used": 13.9
+  },
+  "gpu": {
+    "nvidia_gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 4060 Ti",
+        "memory_total_mb": 16380.0,
+        "memory_free_mb": 13699.0,
+        "driver_version": "616.64",
+        "compute_capability": "8.9",
+        "type": "NVIDIA",
+        "backend": "CUDA"
+      }
+    ],
+    "amd_gpus": [],
+    "apple_silicon": null,
+    "total_gpus": 1,
+    "available_backends": [
+      "CUDA"
+    ]
+  },
+  "recommendations": {
+    "parallel_processing": {
+      "strategy": "high_parallelism",
+      "suggested_workers": 30,
+      "libraries": [
+        "joblib",
+        "multiprocessing",
+        "dask"
+      ]
+    },
+    "memory_strategy": {
+      "strategy": "memory_abundant",
+      "note": "Can load most datasets into memory"
+    },
+    "gpu_acceleration": {
+      "available": true,
+      "backends": [
+        "CUDA"
+      ],
+      "suggested_libraries": [
+        "pytorch",
+        "tensorflow",
+        "jax",
+        "cupy",
+        "rapids"
+      ]
+    },
+    "large_data_handling": {
+      "strategy": "disk_abundant",
+      "note": "Sufficient space for large intermediate files"
+    }
+  }
+}

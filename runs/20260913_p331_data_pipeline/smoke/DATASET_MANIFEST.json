@@ -1,0 +1,1213 @@
+{
+  "phase": "P3.3.1",
+  "status": "smoke_data_pipeline_complete",
+  "stage": "smoke",
+  "diagnostic_waymo_record_limit": null,
+  "units": [
+    {
+      "unit_id": "waymo-training-a0ad7659ab8c89a4",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00093-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00093-of-01000": "c367e1ba4a7669744c90c4d4c3015450bb3bc2354cde26186591f2452344417c"
+      },
+      "scenes": 477,
+      "examples": 477,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 477,
+          "npz_sha256_before_token_labeling": "0b66aef3bbd2215ad763a2e8b98f0604ad469baf9d3c0071d4a87be8836ec88b"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 123.31342029571533,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-a0ad7659ab8c89a4",
+          "path": "units/waymo-training-a0ad7659ab8c89a4/part-00000.npz",
+          "index": "units/waymo-training-a0ad7659ab8c89a4/part-00000.jsonl",
+          "examples": 477,
+          "sha256": "e5b35040c2328c1826d972fc6f7c06a7749fe68148ff9a2af2b5b3f68fee4acf"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-6e50b00d01e319fb",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00129-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00129-of-01000": "fd362deda9a80f17b812d35606aec822bc4dba8c92b9bc518562a50601802511"
+      },
+      "scenes": 473,
+      "examples": 473,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 473,
+          "npz_sha256_before_token_labeling": "7a35297cc18fc4a3a4874ab1c72950c87e8f1f06e31af1797f1a569ecaa54d2b"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 122.09299993515015,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-6e50b00d01e319fb",
+          "path": "units/waymo-training-6e50b00d01e319fb/part-00000.npz",
+          "index": "units/waymo-training-6e50b00d01e319fb/part-00000.jsonl",
+          "examples": 473,
+          "sha256": "be840b8fbe084ae98dd2750d783a74079d085ac0387fd3c70b74c285ff8100a2"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-641b15159622163a",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00158-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00158-of-01000": "1e005b4081133eccf671f0e371963a8b0faccc1c17db598a89049b9157852952"
+      },
+      "scenes": 534,
+      "examples": 534,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 534,
+          "npz_sha256_before_token_labeling": "2e1f67af02cfb7550e94469bdcd4bfe871b0038216af614b25134f1bd42cf917"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 136.7829201221466,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-641b15159622163a",
+          "path": "units/waymo-training-641b15159622163a/part-00000.npz",
+          "index": "units/waymo-training-641b15159622163a/part-00000.jsonl",
+          "examples": 534,
+          "sha256": "0e9bdd45f546944dc7f987a3c500b68531b525781c90a25f6484526e9f639ed4"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-9ee2f4107354d1a5",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00207-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00207-of-01000": "11995dbd460b08c8088edbe84121d69119911d5b5ea44569a6175f886132fc6a"
+      },
+      "scenes": 474,
+      "examples": 474,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 474,
+          "npz_sha256_before_token_labeling": "343e6ae445b2dae98028723f83ef75c4e837eca83723446f0230f8387a1c1132"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 120.33335494995117,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-9ee2f4107354d1a5",
+          "path": "units/waymo-training-9ee2f4107354d1a5/part-00000.npz",
+          "index": "units/waymo-training-9ee2f4107354d1a5/part-00000.jsonl",
+          "examples": 474,
+          "sha256": "7b0ee1dfff0422c9f452c2c4879bc0ba7efb138dba81ec31b0b3a95607dbd2eb"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-48f2cb33d93668bb",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00297-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00297-of-01000": "8fa4aad812141f10bd30628a69f4513ef0c9e553efe4f462f8679130dc7aa2ae"
+      },
+      "scenes": 492,
+      "examples": 492,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 492,
+          "npz_sha256_before_token_labeling": "8a50825936cba48dd11ba59e19e4b36b9e62dd8f7b1d80a5fa09d64056716350"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 128.28201389312744,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-48f2cb33d93668bb",
+          "path": "units/waymo-training-48f2cb33d93668bb/part-00000.npz",
+          "index": "units/waymo-training-48f2cb33d93668bb/part-00000.jsonl",
+          "examples": 492,
+          "sha256": "7de370ede2bb574a2525eb95e21b8592c1ee2a8e48bde1a695a8adc82189aa3a"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-884f19bec52e3b30",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00375-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00375-of-01000": "a5d3d2198bc6010a4ef892e70224c06d0cae06cba4be2e4aeb666feb0002c45c"
+      },
+      "scenes": 494,
+      "examples": 494,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 494,
+          "npz_sha256_before_token_labeling": "46552dccc8f35d46b9288ba1a1019db0a799c74e2c388bf5230768ac1c441cff"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 126.19234228134155,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-884f19bec52e3b30",
+          "path": "units/waymo-training-884f19bec52e3b30/part-00000.npz",
+          "index": "units/waymo-training-884f19bec52e3b30/part-00000.jsonl",
+          "examples": 494,
+          "sha256": "b9477591f2396150a7ab6d26848a9ddee8c6ebec167dc5fcb9637af39b347652"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-86fb3094183b97ae",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00540-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00540-of-01000": "8a9945b969be8b1a9c73fe83cca0dee92b572c82000a9e2b20c5f8682ffe0177"
+      },
+      "scenes": 512,
+      "examples": 512,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 512,
+          "npz_sha256_before_token_labeling": "c20cf089b7286b28a6b7d7335e71a7e59b63edb6c6cfff46e4e0e9a5f2b36298"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 128.70782327651978,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-86fb3094183b97ae",
+          "path": "units/waymo-training-86fb3094183b97ae/part-00000.npz",
+          "index": "units/waymo-training-86fb3094183b97ae/part-00000.jsonl",
+          "examples": 512,
+          "sha256": "35a019c2a1a2592b671d98c00d33c9f1191a5b70b268c25beb1931e5fbcb3ead"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-93f60aea18bf4721",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00886-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00886-of-01000": "3e8ffc6994f91a58389b5cb9cbe4f457763b285202674ec960fd42f9c3a14dec"
+      },
+      "scenes": 551,
+      "examples": 551,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 551,
+          "npz_sha256_before_token_labeling": "45e6a10469204ca8cbab4abb9afecc6124be885cc967e27388c8594d67ec3bbb"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 146.48501181602478,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-93f60aea18bf4721",
+          "path": "units/waymo-training-93f60aea18bf4721/part-00000.npz",
+          "index": "units/waymo-training-93f60aea18bf4721/part-00000.jsonl",
+          "examples": 551,
+          "sha256": "845b8a0418b6d4c85a0e4a36ee8624a2360fe55b74eb7096ba76000562d56e12"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-6734fed0ff6ce531",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00900-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00900-of-01000": "a05a7b9321460a099a0bbe9397dae651ae23c57bb0d4a4f7411cc9d29b6ba1e8"
+      },
+      "scenes": 458,
+      "examples": 458,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 458,
+          "npz_sha256_before_token_labeling": "4b28342c76551b03999b693480808c80fe84be6ecd76bbef0adfafd0b343c685"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 123.55243921279907,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-6734fed0ff6ce531",
+          "path": "units/waymo-training-6734fed0ff6ce531/part-00000.npz",
+          "index": "units/waymo-training-6734fed0ff6ce531/part-00000.jsonl",
+          "examples": 458,
+          "sha256": "dc802a082da54c5090a63a46b82088a32615f469d20b3690dc8473f1f9cd8a6e"
+        }
+      ]
+    },
+    {
+      "unit_id": "waymo-training-9329c6606fc1b123",
+      "source": "waymo",
+      "source_files": [
+        "Waymo/training/training.tfrecord-00930-of-01000"
+      ],
+      "source_hashes": {
+        "Waymo/training/training.tfrecord-00930-of-01000": "14539d2b8e340d6cdf5211335f502cae31098d122f39bfcef7d6959ad63ac37f"
+      },
+      "scenes": 517,
+      "examples": 517,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 517,
+          "npz_sha256_before_token_labeling": "b2a81bf8caad519a4dd5369b1f7cd31f5d94f1eb5f18eecbacb5d82f8ced631b"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 132.3836431503296,
+      "final_shards": [
+        {
+          "unit_id": "waymo-training-9329c6606fc1b123",
+          "path": "units/waymo-training-9329c6606fc1b123/part-00000.npz",
+          "index": "units/waymo-training-9329c6606fc1b123/part-00000.jsonl",
+          "examples": 517,
+          "sha256": "310d32eb7411c5d17835e5e1dfe76a52af65fce1c47656b22008b0d93590aa00"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_003-a93f46fb2a1645ea",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/pedestrian_tracks_003.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/vehicle_tracks_003.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/pedestrian_tracks_003.csv": "48ac8101c4d285e2b2212453bddf4cb99dc23f66004995d24e8bced804c85cdb",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/vehicle_tracks_003.csv": "07ca5227f47cd3cb6aa50d254a9547795c4533884ee93fcaafeb8c347cd98e12"
+      },
+      "scenes": 276,
+      "examples": 609,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 609,
+          "npz_sha256_before_token_labeling": "56dffc178996a4d4675949cad97d1d5b5b8b799c032cd339907d97336f3fdf10"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 9.244596481323242,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_DEU_Roundabout_OF.osm",
+        "sha256": "42e49f9c6fa467cf1ce0a1e109fcd3b17444dc6957a01315fd72c006c479aef4"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_003-a93f46fb2a1645ea",
+          "path": "units/interaction-pedestrian_tracks_003-a93f46fb2a1645ea/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_003-a93f46fb2a1645ea/part-00000.jsonl",
+          "examples": 609,
+          "sha256": "6c02badabe869c6fdeb3344d764d78586b2e6cad58c909661bafdbe3f147a1e2"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_009-b3325e783fb5744e",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/pedestrian_tracks_009.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/vehicle_tracks_009.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/pedestrian_tracks_009.csv": "2cb660c6342cae482082e43e84611c5d620a6ccfe0c4ee660d21f4ecb7285768",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/vehicle_tracks_009.csv": "55adb783378fef605281b889254f3622d506348a442942310a1a280b041ee7f8"
+      },
+      "scenes": 187,
+      "examples": 765,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 765,
+          "npz_sha256_before_token_labeling": "9c766962f56c3af86016b2278049c4af7f90a925bdccf2310b7cf9c3963bfd06"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 9.510843276977539,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_DEU_Roundabout_OF.osm",
+        "sha256": "42e49f9c6fa467cf1ce0a1e109fcd3b17444dc6957a01315fd72c006c479aef4"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_009-b3325e783fb5744e",
+          "path": "units/interaction-pedestrian_tracks_009-b3325e783fb5744e/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_009-b3325e783fb5744e/part-00000.jsonl",
+          "examples": 765,
+          "sha256": "45f8e523026c40e6a2675ae69192af5ba040c8adb9ae88b0df26f7321cc3f1b0"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_002-4d37ec04580d6e39",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/pedestrian_tracks_002.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/vehicle_tracks_002.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/pedestrian_tracks_002.csv": "249c191c086e137b75fcbf9a81258cc02f1ba960f21b4378893ed1b7351dd003",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/vehicle_tracks_002.csv": "d244b6e4861de3a25e021aae48399046cb0bca11f2ab9df51abcac2a8eee5e3f"
+      },
+      "scenes": 295,
+      "examples": 1316,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 1316,
+          "npz_sha256_before_token_labeling": "45eaba71ec5ee5286da42e8231e38d049eb8d6c228da78f62383fd9051e064a6"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 18.330727338790894,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_EP0.osm",
+        "sha256": "9d58c0ff29dd85a8ace3c0a37cad578a321e98c2fcda21690404dfbee13cdc28"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_002-4d37ec04580d6e39",
+          "path": "units/interaction-pedestrian_tracks_002-4d37ec04580d6e39/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_002-4d37ec04580d6e39/part-00000.jsonl",
+          "examples": 1316,
+          "sha256": "7e83763273a8ede85152639554c3f83dec5f0ae173d0c72c0778eb9aeee3a56a"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_004-af8a6d21fb66091b",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/pedestrian_tracks_004.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/vehicle_tracks_004.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/pedestrian_tracks_004.csv": "a3507bf6ae9819d4f1343a12b6eeaf8a2535ba1efd05cf97ec24bfa2c9986e6f",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/vehicle_tracks_004.csv": "bfc6e2174c09d2477fedfdf5e0faf967183e3cf0e7f6a2d212a33f82fa8936de"
+      },
+      "scenes": 292,
+      "examples": 1584,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 1584,
+          "npz_sha256_before_token_labeling": "c10db2f9fda859b177bf1db364f1bf51c7710bf02cae827d1e02dbf13077c90e"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 21.267079830169678,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_EP0.osm",
+        "sha256": "9d58c0ff29dd85a8ace3c0a37cad578a321e98c2fcda21690404dfbee13cdc28"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_004-af8a6d21fb66091b",
+          "path": "units/interaction-pedestrian_tracks_004-af8a6d21fb66091b/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_004-af8a6d21fb66091b/part-00000.jsonl",
+          "examples": 1584,
+          "sha256": "720cbddc10fd20fbd0218f2b8ba607d5a2f601f279985b9ff5377bd10a8dd6f0"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_000-1323d8258465f759",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/pedestrian_tracks_000.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/vehicle_tracks_000.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/pedestrian_tracks_000.csv": "9aa970c6d5150760c008c20efb514953dd5099f6facb31aa8a63c7118e641d6f",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/vehicle_tracks_000.csv": "f99dbf9f4de5b58a91c19355a9e86ac03c61fa44c781cb568d06ab2729957e7c"
+      },
+      "scenes": 295,
+      "examples": 2163,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 2163,
+          "npz_sha256_before_token_labeling": "91a9383b9587f0eaa3cbbffe9ff41c49de3fed06062e4ef16abd6ab7678ccf94"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 34.230069160461426,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_EP1.osm",
+        "sha256": "47ac6cad328c80cadde4d606c44b998c93f91cc4a3b5af612ca97d5576f11474"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_000-1323d8258465f759",
+          "path": "units/interaction-pedestrian_tracks_000-1323d8258465f759/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_000-1323d8258465f759/part-00000.jsonl",
+          "examples": 2163,
+          "sha256": "4d0ca0d47931a3d9eb6cdb0c4ab309b0079effb17c5ddbb03f171c887d9c53f6"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_002-ff477b24dce5ee8b",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/pedestrian_tracks_002.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/vehicle_tracks_002.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/pedestrian_tracks_002.csv": "acbaf92c9ce3519eeeff09fd002742f78ad105fa1d590fc8679263b026a32260",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/vehicle_tracks_002.csv": "f983867d784ae3d51d1cf947221aef17e4eb05a01fc13fa9adbb7c396d4b5d77"
+      },
+      "scenes": 293,
+      "examples": 1735,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 1735,
+          "npz_sha256_before_token_labeling": "25da76697684ebfff0224ae73cd42589d3562d58c094f6b392920c6c458315c0"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 25.629448890686035,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_EP1.osm",
+        "sha256": "47ac6cad328c80cadde4d606c44b998c93f91cc4a3b5af612ca97d5576f11474"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_002-ff477b24dce5ee8b",
+          "path": "units/interaction-pedestrian_tracks_002-ff477b24dce5ee8b/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_002-ff477b24dce5ee8b/part-00000.jsonl",
+          "examples": 1735,
+          "sha256": "be4cf40e501f368aa88f2d2ca677bea2a6c2cff15ea5e0248b0de1480ce57248"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_047-aafbb03f1b1b3037",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/pedestrian_tracks_047.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/vehicle_tracks_047.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/pedestrian_tracks_047.csv": "b3c840db4f34874c49644c24c873ae90b4c61203eebcd2fc07d01786a1040e8f",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/vehicle_tracks_047.csv": "e7bac9bd81b33397b3697e88d93ad9eb4c9cadb63c9a8f82c503518a09da6a85"
+      },
+      "scenes": 295,
+      "examples": 1855,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 1855,
+          "npz_sha256_before_token_labeling": "e0bbd8b5772adb5466387be450c325c3db2ed8379dd589d88ebfb3a09cb064d2"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 27.640758514404297,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_GL.osm",
+        "sha256": "96d9b096e70bab53f5b55e167dfcaaf6fdd9b68adb4ddb5c25cef38cbcf24db0"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_047-aafbb03f1b1b3037",
+          "path": "units/interaction-pedestrian_tracks_047-aafbb03f1b1b3037/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_047-aafbb03f1b1b3037/part-00000.jsonl",
+          "examples": 1855,
+          "sha256": "b35d36ac1eb948523f5e125e6c178b8b997310cd671d2a7970ebff1f2b8689bf"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_050-2f83b8a4d17d9da6",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/pedestrian_tracks_050.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/vehicle_tracks_050.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/pedestrian_tracks_050.csv": "e7a023f77fd9020abf78722bef8d1cfb7d1a51258398af9cc06b592e210752d5",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/vehicle_tracks_050.csv": "2d840d59f599eb42d0829c961c09cf3c349b4ab34be6c25275a44c9b257fefed"
+      },
+      "scenes": 295,
+      "examples": 1867,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 1867,
+          "npz_sha256_before_token_labeling": "f2f3968e0c5185605e44d563c80b3545d49c8a54536365e8742286f6e5dca28c"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 28.549675226211548,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_GL.osm",
+        "sha256": "96d9b096e70bab53f5b55e167dfcaaf6fdd9b68adb4ddb5c25cef38cbcf24db0"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_050-2f83b8a4d17d9da6",
+          "path": "units/interaction-pedestrian_tracks_050-2f83b8a4d17d9da6/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_050-2f83b8a4d17d9da6/part-00000.jsonl",
+          "examples": 1867,
+          "sha256": "f190348bb49af24472ec84199d48988b5f5ae10de1095a990d152bbbec16cedb"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_014-e01dc7de79b1ca0b",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/pedestrian_tracks_014.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/vehicle_tracks_014.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/pedestrian_tracks_014.csv": "d8ea4318bd63ecd35727f3c0e07ce0be88f00f8537f03d95c30493fbc43f3144",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/vehicle_tracks_014.csv": "52860fe27314df03a6e145d6babd10081aaa6f036398a652d28d712b46528f73"
+      },
+      "scenes": 258,
+      "examples": 1837,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 1837,
+          "npz_sha256_before_token_labeling": "4284feb1a5f0336511556d2391695d4875e419d6d48ed726e967536511506e71"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 27.912158250808716,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_MA.osm",
+        "sha256": "bca3bc89c6511fe326987c0b45415a34b2622d0a204757e88f15919bc0b20502"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_014-e01dc7de79b1ca0b",
+          "path": "units/interaction-pedestrian_tracks_014-e01dc7de79b1ca0b/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_014-e01dc7de79b1ca0b/part-00000.jsonl",
+          "examples": 1837,
+          "sha256": "583b1dffc9f91cfb024673eff3c8e55b7cd1cba5d5166073557fadbd74352918"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_015-bf628ce8d96931c7",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/pedestrian_tracks_015.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/vehicle_tracks_015.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/pedestrian_tracks_015.csv": "a03f9694af185c98a12ef67deea6314b669951f60d5884afff31eca33d087dc4",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/vehicle_tracks_015.csv": "d6cd8449b6283d76cb73ad5b72be4b9bd8db6508a0ce384ff75b80b8935763f1"
+      },
+      "scenes": 289,
+      "examples": 1775,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 1775,
+          "npz_sha256_before_token_labeling": "4de2db18426e5bb2a870600307f8f6e3ccf94d9f52d968efe4e37152b318394a"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 26.252393007278442,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_MA.osm",
+        "sha256": "bca3bc89c6511fe326987c0b45415a34b2622d0a204757e88f15919bc0b20502"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_015-bf628ce8d96931c7",
+          "path": "units/interaction-pedestrian_tracks_015-bf628ce8d96931c7/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_015-bf628ce8d96931c7/part-00000.jsonl",
+          "examples": 1775,
+          "sha256": "df7c33f091afe31779e172af5c1465bd1f138b5fa5897de365785e00c9843332"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_001-7958250a366d7da4",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/pedestrian_tracks_001.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/vehicle_tracks_001.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/pedestrian_tracks_001.csv": "3f4d6c4095c8b8b5d6233e9d499f8b029a7c58fbca20ebee95878d9f7470d478",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/vehicle_tracks_001.csv": "dfc897619663cccd104fd63e767a14b7aa884cd1fe6814f7510d5e6475e5baab"
+      },
+      "scenes": 295,
+      "examples": 2107,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 2107,
+          "npz_sha256_before_token_labeling": "d9715014a9480f47888e163aca2d89da4d977ffac5705332d6d650bb9e65563d"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 31.726741075515747,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_EP.osm",
+        "sha256": "64d9bbefd257ad073340b16b8e618bfe126f83b819bf3a0401a2105343e6a4de"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_001-7958250a366d7da4",
+          "path": "units/interaction-pedestrian_tracks_001-7958250a366d7da4/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_001-7958250a366d7da4/part-00000.jsonl",
+          "examples": 2107,
+          "sha256": "2b617092d31aa68693a98d2af31dc151db70b3e579afe24797592f77facb17e4"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_005-1408d84bc7f372ab",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/pedestrian_tracks_005.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/vehicle_tracks_005.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/pedestrian_tracks_005.csv": "10a191b5d128bdf8e02fc131eb110518ad08c40ad5f110de43a6d0618c80e991",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/vehicle_tracks_005.csv": "fe665f07337e01f0dc9e06e33360e396b7b4fb4584bab760693eb68b1c30c04e"
+      },
+      "scenes": 295,
+      "examples": 2180,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 2180,
+          "npz_sha256_before_token_labeling": "a72b9934f6e29e7ae7c92de7a3bdacfe4a3317148de98d7275e66c83fdd5dba0"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 33.727657318115234,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_EP.osm",
+        "sha256": "64d9bbefd257ad073340b16b8e618bfe126f83b819bf3a0401a2105343e6a4de"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_005-1408d84bc7f372ab",
+          "path": "units/interaction-pedestrian_tracks_005-1408d84bc7f372ab/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_005-1408d84bc7f372ab/part-00000.jsonl",
+          "examples": 2180,
+          "sha256": "0ea2663137aad8098321fa813326d5d0a734f3a43d7fb0dce40b34c734ae0938"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_023-ffb79979d670444b",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/pedestrian_tracks_023.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/vehicle_tracks_023.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/pedestrian_tracks_023.csv": "cc2c8e9e180838f7747654525e42e0b972dd87fbd7ecaef3719c5fe39a3ccb90",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/vehicle_tracks_023.csv": "3ecba08a6c85d53ccdec7ff6e1d21b7f4783d25f014f413e9291541b1859da64"
+      },
+      "scenes": 294,
+      "examples": 1801,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 1801,
+          "npz_sha256_before_token_labeling": "46d6d99ac0252fd5bf181610a5fe2ab05d645b0be88f4048f4f44ddc9d67259f"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 28.003973245620728,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_FT.osm",
+        "sha256": "b899bc133d429a6919c15aff41f7dc6e258aa4c487f8f82940d4eb82cac4e84b"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_023-ffb79979d670444b",
+          "path": "units/interaction-pedestrian_tracks_023-ffb79979d670444b/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_023-ffb79979d670444b/part-00000.jsonl",
+          "examples": 1801,
+          "sha256": "cf1849168f52b204eb4769b0158b88aef13931177645719e56d4a5a85865c7c0"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_032-6af36d72f0e83872",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/pedestrian_tracks_032.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/vehicle_tracks_032.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/pedestrian_tracks_032.csv": "d0a8916dba93851d7e7fc267bbfc8d7386611dec51d54a4304f189a2acdbda7e",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/vehicle_tracks_032.csv": "5447cc4a24ac4d8e21d4ca18422c15b08785e081659d844fdf9a679cc5bdf96d"
+      },
+      "scenes": 295,
+      "examples": 2078,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 2078,
+          "npz_sha256_before_token_labeling": "e79628344be46d01c847798a8fc73983e16680451eefc7e4a771c476c353ebb0"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 33.498905181884766,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_FT.osm",
+        "sha256": "b899bc133d429a6919c15aff41f7dc6e258aa4c487f8f82940d4eb82cac4e84b"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_032-6af36d72f0e83872",
+          "path": "units/interaction-pedestrian_tracks_032-6af36d72f0e83872/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_032-6af36d72f0e83872/part-00000.jsonl",
+          "examples": 2078,
+          "sha256": "5dd7ee887a53fca5ba0652e4eb1b10ddc35a97013ff8bd459233f7956ab5c676"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_003-f67fce2225008903",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/pedestrian_tracks_003.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/vehicle_tracks_003.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/pedestrian_tracks_003.csv": "516ac9e07bbdcc3ee9b84095824476ea489559e1063f2d248370c9ddcec2e648",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/vehicle_tracks_003.csv": "29fd18426070fd4a36136ab7a4cf2af22e07fdc4380bd4c08c5073ef67948d49"
+      },
+      "scenes": 268,
+      "examples": 2144,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 2144,
+          "npz_sha256_before_token_labeling": "21efa288eea9214f0b7f93697a0320904b0e3897c44c1a43049805c70e414028"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 35.201915979385376,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_SR.osm",
+        "sha256": "8288235930d98a10e6abd0b63f189d5e929bc6a7ed3cb6b497f630b99eec09c4"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_003-f67fce2225008903",
+          "path": "units/interaction-pedestrian_tracks_003-f67fce2225008903/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_003-f67fce2225008903/part-00000.jsonl",
+          "examples": 2144,
+          "sha256": "09eb6eb068cea3e3e18685dc8a91ba48c53b4e07f15c8e4b88f9efb4448ac633"
+        }
+      ]
+    },
+    {
+      "unit_id": "interaction-pedestrian_tracks_009-e8182c43e7d55370",
+      "source": "interaction",
+      "source_files": [
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/pedestrian_tracks_009.csv",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/vehicle_tracks_009.csv"
+      ],
+      "source_hashes": {
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/pedestrian_tracks_009.csv": "ea7281f7df29bba4b74c4f34a3dbe8955a029f85f13e3e7a66abfc018d970923",
+        "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/vehicle_tracks_009.csv": "d385f092b2ca666f555de9b26dc860146c12df0659a0860e60e4ad759eb9b243"
+      },
+      "scenes": 78,
+      "examples": 417,
+      "errors": [],
+      "shards": [
+        {
+          "npz": "part-00000.npz",
+          "index": "part-00000.jsonl",
+          "examples": 417,
+          "npz_sha256_before_token_labeling": "5d59afae70c4b6991b7bf229b70954791f9fb6b9ec61e9c042be07f279818f7d"
+        }
+      ],
+      "resumed": true,
+      "token_status": "labelled_and_validated",
+      "elapsed_seconds": 5.340398788452148,
+      "map_dependency": {
+        "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_SR.osm",
+        "sha256": "8288235930d98a10e6abd0b63f189d5e929bc6a7ed3cb6b497f630b99eec09c4"
+      },
+      "final_shards": [
+        {
+          "unit_id": "interaction-pedestrian_tracks_009-e8182c43e7d55370",
+          "path": "units/interaction-pedestrian_tracks_009-e8182c43e7d55370/part-00000.npz",
+          "index": "units/interaction-pedestrian_tracks_009-e8182c43e7d55370/part-00000.jsonl",
+          "examples": 417,
+          "sha256": "cf8dc68a1240f0ce11b31f310614489aefba5086eebe8d9e43c977e8a0be01b8"
+        }
+      ]
+    }
+  ],
+  "codebook": {
+    "version": "motion-codebook-v1",
+    "fit_split": "train_only",
+    "fit_weighting": "uniform_source_agent_type_strata_with_replacement",
+    "settings": {
+      "capacity_per_source_agent_type": 8192,
+      "batch_size": 2048,
+      "max_steps": 200,
+      "convergence_tolerance": 0.0001,
+      "random_seed": 7
+    },
+    "strata_seen": {
+      "waymo:type_1": 534079,
+      "waymo:type_2": 37604,
+      "waymo:type_3": 6865,
+      "interaction:type_1": 2080575,
+      "interaction:type_4": 188827
+    },
+    "strata_retained": {
+      "interaction:type_1": 8192,
+      "interaction:type_4": 8192,
+      "waymo:type_1": 8192,
+      "waymo:type_2": 8192,
+      "waymo:type_3": 6865
+    },
+    "fit": {
+      "steps": 200,
+      "final_max_centroid_shift": 0.005068906522615811,
+      "final_batch_inertia": 0.015229543276950808,
+      "cluster_update_count_min": 8,
+      "cluster_update_count_max": 80490
+    },
+    "codebook_path": "motion_codebook_v1.npz",
+    "codebook_sha256": "7011ee60f76eb433e4090d8820f433d915c0aeca49ec8fa191a402048db4184f"
+  },
+  "validation": {
+    "counts": {
+      "agent_truncations": 7423,
+      "examples": 31215,
+      "map_truncations": 30685,
+      "source:interaction": 26233,
+      "source:waymo": 4982,
+      "source_split:interaction:dev": 3935,
+      "source_split:interaction:train": 22298,
+      "source_split:waymo:dev": 481,
+      "source_split:waymo:train": 4501,
+      "split:dev": 4416,
+      "split:train": 26799
+    },
+    "independent_groups": 4998,
+    "coordinate_roundtrip_max_abs_error_m": 4.551026222543442e-12,
+    "shards": [
+      {
+        "unit_id": "waymo-training-a0ad7659ab8c89a4",
+        "path": "units/waymo-training-a0ad7659ab8c89a4/part-00000.npz",
+        "index": "units/waymo-training-a0ad7659ab8c89a4/part-00000.jsonl",
+        "examples": 477,
+        "sha256": "e5b35040c2328c1826d972fc6f7c06a7749fe68148ff9a2af2b5b3f68fee4acf"
+      },
+      {
+        "unit_id": "waymo-training-6e50b00d01e319fb",
+        "path": "units/waymo-training-6e50b00d01e319fb/part-00000.npz",
+        "index": "units/waymo-training-6e50b00d01e319fb/part-00000.jsonl",
+        "examples": 473,
+        "sha256": "be840b8fbe084ae98dd2750d783a74079d085ac0387fd3c70b74c285ff8100a2"
+      },
+      {
+        "unit_id": "waymo-training-641b15159622163a",
+        "path": "units/waymo-training-641b15159622163a/part-00000.npz",
+        "index": "units/waymo-training-641b15159622163a/part-00000.jsonl",
+        "examples": 534,
+        "sha256": "0e9bdd45f546944dc7f987a3c500b68531b525781c90a25f6484526e9f639ed4"
+      },
+      {
+        "unit_id": "waymo-training-9ee2f4107354d1a5",
+        "path": "units/waymo-training-9ee2f4107354d1a5/part-00000.npz",
+        "index": "units/waymo-training-9ee2f4107354d1a5/part-00000.jsonl",
+        "examples": 474,
+        "sha256": "7b0ee1dfff0422c9f452c2c4879bc0ba7efb138dba81ec31b0b3a95607dbd2eb"
+      },
+      {
+        "unit_id": "waymo-training-48f2cb33d93668bb",
+        "path": "units/waymo-training-48f2cb33d93668bb/part-00000.npz",
+        "index": "units/waymo-training-48f2cb33d93668bb/part-00000.jsonl",
+        "examples": 492,
+        "sha256": "7de370ede2bb574a2525eb95e21b8592c1ee2a8e48bde1a695a8adc82189aa3a"
+      },
+      {
+        "unit_id": "waymo-training-884f19bec52e3b30",
+        "path": "units/waymo-training-884f19bec52e3b30/part-00000.npz",
+        "index": "units/waymo-training-884f19bec52e3b30/part-00000.jsonl",
+        "examples": 494,
+        "sha256": "b9477591f2396150a7ab6d26848a9ddee8c6ebec167dc5fcb9637af39b347652"
+      },
+      {
+        "unit_id": "waymo-training-86fb3094183b97ae",
+        "path": "units/waymo-training-86fb3094183b97ae/part-00000.npz",
+        "index": "units/waymo-training-86fb3094183b97ae/part-00000.jsonl",
+        "examples": 512,
+        "sha256": "35a019c2a1a2592b671d98c00d33c9f1191a5b70b268c25beb1931e5fbcb3ead"
+      },
+      {
+        "unit_id": "waymo-training-93f60aea18bf4721",
+        "path": "units/waymo-training-93f60aea18bf4721/part-00000.npz",
+        "index": "units/waymo-training-93f60aea18bf4721/part-00000.jsonl",
+        "examples": 551,
+        "sha256": "845b8a0418b6d4c85a0e4a36ee8624a2360fe55b74eb7096ba76000562d56e12"
+      },
+      {
+        "unit_id": "waymo-training-6734fed0ff6ce531",
+        "path": "units/waymo-training-6734fed0ff6ce531/part-00000.npz",
+        "index": "units/waymo-training-6734fed0ff6ce531/part-00000.jsonl",
+        "examples": 458,
+        "sha256": "dc802a082da54c5090a63a46b82088a32615f469d20b3690dc8473f1f9cd8a6e"
+      },
+      {
+        "unit_id": "waymo-training-9329c6606fc1b123",
+        "path": "units/waymo-training-9329c6606fc1b123/part-00000.npz",
+        "index": "units/waymo-training-9329c6606fc1b123/part-00000.jsonl",
+        "examples": 517,
+        "sha256": "310d32eb7411c5d17835e5e1dfe76a52af65fce1c47656b22008b0d93590aa00"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_003-a93f46fb2a1645ea",
+        "path": "units/interaction-pedestrian_tracks_003-a93f46fb2a1645ea/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_003-a93f46fb2a1645ea/part-00000.jsonl",
+        "examples": 609,
+        "sha256": "6c02badabe869c6fdeb3344d764d78586b2e6cad58c909661bafdbe3f147a1e2"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_009-b3325e783fb5744e",
+        "path": "units/interaction-pedestrian_tracks_009-b3325e783fb5744e/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_009-b3325e783fb5744e/part-00000.jsonl",
+        "examples": 765,
+        "sha256": "45f8e523026c40e6a2675ae69192af5ba040c8adb9ae88b0df26f7321cc3f1b0"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_002-4d37ec04580d6e39",
+        "path": "units/interaction-pedestrian_tracks_002-4d37ec04580d6e39/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_002-4d37ec04580d6e39/part-00000.jsonl",
+        "examples": 1316,
+        "sha256": "7e83763273a8ede85152639554c3f83dec5f0ae173d0c72c0778eb9aeee3a56a"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_004-af8a6d21fb66091b",
+        "path": "units/interaction-pedestrian_tracks_004-af8a6d21fb66091b/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_004-af8a6d21fb66091b/part-00000.jsonl",
+        "examples": 1584,
+        "sha256": "720cbddc10fd20fbd0218f2b8ba607d5a2f601f279985b9ff5377bd10a8dd6f0"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_000-1323d8258465f759",
+        "path": "units/interaction-pedestrian_tracks_000-1323d8258465f759/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_000-1323d8258465f759/part-00000.jsonl",
+        "examples": 2163,
+        "sha256": "4d0ca0d47931a3d9eb6cdb0c4ab309b0079effb17c5ddbb03f171c887d9c53f6"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_002-ff477b24dce5ee8b",
+        "path": "units/interaction-pedestrian_tracks_002-ff477b24dce5ee8b/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_002-ff477b24dce5ee8b/part-00000.jsonl",
+        "examples": 1735,
+        "sha256": "be4cf40e501f368aa88f2d2ca677bea2a6c2cff15ea5e0248b0de1480ce57248"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_047-aafbb03f1b1b3037",
+        "path": "units/interaction-pedestrian_tracks_047-aafbb03f1b1b3037/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_047-aafbb03f1b1b3037/part-00000.jsonl",
+        "examples": 1855,
+        "sha256": "b35d36ac1eb948523f5e125e6c178b8b997310cd671d2a7970ebff1f2b8689bf"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_050-2f83b8a4d17d9da6",
+        "path": "units/interaction-pedestrian_tracks_050-2f83b8a4d17d9da6/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_050-2f83b8a4d17d9da6/part-00000.jsonl",
+        "examples": 1867,
+        "sha256": "f190348bb49af24472ec84199d48988b5f5ae10de1095a990d152bbbec16cedb"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_014-e01dc7de79b1ca0b",
+        "path": "units/interaction-pedestrian_tracks_014-e01dc7de79b1ca0b/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_014-e01dc7de79b1ca0b/part-00000.jsonl",
+        "examples": 1837,
+        "sha256": "583b1dffc9f91cfb024673eff3c8e55b7cd1cba5d5166073557fadbd74352918"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_015-bf628ce8d96931c7",
+        "path": "units/interaction-pedestrian_tracks_015-bf628ce8d96931c7/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_015-bf628ce8d96931c7/part-00000.jsonl",
+        "examples": 1775,
+        "sha256": "df7c33f091afe31779e172af5c1465bd1f138b5fa5897de365785e00c9843332"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_001-7958250a366d7da4",
+        "path": "units/interaction-pedestrian_tracks_001-7958250a366d7da4/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_001-7958250a366d7da4/part-00000.jsonl",
+        "examples": 2107,
+        "sha256": "2b617092d31aa68693a98d2af31dc151db70b3e579afe24797592f77facb17e4"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_005-1408d84bc7f372ab",
+        "path": "units/interaction-pedestrian_tracks_005-1408d84bc7f372ab/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_005-1408d84bc7f372ab/part-00000.jsonl",
+        "examples": 2180,
+        "sha256": "0ea2663137aad8098321fa813326d5d0a734f3a43d7fb0dce40b34c734ae0938"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_023-ffb79979d670444b",
+        "path": "units/interaction-pedestrian_tracks_023-ffb79979d670444b/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_023-ffb79979d670444b/part-00000.jsonl",
+        "examples": 1801,
+        "sha256": "cf1849168f52b204eb4769b0158b88aef13931177645719e56d4a5a85865c7c0"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_032-6af36d72f0e83872",
+        "path": "units/interaction-pedestrian_tracks_032-6af36d72f0e83872/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_032-6af36d72f0e83872/part-00000.jsonl",
+        "examples": 2078,
+        "sha256": "5dd7ee887a53fca5ba0652e4eb1b10ddc35a97013ff8bd459233f7956ab5c676"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_003-f67fce2225008903",
+        "path": "units/interaction-pedestrian_tracks_003-f67fce2225008903/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_003-f67fce2225008903/part-00000.jsonl",
+        "examples": 2144,
+        "sha256": "09eb6eb068cea3e3e18685dc8a91ba48c53b4e07f15c8e4b88f9efb4448ac633"
+      },
+      {
+        "unit_id": "interaction-pedestrian_tracks_009-e8182c43e7d55370",
+        "path": "units/interaction-pedestrian_tracks_009-e8182c43e7d55370/part-00000.npz",
+        "index": "units/interaction-pedestrian_tracks_009-e8182c43e7d55370/part-00000.jsonl",
+        "examples": 417,
+        "sha256": "cf8dc68a1240f0ce11b31f310614489aefba5086eebe8d9e43c977e8a0be01b8"
+      }
+    ]
+  },
+  "checks": {
+    "heldout_trajectory_content_unread": true,
+    "both_sources_present": true,
+    "train_and_dev_present": true,
+    "coordinate_roundtrip_within_tolerance": true,
+    "cross_split_groups": 0,
+    "finite_and_mask_contract": "all_samples_passed",
+    "resumable_units": 26,
+    "maximum_resident_examples": 4096
+  },
+  "previews": [
+    "preview_waymo.png",
+    "preview_interaction.png"
+  ],
+  "elapsed_seconds": 100.84370946884155
+}

@@ -1,0 +1,35 @@
+{
+  "version": "motion-codebook-v1",
+  "fit_split": "train_only",
+  "fit_weighting": "uniform_source_agent_type_strata_with_replacement",
+  "settings": {
+    "capacity_per_source_agent_type": 8192,
+    "batch_size": 2048,
+    "max_steps": 200,
+    "convergence_tolerance": 0.0001,
+    "random_seed": 7
+  },
+  "strata_seen": {
+    "waymo:type_1": 534079,
+    "waymo:type_2": 37604,
+    "waymo:type_3": 6865,
+    "interaction:type_1": 2080575,
+    "interaction:type_4": 188827
+  },
+  "strata_retained": {
+    "interaction:type_1": 8192,
+    "interaction:type_4": 8192,
+    "waymo:type_1": 8192,
+    "waymo:type_2": 8192,
+    "waymo:type_3": 6865
+  },
+  "fit": {
+    "steps": 200,
+    "final_max_centroid_shift": 0.005068906522615811,
+    "final_batch_inertia": 0.015229543276950808,
+    "cluster_update_count_min": 8,
+    "cluster_update_count_max": 80490
+  },
+  "codebook_path": "motion_codebook_v1.npz",
+  "codebook_sha256": "7011ee60f76eb433e4090d8820f433d915c0aeca49ec8fa191a402048db4184f"
+}

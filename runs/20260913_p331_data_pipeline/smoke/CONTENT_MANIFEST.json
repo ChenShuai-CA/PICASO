@@ -1,0 +1,257 @@
+{
+  "trajectory_files_read": [
+    {
+      "path": "Waymo/training/training.tfrecord-00093-of-01000",
+      "sha256": "c367e1ba4a7669744c90c4d4c3015450bb3bc2354cde26186591f2452344417c",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00129-of-01000",
+      "sha256": "fd362deda9a80f17b812d35606aec822bc4dba8c92b9bc518562a50601802511",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00158-of-01000",
+      "sha256": "1e005b4081133eccf671f0e371963a8b0faccc1c17db598a89049b9157852952",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00207-of-01000",
+      "sha256": "11995dbd460b08c8088edbe84121d69119911d5b5ea44569a6175f886132fc6a",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00297-of-01000",
+      "sha256": "8fa4aad812141f10bd30628a69f4513ef0c9e553efe4f462f8679130dc7aa2ae",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00375-of-01000",
+      "sha256": "a5d3d2198bc6010a4ef892e70224c06d0cae06cba4be2e4aeb666feb0002c45c",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00540-of-01000",
+      "sha256": "8a9945b969be8b1a9c73fe83cca0dee92b572c82000a9e2b20c5f8682ffe0177",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00886-of-01000",
+      "sha256": "3e8ffc6994f91a58389b5cb9cbe4f457763b285202674ec960fd42f9c3a14dec",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00900-of-01000",
+      "sha256": "a05a7b9321460a099a0bbe9397dae651ae23c57bb0d4a4f7411cc9d29b6ba1e8",
+      "split_role": "development"
+    },
+    {
+      "path": "Waymo/training/training.tfrecord-00930-of-01000",
+      "sha256": "14539d2b8e340d6cdf5211335f502cae31098d122f39bfcef7d6959ad63ac37f",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/pedestrian_tracks_003.csv",
+      "sha256": "48ac8101c4d285e2b2212453bddf4cb99dc23f66004995d24e8bced804c85cdb",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/vehicle_tracks_003.csv",
+      "sha256": "07ca5227f47cd3cb6aa50d254a9547795c4533884ee93fcaafeb8c347cd98e12",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/pedestrian_tracks_009.csv",
+      "sha256": "2cb660c6342cae482082e43e84611c5d620a6ccfe0c4ee660d21f4ecb7285768",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_DEU_Roundabout_OF/vehicle_tracks_009.csv",
+      "sha256": "55adb783378fef605281b889254f3622d506348a442942310a1a280b041ee7f8",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/pedestrian_tracks_002.csv",
+      "sha256": "249c191c086e137b75fcbf9a81258cc02f1ba960f21b4378893ed1b7351dd003",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/vehicle_tracks_002.csv",
+      "sha256": "d244b6e4861de3a25e021aae48399046cb0bca11f2ab9df51abcac2a8eee5e3f",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/pedestrian_tracks_004.csv",
+      "sha256": "a3507bf6ae9819d4f1343a12b6eeaf8a2535ba1efd05cf97ec24bfa2c9986e6f",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP0/vehicle_tracks_004.csv",
+      "sha256": "bfc6e2174c09d2477fedfdf5e0faf967183e3cf0e7f6a2d212a33f82fa8936de",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/pedestrian_tracks_000.csv",
+      "sha256": "9aa970c6d5150760c008c20efb514953dd5099f6facb31aa8a63c7118e641d6f",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/vehicle_tracks_000.csv",
+      "sha256": "f99dbf9f4de5b58a91c19355a9e86ac03c61fa44c781cb568d06ab2729957e7c",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/pedestrian_tracks_002.csv",
+      "sha256": "acbaf92c9ce3519eeeff09fd002742f78ad105fa1d590fc8679263b026a32260",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_EP1/vehicle_tracks_002.csv",
+      "sha256": "f983867d784ae3d51d1cf947221aef17e4eb05a01fc13fa9adbb7c396d4b5d77",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/pedestrian_tracks_047.csv",
+      "sha256": "b3c840db4f34874c49644c24c873ae90b4c61203eebcd2fc07d01786a1040e8f",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/vehicle_tracks_047.csv",
+      "sha256": "e7bac9bd81b33397b3697e88d93ad9eb4c9cadb63c9a8f82c503518a09da6a85",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/pedestrian_tracks_050.csv",
+      "sha256": "e7a023f77fd9020abf78722bef8d1cfb7d1a51258398af9cc06b592e210752d5",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_GL/vehicle_tracks_050.csv",
+      "sha256": "2d840d59f599eb42d0829c961c09cf3c349b4ab34be6c25275a44c9b257fefed",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/pedestrian_tracks_014.csv",
+      "sha256": "d8ea4318bd63ecd35727f3c0e07ce0be88f00f8537f03d95c30493fbc43f3144",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/vehicle_tracks_014.csv",
+      "sha256": "52860fe27314df03a6e145d6babd10081aaa6f036398a652d28d712b46528f73",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/pedestrian_tracks_015.csv",
+      "sha256": "a03f9694af185c98a12ef67deea6314b669951f60d5884afff31eca33d087dc4",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Intersection_MA/vehicle_tracks_015.csv",
+      "sha256": "d6cd8449b6283d76cb73ad5b72be4b9bd8db6508a0ce384ff75b80b8935763f1",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/pedestrian_tracks_001.csv",
+      "sha256": "3f4d6c4095c8b8b5d6233e9d499f8b029a7c58fbca20ebee95878d9f7470d478",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/vehicle_tracks_001.csv",
+      "sha256": "dfc897619663cccd104fd63e767a14b7aa884cd1fe6814f7510d5e6475e5baab",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/pedestrian_tracks_005.csv",
+      "sha256": "10a191b5d128bdf8e02fc131eb110518ad08c40ad5f110de43a6d0618c80e991",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_EP/vehicle_tracks_005.csv",
+      "sha256": "fe665f07337e01f0dc9e06e33360e396b7b4fb4584bab760693eb68b1c30c04e",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/pedestrian_tracks_023.csv",
+      "sha256": "cc2c8e9e180838f7747654525e42e0b972dd87fbd7ecaef3719c5fe39a3ccb90",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/vehicle_tracks_023.csv",
+      "sha256": "3ecba08a6c85d53ccdec7ff6e1d21b7f4783d25f014f413e9291541b1859da64",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/pedestrian_tracks_032.csv",
+      "sha256": "d0a8916dba93851d7e7fc267bbfc8d7386611dec51d54a4304f189a2acdbda7e",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_FT/vehicle_tracks_032.csv",
+      "sha256": "5447cc4a24ac4d8e21d4ca18422c15b08785e081659d844fdf9a679cc5bdf96d",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/pedestrian_tracks_003.csv",
+      "sha256": "516ac9e07bbdcc3ee9b84095824476ea489559e1063f2d248370c9ddcec2e648",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/vehicle_tracks_003.csv",
+      "sha256": "29fd18426070fd4a36136ab7a4cf2af22e07fdc4380bd4c08c5073ef67948d49",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/pedestrian_tracks_009.csv",
+      "sha256": "ea7281f7df29bba4b74c4f34a3dbe8955a029f85f13e3e7a66abfc018d970923",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/recorded_trackfiles/DR_USA_Roundabout_SR/vehicle_tracks_009.csv",
+      "sha256": "d385f092b2ca666f555de9b26dc860146c12df0659a0860e60e4ad759eb9b243",
+      "split_role": "development"
+    }
+  ],
+  "map_files_read": [
+    {
+      "path": "INTERACTION/INTERACTION/maps/DR_DEU_Roundabout_OF.osm",
+      "sha256": "42e49f9c6fa467cf1ce0a1e109fcd3b17444dc6957a01315fd72c006c479aef4",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_EP0.osm",
+      "sha256": "9d58c0ff29dd85a8ace3c0a37cad578a321e98c2fcda21690404dfbee13cdc28",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_EP1.osm",
+      "sha256": "47ac6cad328c80cadde4d606c44b998c93f91cc4a3b5af612ca97d5576f11474",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_GL.osm",
+      "sha256": "96d9b096e70bab53f5b55e167dfcaaf6fdd9b68adb4ddb5c25cef38cbcf24db0",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/maps/DR_USA_Intersection_MA.osm",
+      "sha256": "bca3bc89c6511fe326987c0b45415a34b2622d0a204757e88f15919bc0b20502",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_EP.osm",
+      "sha256": "64d9bbefd257ad073340b16b8e618bfe126f83b819bf3a0401a2105343e6a4de",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_FT.osm",
+      "sha256": "b899bc133d429a6919c15aff41f7dc6e258aa4c487f8f82940d4eb82cac4e84b",
+      "split_role": "development"
+    },
+    {
+      "path": "INTERACTION/INTERACTION/maps/DR_USA_Roundabout_SR.osm",
+      "sha256": "8288235930d98a10e6abd0b63f189d5e929bc6a7ed3cb6b497f630b99eec09c4",
+      "split_role": "development"
+    }
+  ],
+  "heldout_trajectory_content_read": false
+}

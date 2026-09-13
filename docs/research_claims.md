@@ -353,3 +353,20 @@ P3.3 完成前禁止声称：
 - ABD-supported 数值敏感性结果；
 - 二维动画、CARLA 三维视频及轨迹/事件一致性报告；
 - 新 final confirmation 完成标记，以及可复现实验命令和哈希。
+
+### 9.10 P3.3.1 当前证据状态（2026-09-13）
+
+P3.3.1 smoke 数据管线已经完成 G0 工程验证：冻结的 10 个 Waymo training shard 和 16 个
+INTERACTION 记录 case 被转换为 31,215 个 `scene-shard-v1` 样本，train/dev 为 26,799/4,416。
+Waymo 有 4,982 个独立 Scenario；INTERACTION 有 16 个独立 `(location,case_id)` 组，其 26,233 个
+重叠窗不能作为独立样本计数。heldout 轨迹内容未读。
+
+最终 26 个 shard 的内容哈希、行数、sample ID、metadata、数组/mask 和 motion-token 契约均通过独立
+复核；零独立组跨 split，坐标正反变换最大误差为 `4.56e-12 m`。train-only 运动码本的 128 个 token
+在 3,371,044 个有效目标中全部出现。以上只支持“可流式、可恢复地形成训练输入”这一工程结论，不
+支持 Transformer 已学到真实交通分布或优于基线。
+
+当前 smoke dev 只有 481 个 Waymo Scenario 和 4 个 INTERACTION case，未达到 G1 的 5,000/100
+最低独立样本量。另有 7,423 个样本发生 agent 截断、30,685 个样本发生地图截断；这两项必须在
+P3.3.2/architecture 阶段分层评估。下一步是数据加载器、constant-velocity 基线和最小
+AR-Scene-v1 的单 batch overfit/smoke training，而不是读取 final-confirmation 数据。

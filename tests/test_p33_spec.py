@@ -97,7 +97,7 @@ def test_inventory_validator_rejects_heldout_development_leak():
             "content_sha256_status": "deferred_until_final_confirmation"
         })
     inventory = {
-        "inventory_version": "p33-file-inventory-v1",
+        "inventory_version": "p33-file-inventory-v2",
         "spec_version": config["spec_version"],
         "metadata_only": True,
         "dataset_content_bytes_read": 0,

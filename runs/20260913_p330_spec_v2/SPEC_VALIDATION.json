@@ -1,0 +1,51 @@
+{
+  "phase": "P3.3.0",
+  "status": "complete",
+  "spec_version": "p33.0-v1.1",
+  "design_status": "design_frozen_not_trained",
+  "checks": {
+    "config_invariants": "pass",
+    "schema_matches_executable_array_contract": "pass",
+    "expected_file_counts": "pass",
+    "file_roles_are_disjoint": "pass",
+    "heldout_has_no_development_stage": "pass",
+    "metadata_only_inventory": "pass"
+  },
+  "heldout_trajectory_content_read": false,
+  "data_counts": {
+    "interaction": 373,
+    "waymo": 1150
+  },
+  "role_counts": {
+    "interaction:dev": 44,
+    "interaction:final_confirmation": 35,
+    "interaction:train": 294,
+    "waymo:development_only_previously_read": 2,
+    "waymo:final_confirmation": 148,
+    "waymo:scenario_hash_train_dev": 1000
+  },
+  "stage_counts": {
+    "smoke": {
+      "interaction": 32,
+      "waymo": 10
+    },
+    "architecture": {
+      "interaction": 90,
+      "waymo": 102
+    },
+    "scale": {
+      "interaction": 338,
+      "waymo": 502
+    },
+    "full": {
+      "interaction": 338,
+      "waymo": 1002
+    },
+    "final_confirmation": {
+      "interaction": 35,
+      "waymo": 148
+    }
+  },
+  "total_size_bytes": 497072265978,
+  "inventory_fingerprint_sha256": "d3f88c5587013453b7c5da0b531300c2d331e700b7e9220f410263a7a5cb9e76"
+}

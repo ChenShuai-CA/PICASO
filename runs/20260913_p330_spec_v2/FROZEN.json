@@ -1,0 +1,26 @@
+{
+  "phase": "P3.3.0",
+  "status": "design_frozen_not_trained",
+  "spec_version": "p33.0-v1.1",
+  "frozen_at_utc": "2026-09-12T18:21:42.238452+00:00",
+  "source_git_head": "329d9b566878fd0dc15ffbd7619f4f5fbe6b4163",
+  "config": {
+    "path": "configs/p33/ar_scene_v1.json",
+    "sha256": "5fc6f511be8caa9205511b99de397a1c62ad2943e56834f4c51a21690d73399d"
+  },
+  "scene_schema": {
+    "path": "schemas/p33_scene_v1.schema.json",
+    "sha256": "7163dac364648626e8fc9ad23b868c5914b13c810791227ced8a57ba55d3ef57"
+  },
+  "inventory": {
+    "path": "runs/20260913_p330_spec_v2/data_inventory.json",
+    "file_sha256": "839650511955979b9adf83908da921c404957322998009cd5fcc7bb375bdb66d",
+    "metadata_fingerprint_sha256": "d3f88c5587013453b7c5da0b531300c2d331e700b7e9220f410263a7a5cb9e76"
+  },
+  "validation": {
+    "path": "runs/20260913_p330_spec_v2/SPEC_VALIDATION.json",
+    "sha256": "6546c3383423e9ecd1356402c5d3aedf3155d43b996a361a1aac320b1d2c5fd5"
+  },
+  "freeze_fingerprint_sha256": "90612c5c7e821119f75f934b682ee5283c1fcbf54b8198ff53aed0dff61172e5",
+  "next_phase": "P3.3.1_streaming_data_pipeline"
+}

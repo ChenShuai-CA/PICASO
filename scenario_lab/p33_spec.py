@@ -17,8 +17,8 @@ import re
 import numpy as np
 
 
-SPEC_VERSION = "p33.0-v1"
-INVENTORY_VERSION = "p33-file-inventory-v1"
+SPEC_VERSION = "p33.0-v1.1"
+INVENTORY_VERSION = "p33-file-inventory-v2"
 WAYMO_SPLIT_SALT = "p33-waymo-v1"
 CONFIG_PATH = Path("configs/p33/ar_scene_v1.json")
 SCHEMA_PATH = Path("schemas/p33_scene_v1.schema.json")
@@ -113,6 +113,8 @@ def validate_p33_config(config: dict) -> None:
     if sum((interaction["expected_development_files"],
             interaction["expected_heldout_files"])) != interaction["expected_csv_files"]:
         raise ValueError("INTERACTION expected file counts do not add up")
+    if interaction.get("selection_unit") != "location_and_recording_case":
+        raise ValueError("INTERACTION scale selection must keep recording file families together")
 
     ladder = config["scale_ladder"]
     if [row["name"] for row in ladder] != ["smoke", "architecture", "scale", "full"]:
@@ -166,6 +168,14 @@ def _file_record(path: Path, data_root: Path, source: str, split_role: str,
         "content_sha256_status": "deferred_to_streaming_conversion"
         if split_role != "final_confirmation" else "deferred_until_final_confirmation"
     }
+
+
+def interaction_recording_case_id(path: Path) -> str:
+    """Canonical raw-recording case shared by vehicle/pedestrian CSV families."""
+    match = re.search(r"_(\d+)$", path.stem)
+    if not match:
+        raise ValueError(f"cannot infer INTERACTION recording case from {path.name}")
+    return match.group(1).zfill(3)
 
 
 def build_p33_inventory(data_root: Path | str, config: dict) -> dict:
@@ -225,10 +235,23 @@ def build_p33_inventory(data_root: Path | str, config: dict) -> dict:
 
     smoke_selected, architecture_selected = set(), set()
     for location in sorted(train_locations | dev_locations):
-        ordered = _stable_file_order(by_location[location], data_root, salt)
-        smoke_selected.update(ordered[:2])
-        architecture_count = max(1, math.ceil(len(ordered) * 0.25))
-        architecture_selected.update(ordered[:architecture_count])
+        by_case = defaultdict(list)
+        for path in by_location[location]:
+            by_case[interaction_recording_case_id(path)].append(path)
+        ordered_cases = sorted(
+            by_case,
+            key=lambda case: (sha256(f"{salt}\x1f{location}::{case}".encode("utf-8")).hexdigest(),
+                              case),
+        )
+        smoke_case_count = next(
+            row["interaction_case_cap_per_development_location"]
+            for row in config["scale_ladder"] if row["name"] == "smoke"
+        )
+        architecture_count = max(1, math.ceil(len(ordered_cases) * 0.25))
+        for case in ordered_cases[:smoke_case_count]:
+            smoke_selected.update(by_case[case])
+        for case in ordered_cases[:architecture_count]:
+            architecture_selected.update(by_case[case])
 
     for path in csv_paths:
         location = path.parent.name

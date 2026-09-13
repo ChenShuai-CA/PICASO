@@ -1,0 +1,10 @@
+{
+  "heldout_trajectory_content_unread": true,
+  "both_sources_present": true,
+  "train_and_dev_present": true,
+  "coordinate_roundtrip_within_tolerance": true,
+  "cross_split_groups": 0,
+  "finite_and_mask_contract": "all_samples_passed",
+  "resumable_units": 26,
+  "maximum_resident_examples": 4096
+}

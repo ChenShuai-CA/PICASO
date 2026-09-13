@@ -1,5 +1,5 @@
 {
-  "spec_version": "p33.0-v1",
+  "spec_version": "p33.0-v1.1",
   "status": "design_frozen_not_trained",
   "frozen_date": "2026-09-13",
   "task": {
@@ -270,6 +270,7 @@
     },
     "interaction": {
       "root": "INTERACTION/INTERACTION/recorded_trackfiles",
+      "selection_unit": "location_and_recording_case",
       "expected_csv_files": 373,
       "train_locations": [
         "DR_USA_Roundabout_EP",
@@ -298,28 +299,28 @@
       "name": "smoke",
       "waymo_training_shards": 10,
       "interaction_fraction_per_development_location": null,
-      "interaction_cap_per_development_location": 2,
+      "interaction_case_cap_per_development_location": 2,
       "purpose": "engineering_only"
     },
     {
       "name": "architecture",
       "waymo_training_shards": 100,
       "interaction_fraction_per_development_location": 0.25,
-      "interaction_cap_per_development_location": null,
+      "interaction_case_cap_per_development_location": null,
       "purpose": "model_and_representation_selection"
     },
     {
       "name": "scale",
       "waymo_training_shards": 500,
       "interaction_fraction_per_development_location": 1.0,
-      "interaction_cap_per_development_location": null,
+      "interaction_case_cap_per_development_location": null,
       "purpose": "scaling_and_hyperparameter_freeze"
     },
     {
       "name": "full",
       "waymo_training_shards": 1000,
       "interaction_fraction_per_development_location": 1.0,
-      "interaction_cap_per_development_location": null,
+      "interaction_case_cap_per_development_location": null,
       "purpose": "three_seed_formal_training"
     }
   ],

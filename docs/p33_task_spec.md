@@ -1,6 +1,6 @@
 # P3.3.0 任务规范与最小模型设计
 
-_版本 p33.0-v1，2026-09-13；状态：设计冻结，尚未训练_
+_版本 p33.0-v1.1，2026-09-13；状态：设计冻结，尚未训练_
 
 ---
 
@@ -101,15 +101,17 @@ dev    = bucket 90..99
 
 | 阶段 | Waymo training | INTERACTION development | 决策权限 |
 |---|---:|---:|---|
-| smoke | 10 shard | 每个开发地点至多 2 个文件 | 只能修工程错误 |
+| smoke | 10 shard | 每个开发地点至多 2 个记录 case | 只能修工程错误 |
 | architecture | 100 shard | 每地点 hash 顺序前 25% | 允许选模型和表示 |
 | scale | 500 shard | 全部 338 个开发文件 | 允许冻结超参数 |
 | full | 1,000 shard | 全部 338 个开发文件 | 三种子正式训练 |
 | final confirmation | 148 个 validation shard | 35 个 location-heldout 文件 | 只评价一次 |
 
-文件子集按 `sha256(selection_salt + relative_path)` 排序，保证 10/100/500/1000 为嵌套子集。P3.3.0
-只清点路径和大小；development 文件的内容 SHA-256 在 P3.3.1 流式读取时计算，final 文件只在正式
-确认时计算。
+Waymo 文件子集按 `sha256(selection_salt + relative_path)` 排序，保证 10/100/500/1000 为嵌套子集。
+INTERACTION 原始文件没有 `case_id` 列，因此以文件名末尾编号定义记录 case；同一地点、同一编号的
+`vehicle_tracks` 与 `pedestrian_tracks` 必须作为一个选择单元，禁止拆到不同规模阶段。P3.3.0 只清点
+路径和大小；development 文件的内容 SHA-256 在 P3.3.1 流式读取时计算，final 文件只在正式确认时
+计算。实际读取的开发地点 OSM 地图作为外部依赖另行记录内容哈希。
 
 ## 4. 场景样本契约
 
