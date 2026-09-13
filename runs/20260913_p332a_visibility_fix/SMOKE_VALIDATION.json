@@ -30,7 +30,7 @@
     "跨进程逐位复现的成立条件 = strict torch.use_deterministic_algorithms(warn_only=False) + math SDPA 后端（吞吐代价 ~8%）；该结论限定于本机 CUDA 栈。旧 P3.3.2 的分配器→核选择归因已撤回（旧探针受优化器 payload 存储别名污染；干净探针三配置 30/30 update 逐位相等）。",
     "INTERACTION dev 仅 4 个独立 location::case 组；其组级数字带 4 组不确定性；26,233 个重叠窗口从未被计为独立场景数。",
     "加速度/jerk 几何代理受逐 chunk 分段线性解码的结构性影响（100% 'violations'），速度违规率 0.011%；这些阈值是工程诊断，不是 G1 门槛。",
-    "sampled_token_nll=1.646 是 top-p 截断后采样 token 按全 softmax log-prob 的均值 NLL（平均采样熵的单样本 MC 估计），不是拟合优度，exp(·) 不称有效词数。",
+    "sampled_token_nll=1.646 是 top-p 截断后采样 token 按全 softmax log-prob 的均值 NLL，即截断采样分布相对于原模型分布的交叉熵的 MC 估计，不是采样分布熵或真值拟合优度，exp(·) 不称有效词数。",
     "joint-scene best-of-6 是次级诊断指标；主端点仍为 spec 冻结的 per-agent minADE@6。",
     "dev 仅用于 smoke 工程验证；模型改动仅落实复核指出的 spec §4.5 违反，未做任何基于 dev 的超参/结构选择。"
   ]

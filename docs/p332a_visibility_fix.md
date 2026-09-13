@@ -79,7 +79,7 @@ backing array。改为 `value[index].copy()`（行级拷贝，docstring 说明 v
 - **分来源叠加图**：`overlay_plot_per_source: {waymo: 4, interaction: 4}`，文件名
   `overlay_{source}_{ii}.png`；CV 只在需要出图的样本上惰性计算。
 - **sampled_token_nll 措辞**：top-p 截断/重归一后采样 token、按**全 softmax**
-  log-prob 计算的均值 NLL——平均采样熵的单样本 MC 估计，不是分布熵的严格值，
+  log-prob 计算的均值 NLL——截断采样分布相对于原模型分布的交叉熵的 MC 估计，不是采样分布熵，
   `exp(·)` 不可称有效词数（结果 JSON 附 `sampled_token_nll_definition`）。
 - **exposure 口径**：M2 有效样本 25,600/来源 = 5.69 个 waymo train pass / 1.15 个
   interaction train pass；elapsed = 300 update 当量（主 200 + 恢复分支 100）。
