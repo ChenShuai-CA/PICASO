@@ -232,6 +232,39 @@ def fit_codebook(output: Path, units: list[dict], config: dict, pipeline: dict) 
     return codebook, manifest
 
 
+def reuse_codebook(output: Path, frozen_path: Path,
+                   config: dict) -> tuple[np.ndarray, dict]:
+    """Copy a frozen motion codebook instead of refitting (P3.3.5 scale run).
+
+    Keeps the 100->500 shard comparison isolated to data scale: the copied
+    file is byte-identical to the frozen source, so downstream readers
+    (train/eval load ``motion_codebook_v1.npz`` next to DATASET_MANIFEST)
+    are unchanged.  Raises ValueError on shape or content mismatch.
+    """
+    expected = (config["motion_tokens"]["vocabulary_size"],
+                config["motion_tokens"]["vector_dimension"])
+    with np.load(frozen_path, allow_pickle=False) as data:
+        if "centroids" not in data.files:
+            raise ValueError(f"{frozen_path}: no 'centroids' array")
+        codebook = np.array(data["centroids"])
+    if codebook.shape != expected:
+        raise ValueError(f"{frozen_path}: centroids shape {codebook.shape} "
+                         f"!= config vocabulary/dimension {expected}")
+    target = output / "motion_codebook_v1.npz"
+    shutil.copyfile(frozen_path, target)
+    manifest = {
+        "version": config["motion_tokens"]["version"],
+        "reused_frozen": True,
+        "source_path": str(frozen_path),
+        "source_sha256": file_sha256(frozen_path),
+        "shape": list(codebook.shape),
+        "codebook_path": target.name,
+        "codebook_sha256": file_sha256(target),
+    }
+    write_json(output / "CODEBOOK_MANIFEST.json", manifest)
+    return codebook, manifest
+
+
 def label_and_validate_shards(output: Path, units: list[dict], config: dict,
                               codebook: np.ndarray) -> dict:
     counts = Counter()
@@ -367,6 +400,9 @@ def main() -> None:
     parser.add_argument("--output", type=Path,
                         default=Path("runs/20260913_p331_data_pipeline/smoke"))
     parser.add_argument("--waymo-records-per-file", type=int)
+    parser.add_argument("--codebook-reuse", type=Path, default=None,
+                        help="frozen motion codebook .npz to reuse instead of "
+                             "refitting (P3.3.5 scale isolation; default refits)")
     args = parser.parse_args()
     started = time.time()
     config = load_p33_config(args.config)
@@ -419,7 +455,12 @@ def main() -> None:
     if any(unit["errors"] for unit in converted):
         write_json(args.output / "CONVERSION_ERRORS.json", converted)
         raise RuntimeError("conversion produced sample errors; inspect CONVERSION_ERRORS.json")
-    codebook, codebook_manifest = fit_codebook(args.output, converted, config, pipeline)
+    if args.codebook_reuse is not None:
+        codebook, codebook_manifest = reuse_codebook(args.output, args.codebook_reuse,
+                                                     config)
+    else:
+        codebook, codebook_manifest = fit_codebook(args.output, converted, config,
+                                                   pipeline)
     validation = label_and_validate_shards(args.output, converted, config, codebook)
     tolerance = pipeline["validation"]["coordinate_roundtrip_tolerance_m"]
     checks = {

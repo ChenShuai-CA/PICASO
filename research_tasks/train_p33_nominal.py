@@ -499,6 +499,26 @@ def validate_architecture(model, catalog, config: dict, device: torch.device,
     }
 
 
+def resolve_validation_catalog(validation_manifest, manifest, catalog,
+                               config) -> tuple[ShardCatalog, str, bool]:
+    """Pick the catalog validation runs on (P3.3.5 fixed-dev pairing).
+
+    Default ``validation_manifest=None`` keeps the sealed behaviour: the
+    training manifest's own dev split, same catalog object, so every
+    historical reading replays byte-exact.  An explicit path (the scale
+    run points at the frozen architecture manifest) builds a separate
+    catalog; its dev split is then the fixed one regardless of what the
+    training manifest is, and early stopping/pairing use only that.
+    """
+    if validation_manifest is None:
+        return catalog, str(manifest), False
+    validation_manifest = Path(validation_manifest)
+    validation_catalog = ShardCatalog.from_manifest(validation_manifest, config)
+    if not validation_catalog.entries("dev"):
+        raise ValueError(f"{validation_manifest}: no dev split for validation")
+    return validation_catalog, str(validation_manifest), True
+
+
 def run_architecture(args: argparse.Namespace) -> dict:
     """P3.3.3 architecture-stage training.
 
@@ -516,6 +536,9 @@ def run_architecture(args: argparse.Namespace) -> dict:
     device = torch.device(args.device)
     codebook = load_codebook(manifest)
     catalog = ShardCatalog.from_manifest(manifest, config)
+    validation_catalog, validation_provenance, validation_fixed_dev = \
+        resolve_validation_catalog(getattr(args, "validation_manifest", None),
+                                   manifest, catalog, config)
     c_config = (json.loads(Path(args.c_config).read_text(encoding="utf-8"))
                 if args.variant == "kinematic" else None)
 
@@ -608,8 +631,8 @@ def run_architecture(args: argparse.Namespace) -> dict:
         if (state["epoch"] % args.validate_every == 0
                 or state["epoch"] == max_epochs
                 or state["update_index"] >= update_cap):
-            validation = validate_architecture(model, catalog, config, device,
-                                               budget, loss_fn)
+            validation = validate_architecture(model, validation_catalog, config,
+                                               device, budget, loss_fn)
             state["best"], state["stagnant"], improved = update_early_stopping(
                 state["best"], state["stagnant"],
                 validation["source_macro_minade_at_6"], budget["patience"])
@@ -650,6 +673,8 @@ def run_architecture(args: argparse.Namespace) -> dict:
         "seed": budget["seed"],
         "device": str(device),
         "manifest": str(manifest),
+        "validation_manifest": validation_provenance,
+        "validation_fixed_dev": validation_fixed_dev,
         "budget": budget,
         "epochs_completed": state["epoch"],
         "updates_completed": state["update_index"],
@@ -690,6 +715,11 @@ def main() -> None:
                         help="override m2 checkpoint cadence (probe runs)")
     parser.add_argument("--manifest", default=None,
                         help="architecture mode: dataset manifest path")
+    parser.add_argument("--validation-manifest", default=None,
+                        help="architecture mode: validate (and early-stop) on this "
+                             "manifest's dev split instead of the training "
+                             "manifest's (P3.3.5 fixed-dev pairing; default "
+                             "keeps sealed behaviour)")
     parser.add_argument("--output-dir", default=None,
                         help="architecture mode: output directory")
     parser.add_argument("--resume", default=None,
