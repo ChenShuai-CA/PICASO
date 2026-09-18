@@ -1,0 +1,35 @@
+{
+  "pipeline_version": "p33.1-pipeline-v1",
+  "scene_spec_version": "p33.0-v1.1",
+  "stage": "architecture",
+  "interaction": {
+    "window_stride_frames": 10,
+    "anchors_per_window": 8,
+    "case_id_source": "trailing_numeric_file_stem",
+    "ambiguous_pedestrian_bicycle_type": "other",
+    "ambiguous_actor_default_length_m": 1.8,
+    "ambiguous_actor_default_width_m": 0.8,
+    "missing_heading": "derive_from_velocity_above_0.5_mps_then_forward_fill",
+    "paired_file_families": [
+      "vehicle_tracks",
+      "pedestrian_tracks"
+    ]
+  },
+  "waymo": {
+    "records_per_file": null
+  },
+  "motion_codebook": {
+    "capacity_per_source_agent_type": 8192,
+    "batch_size": 2048,
+    "max_steps": 200,
+    "convergence_tolerance": 0.0001,
+    "random_seed": 7
+  },
+  "validation": {
+    "coordinate_roundtrip_tolerance_m": 1e-5,
+    "maximum_resident_examples": 4096,
+    "require_both_sources": true,
+    "require_train_and_dev": true,
+    "heldout_content_reads_allowed": false
+  }
+}

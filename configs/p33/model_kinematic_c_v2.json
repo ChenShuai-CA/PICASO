@@ -1,0 +1,32 @@
+{
+  "phase_c_spec": "runs/20260916_p334_r1/SPEC_R1.md (frozen 2026-09-16 before R1 training); supersedes model_kinematic_c_v1.json for the C-v2 variant only -- v1 config stays sealed",
+  "construction": "bounded",
+  "token_conditioning": true,
+  "start_pair_joint": true,
+  "v0_source": "recorded",
+  "v0_speed_limit_mps": 35.0,
+  "limits_by_type": {
+    "0": [19.0, 9.5],
+    "1": [19.0, 9.5],
+    "2": [5.0, 3.0],
+    "3": [10.0, 5.0],
+    "4": [10.0, 5.0]
+  },
+  "start_pair_cap_mps2": 9.5,
+  "loss": {
+    "token_intent_huber": 0.1,
+    "speed_exceedance": 0.05,
+    "jerk_exceedance": 0.5,
+    "accel_exceedance": 0.5
+  },
+  "r1_change_log": {
+    "token_conditioning": "current-chunk token centroid (codebook row / CENTROID_SCALE_M) concatenated into the state_mlp feature: token k now affects chunk k, last token has a live compute path",
+    "start_pair_joint": "start-pair rescale applies to the SUM a_1+a_2 (joint scale s <= 1 on both), fixing the v1 a2-only defect where ||a_1+a_2|| was unbounded",
+    "v0_source": "recorded vx/vy of the last history frame (SPEC section 6 as written), replacing the v1 position difference; a corrupted position channel can no longer inject a 613 m/s v0",
+    "v0_speed_limit_mps": "disk-clamp on v0 with an explicit over-limit count (the ~35 m/s real fast vehicles keep direction, excess is reported, never silently integrated)"
+  },
+  "control_variant": {
+    "construction": "penalty",
+    "note": "unchanged v1 policy: only after R1 passes the joint gate and the 9/30 draft window allows (plan section 3)"
+  }
+}

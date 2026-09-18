@@ -1,0 +1,30 @@
+{
+  "phase_c_spec": "runs/20260917_p334_r2/SPEC_R2.md (frozen 2026-09-17 before the R2-B fix); identical flags to model_kinematic_c_v2.json plus start_recurrence_version -- v1/v2 configs stay sealed and replay bit-exact",
+  "construction": "bounded",
+  "token_conditioning": true,
+  "start_pair_joint": true,
+  "start_recurrence_version": 2,
+  "v0_source": "recorded",
+  "v0_speed_limit_mps": 35.0,
+  "limits_by_type": {
+    "0": [19.0, 9.5],
+    "1": [19.0, 9.5],
+    "2": [5.0, 3.0],
+    "3": [10.0, 5.0],
+    "4": [10.0, 5.0]
+  },
+  "start_pair_cap_mps2": 9.5,
+  "loss": {
+    "token_intent_huber": 0.1,
+    "speed_exceedance": 0.05,
+    "jerk_exceedance": 0.5,
+    "accel_exceedance": 0.5
+  },
+  "r2_change_log": {
+    "start_recurrence_version": "step 0 of the joint start pair now advances the working acceleration to a_1_raw, so step 1 computes a_2 = disk(a_1_raw + h*j_2) (true continuous recurrence) instead of disk(a_0 + h*j_2); the step-1 joint rescale applies one scale to both terms, capping the realized start jerk at J instead of 2J (38 -> <=19 m/s^3 for vehicles; R1_ERRATA 2.2, SPEC_R2 2.2)"
+  },
+  "control_variant": {
+    "construction": "penalty",
+    "note": "unchanged v1 policy: only after R2 acceptance and the 9/30 draft window allows (plan section 6.1)"
+  }
+}

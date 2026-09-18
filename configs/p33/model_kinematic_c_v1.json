@@ -1,0 +1,22 @@
+{
+  "phase_c_spec": "runs/20260915_p334_kinematics/SPEC.md#6 (frozen 2026-09-15 before training)",
+  "construction": "bounded",
+  "limits_by_type": {
+    "0": [19.0, 9.5],
+    "1": [19.0, 9.5],
+    "2": [5.0, 3.0],
+    "3": [10.0, 5.0],
+    "4": [10.0, 5.0]
+  },
+  "start_pair_cap_mps2": 9.5,
+  "loss": {
+    "token_intent_huber": 0.1,
+    "speed_exceedance": 0.05,
+    "jerk_exceedance": 0.5,
+    "accel_exceedance": 0.5
+  },
+  "control_variant": {
+    "construction": "penalty",
+    "note": "SPEC 6.5: train only if C passes the joint gate and the 9/30 draft window allows; skipping is declared in the Phase C report"
+  }
+}
