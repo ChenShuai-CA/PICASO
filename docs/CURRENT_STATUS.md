@@ -13,7 +13,16 @@
 
 **措辞约束（论文与后续报告一律遵守）**：INTERACTION 分源 minADE +0.43%，只称"macro 与冻结误差门槛通过、多数指标改善"，不称全面优于 orig；diversity 96.48% 只称三个 C 后继臂中最高；C-v2 1.3002 为约束失效下真实读数；penalty 暂缓且硬约束 vs 软罚项比较问题未解决；快车归因纠正为 v0 越限+学习加速度（恒速反例可行）；延迟口径 1.39× 非 1.83×。
 
-**下一步**（待用户）：① 场景口径裁决（V3.1 草案 Option A/B）；② P3.3.5 500-shard 准备的预算审核（数据就绪/固定 dev/短探针后停）。全套测试 253 通过；heldout 全程未读；runs/ 产物不入 git（manifest 哈希管理）。
+**下一步**（待用户）：① 场景口径裁决（V3.1 草案 Option A/B）；② P3.3.5 500-shard 预算审核（见下）。
+
+## 2026-09-19：P3.3.5 scale 准备（自动推进中，停在预算审核）
+
+`runs/20260919_p335_scale_prep/`（SPEC_P335_SCALE.md、DATA_READINESS.json 全过）：
+
+- **数据接口已落地并提交**（54ee6fe，262 测试全过）：convert `--codebook-reuse`（复用冻结 motion_codebook_v1.npz，逐字节拷贝+溯源 manifest，缺省重拟不变）；train `--validation-manifest`（scale 训练 + 固定旧 dev 早停/配对，缺省=封存行为同对象）；`data_pipeline_scale_v1.json`（仅 stage=scale）。
+- **转换后台执行中**（计划任务 P335_SCALE_CONV，03:44 启动）：502 waymo + 338 INTERACTION（100%），预哈希 212.8 GiB 后逐 unit 转换（unit 级幂等可续跑）；按 100-shard 实测 2.06 min/shard 推 ~18-20h。heldout 183 文件零重叠（inventory+converter 双守卫）。
+- **探针链自动挂起**（计划任务 P335_PROBE_CHAIN 每小时）：等转换成功→split/曝光审计（已用 architecture manifest 干跑验证，固定旧 dev 签名与封存逐位相等）→GPU 空闲守卫→30-update 真路径探针+3-update resume 探针→`BUDGET_MEASURED.json`（T1/T2 分解实测 s/update 与验证成本）→**写标记即停，不启动正式训练**。
+- 待用户：审核 BUDGET_MEASURED.json + SPEC（早停集合=固定旧 dev 为建议项可改）后授权正式训练；过夜训练前锁 Windows 自动重启；penalty 仍暂缓。
 
 ---
 
