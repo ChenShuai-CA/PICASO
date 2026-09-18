@@ -182,6 +182,72 @@ def iter_shards(output: Path, units: list[dict]):
             yield unit, unit_dir / shard["npz"], unit_dir / shard["index"]
 
 
+def _hash_file(path: Path) -> tuple[str, str]:
+    return str(path), file_sha256(path)
+
+
+def hash_files(paths: list[Path], workers: int) -> dict[str, str]:
+    """SHA-256 every path.  workers>1 fans files out across forked processes;
+    the returned mapping is identical to the serial loop (dict content is
+    order-free)."""
+    if workers <= 1:
+        return {str(path): file_sha256(path) for path in paths}
+    import multiprocessing as mp
+    if "fork" not in mp.get_all_start_methods():
+        raise RuntimeError("--units-parallel >1 requires a fork-capable platform "
+                           "(Linux/WSL); run with --units-parallel 1 otherwise")
+    with mp.get_context("fork").Pool(max(1, min(workers, len(paths)))) as pool:
+        return dict(pool.map(_hash_file, paths, chunksize=1))
+
+
+def _convert_unit_job(unit, data_root, output, config, pipeline, content_hashes) -> dict:
+    source, paths = unit
+    return convert_unit(source, paths, data_root, output, config, pipeline, content_hashes)
+
+
+def convert_units(units, data_root: Path, output: Path, config: dict, pipeline: dict,
+                  content_hashes: dict[str, str], workers: int = 1) -> list[dict]:
+    """Convert every unit, preserving input unit order.
+
+    workers=1 is the original serial loop (unchanged behaviour).  workers>1
+    runs convert_unit in a fork Pool; results are collected with imap so the
+    returned list (and therefore DATASET_MANIFEST unit ordering) matches the
+    serial order exactly.  Each unit writes only to its own units/<id>/
+    directory, so workers never share mutable state.  The endgame phases
+    (codebook, label_and_validate_shards, previews, manifests) stay serial
+    and are not part of this helper.
+    """
+    def progress(number: int, unit_result: dict) -> None:
+        print(json.dumps({
+            "progress": f"{number}/{len(units)}", "source": unit_result["source"],
+            "unit_id": unit_result["unit_id"], "scenes": unit_result["scenes"],
+            "examples": unit_result["examples"], "resumed": unit_result["resumed"],
+            "elapsed_seconds": unit_result.get("elapsed_seconds"),
+        }), flush=True)
+
+    if workers <= 1:
+        converted = []
+        for number, (source, paths) in enumerate(units, start=1):
+            unit_result = convert_unit(source, paths, data_root, output, config,
+                                       pipeline, content_hashes)
+            converted.append(unit_result)
+            progress(number, unit_result)
+        return converted
+    import multiprocessing as mp
+    from functools import partial
+    if "fork" not in mp.get_all_start_methods():
+        raise RuntimeError("--units-parallel >1 requires a fork-capable platform "
+                           "(Linux/WSL); run with --units-parallel 1 otherwise")
+    job = partial(_convert_unit_job, data_root=data_root, output=output, config=config,
+                  pipeline=pipeline, content_hashes=content_hashes)
+    converted = []
+    with mp.get_context("fork").Pool(max(1, min(workers, len(units)))) as pool:
+        for number, unit_result in enumerate(pool.imap(job, units, chunksize=1), start=1):
+            converted.append(unit_result)
+            progress(number, unit_result)
+    return converted
+
+
 def fit_codebook(output: Path, units: list[dict], config: dict, pipeline: dict) -> tuple[np.ndarray, dict]:
     settings = pipeline["motion_codebook"]
     reservoir = BalancedMotionReservoir(
@@ -403,6 +469,11 @@ def main() -> None:
     parser.add_argument("--codebook-reuse", type=Path, default=None,
                         help="frozen motion codebook .npz to reuse instead of "
                              "refitting (P3.3.5 scale isolation; default refits)")
+    parser.add_argument("--units-parallel", type=int, default=1,
+                        help="worker processes for per-file SHA-256 hashing and "
+                             "per-unit conversion (P3.3.5 HPC run; 1 = original "
+                             "serial behaviour; unit order and all endgame "
+                             "phases are unaffected)")
     args = parser.parse_args()
     started = time.time()
     config = load_p33_config(args.config)
@@ -431,27 +502,16 @@ def main() -> None:
         "inventory": str(args.inventory), "inventory_sha256": file_sha256(args.inventory),
         "effective_pipeline": pipeline,
     })
-    content_hashes = {}
-    for _source, paths in units:
-        for path in paths:
-            content_hashes[str(path)] = file_sha256(path)
     interaction_maps = sorted({
         resolve_interaction_map(args.data_root, interaction_location(paths[0]))
         for source, paths in units if source == "interaction"
     })
-    for path in interaction_maps:
-        content_hashes[str(path)] = file_sha256(path)
-    converted = []
-    for number, (source, paths) in enumerate(units, start=1):
-        unit = convert_unit(source, paths, args.data_root, args.output, config, pipeline,
-                            content_hashes)
-        converted.append(unit)
-        print(json.dumps({
-            "progress": f"{number}/{len(units)}", "source": source,
-            "unit_id": unit["unit_id"], "scenes": unit["scenes"],
-            "examples": unit["examples"], "resumed": unit["resumed"],
-            "elapsed_seconds": unit.get("elapsed_seconds"),
-        }), flush=True)
+    workers = max(1, int(args.units_parallel))
+    hash_targets = [path for _source, paths in units for path in paths]
+    hash_targets.extend(interaction_maps)
+    content_hashes = hash_files(hash_targets, workers)
+    converted = convert_units(units, args.data_root, args.output, config, pipeline,
+                              content_hashes, workers)
     if any(unit["errors"] for unit in converted):
         write_json(args.output / "CONVERSION_ERRORS.json", converted)
         raise RuntimeError("conversion produced sample errors; inspect CONVERSION_ERRORS.json")
