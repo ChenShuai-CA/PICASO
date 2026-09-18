@@ -1,152 +1,257 @@
-# PICASO 项目交接文档（Handoff）
+# HANDOFF — GLM 5.3 接续实施与 Codex 回审
 
-> **日期**：2026-09-10（更新）
-> **状态**：2026-09-01 叙事重构 + M1 盘点已提交（`7dae27e`）；2026-09-10 可行性评审完成，P1–P5 修订已写入 Stage3/4；surrogate v0 冲刺进行中
-> **目标**：Q1 SCI（非开源期刊）。**硬 deadline（2026-09-10 用户裁定）：2026-09-30 前完成论文初稿 + 约 80% 实验；2026-12-31 前投出**，首选 IEEE TIV / T-ITS
+> 更新：2026-09-11。接手人：Claude-glm / GLM 5.3。后续审查人：Codex。  
+> 用户明确要求：当前 D 盘目录是唯一工作区；每次通过 WSL2 Ubuntu 工作；不要再次迁移项目。  
+> **当前状态：环境与小预算端到端流程已跑通，研究尚未完成，尚无“优于强基线”的证据。**
 
----
+## 1. 先读这些文件
 
-## 〇、2026-09-10 可行性评审结论（最新，与后文冲突处以本节为准）
+1. 本文件及 [AGENTS.md](AGENTS.md)：用户决策、执行方式和接续顺序。
+2. [README.md](README.md)：真实可运行入口。
+3. [当前实施状态](docs/CURRENT_STATUS.md)、[预实验报告](runs/20260911_gpu_pilot/REPORT.md)。
+4. [规程映射](docs/protocol_mapping.md)、[研究主张](docs/research_claims.md)：需要继续核验，模型撰写的文字不是权威证据。
+5. `scenario_lab/`、`tests/` 和 `scripts/` 的当前代码。
 
-**判定：方案方向可行、具备 Q1 潜力、数据底账属实（1,148/497/252/22 独立复算一致）、叙事可防守。** 评审发现两个前提性缺口 + 三个范围/设计问题，当日修复：
+根目录 Stage1–Stage4、stage2/stage3 和 Word 文件是历史调研与旧方案，部分来自 Gemini/Copilot/Kimi，存在相互冲突的路线。**不得据此恢复已经放弃的性能预测、VAE、Flow Matching 或庞大 Mamba/因果/域适配主线。** 最新用户决策和本交接中的当前实现优先。
 
-| # | 问题 | 状态 |
-|---|------|------|
-| P1 | Stage4 有效性规则 `SR path abort=1 → 整 Run 作废` 会系统性剔除碰撞样本（碰撞 ⇒ abort，surrogate 将无正样本可学） | ✅ Stage4 §3.3 双池双规则 + 附录 G 多证据碰撞判定 |
-| P2 | 三个结果标签（碰撞/minTTC/AEB 触发时刻）尚未提取 + LOBO 诚实范围未显式化 | ✅ Stage4 附录 G 标签提取规范 + §4.1 LOBO 主实验类清单（主表 6 类：CCRs/CPTA/CCFT/CSTA/LKA/CPLA；E8 规程 run 仅 25）+ surrogate 特征含车辆物理量（不用品牌 one-hot） |
-| P3 | M4 门统计功效（n≈20，80% 一致率 CI≈[56%,93%]）+ G1 复现组时间漂移混杂 | ✅ 附录 F 门规则预写（点估计 ≥80% 且 Wilson CI 下限 ≥60% 且 minTTC MAE ≤0.3s）+ G1 重复性基线（复测 vs 历史原始 run 三向比对）+ G1 边界选点原则 |
-| P4 | 生成器/surrogate/ABD .spec 三层参数化不同构 | ✅ Stage3 新增 §2.3 可执行场景空间 E=(c,P,V,τ,O) |
-| P5 | 文档一致性（域标签 AY5T 残留 / coverage 混口径 / 时间线矛盾） | ✅ Stage3 §3.1/§3.3 对齐 Stage4；coverage_matrix 拆 protocol/function 两表；时间线按本节 |
+## 2. 已锁定的目标与范围
 
-**压缩时间线范围决策**：生成器主线 = **B2+**（规程语法约束合成 + 物理投影 + KFR 审计，输出定义在 E 空间）；Mamba+Waymo 预训练为限时 stretch（9/20 检查点：KFR/多样性不胜 B2+ 则砍）；MACC 首轮为参数空间 do-干预（MACC-lite）；FalseReaction 77 负样本 v0 不并入。**实车补测窗口（10–11 月）是 AI 无法加速的外部关键路径，须本周申请。**
+- 目标：生成危险、安全关键场景；不是根据少量测试点预测新车型成绩，也不是预测全部 NCAP ADAS 表现。
+- 主结构：公共数据行为先验＋ABD 支持的车辆响应/执行误差校准＋闭环强化学习场景生成。
+- **单目标和双目标均为正式研究对象**，同一个角色条件模型支持两者。单目标不能只作为双目标的对照基线。
+- 首篇范围：主车＋横穿行人；以及主车＋横穿行人＋动态遮挡车。最多两个学习目标是研究选择，不是规程统一上限。
+- 同一共享策略采用角色编码、注意力、GRU、类型动作头和存在掩码。集中训练/分散执行，主车控制器冻结。
+- PPO/MAPPO/IPPO 是训练基础和对照，不因名称或网络拼接就构成创新。检验角色/观测约束与执行扰动稳定性机制的真实增益。
+- 规程脚本复现、允许范围内参数变化、规程关联的研究扩展必须区分；自适应目标策略不能自动称为 NCAP 合规。
+- 状态级几何遮挡＋最后可见状态跟踪，不宣称验证真实摄像头/雷达；本月不要求试验场硬件控制。
+- 月底目标：2026-09-30 完整英文论文初稿＋主要实验和可复现代码；录用或完成实车部署不是可承诺的月底成果。
+- 投稿目标：中科院大类一区、允许传统订阅发表；分区与出版政策需投稿前核查，不承诺录用。
 
-完整评审与执行计划：`C:\Users\chens\.claude\plans\handoff-md-wise-platypus.md`
+## 3. 环境与每次开工命令
 
----
+### 唯一工作区
 
-## 一、一句话叙事（当前论文故事线）
+- Windows：`D:\Projects\Scenario_Generation_Research`
+- Ubuntu：`/mnt/d/Projects/Scenario_Generation_Research`
+- WSL 发行版：**`Ubuntu`，实际是 Ubuntu 24.04 LTS**；不要切到另一个 `Ubuntu-22.04`。
+- 虚拟环境：`/home/shuai/.venvs/scenario-gpu`
+- 解释器：`/home/shuai/.venvs/scenario-gpu/bin/python`
+- Python 3.12.3；PyTorch 2.14.0+cu130；CUDA runtime 13.0；RTX 4060 Ti 16 GB。
+- Windows 物理内存约 32 GB，当前 WSL 可见约 15 GB；大数据必须有界读取，不能把全部数据载入内存。
 
-> **面向量产 ADAS 的物理可执行安全关键场景生成 + 多品牌真实车辆响应闭环验证**：
-> 生成器（Waymo/INTERACTION 预训练保自然性 + C-NCAP 规程语法与 ABD 执行包络硬约束）产出超越标准矩阵的新场景 → VUT 响应 surrogate（场景参数 → 碰撞 / minTTC / AEB 触发时刻，含不确定度）预测危险度并排序 → **ABD 实车补测验证** → 结果反哺 surrogate（主动学习闭环）→ 反事实归因定位失效边界并经实车确认。
+PowerShell 仅作为进入 Ubuntu 的入口：
 
-**PICASO 命名保持缩写**，展开改为：*Physics-Informed Causal Adversarial Scenario generation with real-wOrld validation*。
+```powershell
+wsl -d Ubuntu --cd /mnt/d/Projects/Scenario_Generation_Research
+```
 
----
+然后所有工作在 Ubuntu 内进行：
 
-## 二、用户已确认的四个关键约束（决策前提，勿再推翻）
+```bash
+source /home/shuai/.venvs/scenario-gpu/bin/activate
+pwd
+python scripts/check_environment.py
+python -m pytest -q
+bash scripts/run.sh --help
+```
 
-1. **具备完整实车补测能力**：ABD 机器人 + 场地 + 车辆可调度，能执行生成器产出的规程外新场景并记录真实响应。
-2. **ABD 数据还会再加 5 款以上车型**（现有 A66 / E8 / S9 / P7+ 四款，最终约 9–10 款）。
-3. **期刊要求 Q1 且非开源**：T-ITS / TIV / TR-C / AAP 均可（均 hybrid）；排除 IEEE Access / Sensors 类 OA。
-4. **6 个月内投出，算力可租且充足**——时间是唯一硬约束。
+也可以逐条通过 `wsl -d Ubuntu --cd /mnt/d/Projects/Scenario_Generation_Research -- <Linux命令>` 调用。
 
----
+**禁止重新建立 `/home/shuai/projects/Scenario_Generation_Research` 工作副本。** 此目录曾误建，用户要求删除后已经删除；13 个独有修改/结果已校验并合回当前目录。保留 GPU 虚拟环境是有意的，它不是第二工作区。`migration/` 仅为历史记录，其中的旧 active_workspace 不是现行指令。
 
-## 三、2026-09-01 方案评审核心结论（为什么改叙事）
+如果从 PowerShell 管道传 Python/Bash 源文本给 WSL，先在该 PowerShell 进程设置：
 
-原方案"开放道路→封闭场地 UDA（GRL-DANN）"是最脆弱环节：
+```powershell
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+```
 
-- C-NCAP 目标域是**离散规程网格、条件内方差近零**，经典 UDA 没有可适配的分布；
-- 审稿人必杀一问："规程 PDF 已完整定义目标分布，为何需要域适应？"；
-- ABD 数据真正的价值是**真实量产车系统响应真值**（AEB/FCW 触发时刻、碰撞结果）+ 实车补测能力——这是 STRIVE/AdvSim/CTG++/CounterScene 全部不具备的。
+否则中文可能变成问号。优先直接在 Ubuntu 编辑/运行文件。复杂命令不要多层拼接引号；不要读取或打印 PowerShell profile、服务 token 或完整模型包装器定义。
 
-**模块新角色**：C1 PI-Causal Mamba 保留为生成主干；C2 MACC 反事实升级为明星贡献（surrogate 上搜边界 → 实车验证翻转）；C3 GRL-DANN **降级为跨品牌 surrogate 的可选校准工具**（LOBO 评估），不进标题级叙事。
+GPU 已验证，普通 PyTorch 训练不需要另装 Linux NVIDIA 驱动。不要为此修改全局驱动、WSL 内存设置或 Windows Python。当前不是完整 nvcc 编译环境；如确实需要自定义 CUDA 扩展，再单独处理。
 
-详细论证见 `C:\Users\chens\.claude\plans\abd-data-c-ncap-sci-typed-turing.md`。
+## 4. 工作区状态：保留用户已有改动
 
----
+接续前运行 `git status --short` 并记录。
 
-## 四、数据真相（M1 盘点实测，非估算）
+交接前已有旧 `abd_parser/` 和 `inventory/` 多个文件删除记录；Stage3 文档已有独立修改及 CRLF/尾随空白差异。**不要 git reset、恢复旧解析器或顺手格式化整份 Stage3 文档。** 全仓 `git diff --check` 会被这些既存文档差异影响，需区分本次新增问题。
 
-管线：`abd_inventory.py`（纯标准库）→ `inventory/all_runs_inventory.csv`（1,148 run 全量）+ `inventory/coverage_matrix.csv`。
+本轮大量代码和结果仍是未提交文件；不要以 untracked 为理由清理。当前不存在需要等待的本轮训练任务，`completed.json` 已记录 25 个任务完成。不要终止其他用户服务或其他会话进程。
 
-| 数据池（data_role） | runs | 用途 |
-|---|---|---|
-| **protocol（C-NCAP 规程）** | **497** | **252 个独立工况 / 22 类规程**；生成评估 + surrogate 训练主池 |
-| function_test（企标功能项） | 179 | A66 的 ACC/ICA/TJA/ILC/RCW；可供 surrogate 训练 |
-| surrogate_negative（FalseReaction） | 77 | "不应制动"负样本池（surrogate 边界建模） |
-| engineering_envelope（调参/标定/预热） | 392 | 仅用于 ABD 执行包络标定 |
-| unclassified | 3 | E8 `4-Cal/61-Learn`，待人工确认 |
+`HANDOFF.md` 曾处于旧文件删除状态；本文件是用户要求新建的当前交接，不是恢复旧交接内容。
 
-**M1 门：PASS**（规程有效 run 497 ≥ 100；规程类别 22 ≥ 6）。
+## 5. 代码地图与真实实现
 
-数据形态事实：ABD `.txt` = 横幅 + `Points=N` + 通道名（385–415 列，Tab 分隔）+ 单位行 + 数据；**100 Hz**，时长 13–51 s；同名 `.spec/.log/.CRUN` 配套；含 Motion Pack 位姿、相对运动、TTC、触发通道、机器人控制通道。车辆物理参数（质量/轴距等）见各车 `ExpInfo.txt`。
-
-品牌覆盖不对称（写作时注意措辞）：
-- **A66 最全**（ADAS+VRU+功能测试 510 runs）；**E8 极度偏科**（CCRs 130/195，无 VRU）；**S9 较均衡**；**P7+** 夹带大量 Conditioning/标定 run（已在盘点中分流）。
-- 无任一品牌有完整 VRU+ADAS 全矩阵 → 跨品牌结论按规程类型分层，缺失处只做案例分析。
-
----
-
-## 五、本次会话已完成的修改（未提交）
-
-| 文件 | 修改要点 |
+| 文件 | 当前能力与注意事项 |
 |---|---|
-| `Stage1_研究问题凝练.md` | 顶部新增 2026-09-01 修订块（优先级最高）；SQ3/断裂3/根因句/§4.3 C3/§六贡献3 改写为实车验证口径；删"完全空白/首发优势窗口" |
-| `Stage2_综合差距分析与Related_Work.md` | 新增修订块；"完全空白"→"未直接覆盖"；CR 25–35%、KFR>95% 等预承诺数值→"实验后填报"；§4.4 英文 Related Work 的 critical gap 改写；C3 两处重定位；TDPD 统一定义并降级；新增实车一致性指标条目 |
-| `Stage2_相关工作梳理与文献调研.md` | §5.2 蓝海预判表软化绝对化表述并加重定位注记 |
-| `Stage3_方法与系统设计_PICASO.md` | 标题改名；新增修订块；架构图 Layer 2→"跨品牌响应校准层（可选）"、Layer 3 物理约束口径"解码投影为主"；§2.2 新增 Stage D 实车闭环；§四 Layer 2 降级声明；§5.3.5 删"首个"；§六 MACC 补实车支撑声明；§7.1 删全部预承诺数值 + 新增 D6 实车一致性指标族；§7.2 消融改非承诺口径 + 新增 A9；§8.2 Phase 2 改为 surrogate 训练；页脚创新点确认更新 |
-| `Stage4_数据处理与实验方案.md` | 新增修订块；FalseReaction 改为**分流**（生成侧剔除 / surrogate 负样本保留，4 处）；§4.1 切分图重画；新增基线 B6（无 ABD 校准对照）；§4.4 新增实车一致性指标；**新增附录 F：ABD 实车补测协议**（首批 ≥20 场景：G1 规程内复现 ≥8 + G2 规程外新点 ≤20% 外推 ≥12，含安全中止与反哺规则） |
+| `scenario_lab/schema.py` | ScenarioSpec、Body、EpisodeRecord；单位 m/s/rad；双目标固定两个槽位 |
+| `env.py` / `geometry.py` | 50 Hz 物理、10 Hz 决策、二维几何遮挡、观测年龄、冻结 TTC/停车距离 AEB、角色和目标间碰撞检查 |
+| `policy.py` | 注意力＋GRU、两个角色输出头；actor 不接收 critic_state；bundle schema 0.1 |
+| `train.py` | 完整 episode 的循环 PPO/MAPPO/IPPO；混合模式前 20% 单目标热身；后 20% 可选成组扰动后训练 |
+| `data.py` | INTERACTION 轨迹、ABD 有界审计；配置候选与真正可用于 AEB 校准严格分开 |
+| `waymo.py` | 手写的有界 Motion TFRecord/局部 protobuf 读取，包含 CRC；未解码地图和感知字段 |
+| `pretrain.py` | **自身运动先验**，不是完整场景/交互预训练；来源/文件/类型配额、分组隔离、运动窗口指纹、角色频率权重 |
+| `evaluate.py` | 脚本、参数 CEM、固定动作序列 CEM、共同条件评价、按初始场景聚类的区间、回放、延迟 |
+| `runtime.py` | 设备选择与实际 Linux/Python/CUDA 运行记录 |
+| `scripts/run.sh` | 固定本工作区和 Ubuntu 解释器的启动入口 |
+| `scripts/run_pilot.py` | 顺序执行小预算流程，任务失败即停，保存 jobs.json 与日志 |
+| `scripts/summarize_pilot.py` | 从真实结果生成比较 CSV、图和报告；当前写死 v4 语料路径及部分 pilot 文案，复用前应参数化 |
+| `scripts/prepare_abd_review.py` | 24 条代表记录的有界字段/控制来源核对材料 |
 
-一致性 grep 验证已通过：无"完全空白 / Blue Ocean / 首个在 / KFR>95 / 25–35%"残留（历史修订块除外，均有新块覆盖）；TDPD 定义三处唯一。
+当前“固定轨迹”基线实际上输出固定动作节点，经动力学积分形成轨迹；写论文时准确命名。不要把它说成已经复现某个外部 SOTA。
 
----
+当前只有可见静止对象制动回归测试，**没有完成真实车辆形状和完整条款下的 CCRs 规程复现**。角色任务完成、完整可避让性判定、超时受控终止等计划内容也不能因文档写过就算已实现。
 
-## 六、红线（写作与实验纪律，历次评审累积）
+## 6. 已验证成果与位置
 
-1. **不预承诺数值**：内部门阈值仅作 go/no-go，论文结果只报实测值 + 95% CI。
-2. **不用绝对化表述**："首个/空白/零论文"一律改为 "to the best of our knowledge after systematic search"，投稿前按 IEEE Xplore/Scopus/WoS/Semantic Scholar/OpenAlex/arXiv/GS 复核。
-3. **arXiv 预印本不写成已录用会议/期刊**；SOTA 数字引用前回原文核验（Stage2 数字多来自 Gemini/Copilot，未逐条核验）。
-4. **ABD 原始数据不外传**；论文中品牌匿名化（Brand A–J），只报聚合统计；Waymo/INTERACTION 管线全开源以支撑可复现性。
-5. 不把"GRU→Mamba 替换"当创新点；Mamba 只是组件。
-6. 统计：3–5 种子、paired/bootstrap、效应量 + CI、Holm-Bonferroni/FDR 多重校正；不预设全 p<0.05。
+### 工程检查
 
----
+- 26 个 Python 文件语法检查通过。
+- 40 项 pytest 通过，包含实际 CUDA 更新、单双目标存在掩码、循环序列回放、遮挡信息边界、数据来源配额和跨集合组隔离。
+- 证据：`runs/20260911_compatibility/environment.json`、`verification.json`、`source_audit.json`、`requirements-lock.txt`。
+- 依赖中补充了 python-docx；旧 `stage2_extract.py` 改为项目相对路径。历史盘点脚本没有自动全量重跑。
 
-## 七、压缩路线图与 Go/No-Go 门（2026-09-10 裁定：9/30 初稿+80% 实验，12/31 投稿）
+### 当前使用的公共语料
 
-| 时间窗 | 任务 | 门 |
-|---|---|---|
-| ✅ M1 完成（9/5） | ABD 盘点 + inventory | **PASS**（497 规程 run / 252 工况 / 22 类） |
-| ✅ 9/10 | 快照提交（`7dae27e`）+ 文档修订（P1–P5 落稿 Stage3/4） | — |
-| 9/10–9/13 | **用户发起实车窗口申请（10–11 月，G1≥8 + G2≥12）** | 窗口锁定 = 外部关键路径 |
-| 9/13–9/20 | **surrogate v0 冲刺**：参数提取器 + 标签提取器（附录 G → `labels_v0.csv` + 20 run 人工校验）+ T0 定位 + GBM v0 品牌内 holdout → LOBO 预览（仅主表 6 类） | **9/20 检查点**：品牌内 minTTC MAE 远差于 0.4s 量级 → 新叙事重新评估；stretch（租 A100）Mamba 生成器同日 KFR/多样性 vs B2+ 定去留 |
-| 9/20–9/30 | B2+ 合成管线（E 空间语法约束采样 + 物理投影 + KFR 审计）+ MACC-lite 边界点 + 最小消融（B2/B6/A9）+ **论文初稿** | **9/30：初稿 + 80% 实验**（全部历史数据实验；Results 只填实测值，占位标注待补） |
-| 10–11 月 | **首批实车补测**（附录 F，含重复性基线）+ sim-to-real 一致性 + 反哺 surrogate | M4 门按附录 F 预写规则：点估计 ≥80% 且 CI 下限 ≥60% 且 minTTC MAE ≤0.3s；窗口滑过 11 月中 → 降级预案（holdout 口径 + TR-C/TVT） |
-| 12 月 | 完整统计（3–5 种子/bootstrap/效应量+CI/Holm）+ 优先权检索复核 + 投稿（TIV/T-ITS） | 3 核心消融 + CI 齐全 |
+路径：`runs/20260911_public_v4/`
 
-**M4 成败即论文成败**；9/30 复盘点：若初稿+80% 未达成，决策 = 顺延（1 月投）或砍实车批（降级口径），不硬凑。
+- 6,601 个运动片段，131 个来源组。
+- INTERACTION 4,519；Waymo 2,082。
+- 训练 5,331；验证 1,122；测试 148。
+- 车辆 6,410；行人 191，明显不均衡；训练使用角色频率权重。
+- 来源只有有界子集：各 4 个文件，Waymo 每文件最多 32 条 Scenario。
+- INTERACTION 优先选择原始 `vehicle_tracks_*`，不混用重切分挑战赛版本；明确行人来自 Waymo。不能把 `pedestrian/bicycle` 混合类型硬解释为行人。
+- split 的总体非空不等于每个来源×角色都有独立验证覆盖。下一步必须输出此交叉表，尤其当前 INTERACTION 验证覆盖不足。
+- `manifest.json` 含 group/track/time/content fingerprint 与来源；NPZ 是当前预训练输入。
+- CRC 检查的是实际读取的记录，未验证所有 1,150 个 Waymo 文件。
+- `wsl_public_pilot`、`20260911_public_v2`、`20260911_public_v3` 是排错产物，**不要用于下一轮正式训练**：早期存在来源被挤占、错误文件优先级等问题。
 
----
+### GPU 预实验
 
-## 八、下一步可立即执行的任务（2026-09-10 重排）
+路径：`runs/20260911_gpu_pilot/`。`completed.json`：25 个任务完成。
 
-1. **surrogate v0 冲刺（关键路径，9/13–9/20）**：参数提取器（condition 目录名 + .spec → 场景参数表）→ 标签提取器（按 Stage4 附录 G → `labels_v0.csv` + 20 run 人工校验 + 类别平衡审计）→ T0 定位（Stage4 §2.6 多策略）→ GBM v0（minTTC 回归为主、碰撞为辅、特征含车辆物理量）→ 品牌内 holdout → LOBO 预览（仅主表 6 类）。**失败则叙事重新评估，先于一切生成器工作。**
-2. **实车窗口申请（用户执行，本周发起）**：10–11 月场地/车辆档期；批规模按附录 F（G1≥8 + G2≥12）；G1 按"历史低 minTTC 边界工况"选点原则。
-3. **9/20–9/30**：B2+ 合成管线 + MACC-lite（E 空间 do-干预边界点，G2 送测核心来源）+ 最小消融（B2 朴素扫掠 vs B2+、B6 无 ABD 校准、A9 随机选点 vs surrogate 选点）+ **初稿**。
-4. **stretch（租 A100 并行）**：Mamba 生成器 + Waymo 预训练；9/20 按 KFR/多样性 vs B2+ 决定去留。
-5. **投稿前检索复核**（"实车验证闭环"优先权）：12 月执行，不阻塞。
+- 5 轮预训练；7 组 RL，每组 12 updates、4 episodes/update。
+- 混合训练 seed 7/17/27；独立 single/dual seed7；无先验、无稳健性后训练 seed7。
+- 每方法每分支 20 个共同测试初始条件；另一主车控制器；10 条初始条件×10 次扰动/分支；4 个单案例 CEM；延迟；动作轨迹回放。
+- `jobs.json` 保留所有真实命令和耗时；子目录 `runtime.json` 记录 GPU 与 Linux。
+- 主策略：`mixed_seed7/policy.pt`；先验：`prior/prior.pt`。
+- 单目标 p99=3.003 ms，双目标 p99=4.919 ms；每分支 10,000 步，超过 100 ms 的比例为零，无渲染。完整仿真实时因子约 48.1 / 22.3。仅本机软实时测量。
 
----
+部分实测值（有效危险率，分母包含无效尝试）：
 
-## 九、关键文件索引
+| 方法 | 单目标 | 双目标 |
+|---|---:|---:|
+| 脚本 | 15% | 25% |
+| 纯先验 | 15% | 25% |
+| mixed seed7 | 20% | 25% |
+| mixed seed17 | 25% | 15% |
+| mixed seed27 | 15% | 15% |
+| mixed 无先验 seed7 | 25% | 15% |
+| mixed 无稳健性后训练 seed7 | 20% | 20% |
 
-| 文件 | 作用 |
-|---|---|
-| `C:\Users\chens\.claude\plans\abd-data-c-ncap-sci-typed-turing.md` | 本次方案评审完整版（可行性论证、修改清单、风险登记册） |
-| `abd_inventory.py` | M1 盘点管线（重跑：`python abd_inventory.py`） |
-| `inventory/all_runs_inventory.csv` | 1,148 run 全量清单（brand/role/工况/条款号/时长/采样率/有效性） |
-| `inventory/coverage_matrix.csv` | 规程类 × 品牌覆盖矩阵（**protocol 池口径**，工况数 / run 数；function_test 另见 `coverage_matrix_function_test.csv`，2026-09-10 拆分） |
-| `Stage1–4 *.md` | 研究方案（各文件顶部 2026-09-01 修订块为当前有效口径） |
-| `四阶段方案可行性审查与修改理由_2026-05-28.md` | 上一轮评审（MVP 分层、红线来源） |
-| `Data/ABD_Data/` | 四车 ABD 实测数据（6.6 GB） |
-| `Data/ABD_Data/C-NCAP_2024/` | 附录 L / 附录 O / 管理规则 PDF |
-| `Data/Waymo`、`Data/INTERACTION` | 公开数据集（生成器预训练用） |
+**不能从这些小差异得出方法优越性。** 预训练验证 MSE 约 0.233，5 轮没有明显改善。样本少、更新少、假设扰动、交互预算不完全一致。正式结果还缺强对照。
 
-## 十、给下一个会话的最短上手指引
+故障证据：`failure_reasons.json`。脚本双目标 20 次中 9 次目标间碰撞；mixed seed17 有 10 次目标间碰撞、7 次遮挡车角色违规。不要简单剔除失败案例。
 
-1. 读本文件**〇节（2026-09-10 评审结论）与七节（压缩路线图）** → 读 Stage1/3/4 顶部最新修订块（2026-09-10 > 2026-09-01 > 2026-05-28）。
-2. **硬 deadline：9/30 初稿+80% 实验，12/31 投稿**；关键路径 = surrogate v0（标签按 Stage4 附录 G 提取）。
-3. 任何与"开放道路→封闭场地 UDA"相关的旧表述均以新叙事为准；不要复活 GRL-DANN 核心地位。
-4. 数值一律不预承诺；新增声明一律走"据当前检索"口径。
-5. 数据问题先查 `inventory/all_runs_inventory.csv`，不要重新手数文件；结果标签查 `inventory/labels_v0.csv`（生成后）。
+### ABD
+
+原始目录 `Data/ABD_Data`；全目录旧清点 4,121 个匹配运行文件，不等于有效独立实验数。目录名也不自动等于独立品牌/车型/软件版本。
+
+- `runs/wsl_data_audit/`：8 个有界抽样审计。
+- `runs/20260911_abd_review/manual_review.csv` 和 `evidence.json`：24 条 CCRs/CPTA/CCFT 记录，每条只读 300 行进行初步字段审查。
+- 不把 abort 当碰撞；不把 UseBrakeRobot=False 当已确认 AEB 制动；不把 spec 默认质量当实车质量。
+- `calibration_candidate` 只表示可继续审查，`suitable_for_aeb_calibration` 仍为 False。
+- **尚未完成 ABD 响应分布校准。** 当前 `perturb_spec` 的参数范围均标为 `assumed_sensitivity_not_abd_calibrated`，不能改标签来伪装校准。
+
+## 7. GLM 接续顺序与验收要求
+
+### P0：先复现与诊断，不急着扩大训练
+
+1. 记录 git 状态；运行环境检查和 40 项测试；在新目录复现一小段训练与一条回放。不要重跑整轮只为证明启动成功。
+2. 从固定 pilot 初始条件生成失败分层报告：参考脚本目标间冲突、策略新增冲突、车辆/行人角色违规分别计数；给出至少 3 条代表轨迹的平面图与时间曲线。
+3. 检查初始化几何、行人启动前状态、遮挡/跟踪刷新、制动响应延迟、动作限幅和奖励终止逻辑。特别核对实际位置未动时速度是否仍按运动状态上报等物理一致性问题。
+4. 新采样器建立有版本的场景集合，区分参考可执行场景与刻意压力场景；原始集合继续保留。不要靠事后按模型结果筛样本来提高成功率。
+
+验收：新旧采样器能追溯版本；同一条件各方法共享；无效尝试不消失；测试覆盖真正发现的问题；旧轨迹若因物理修正无法回放，应记录兼容边界而不是悄悄更改日志。
+
+### P1：把预训练从自身运动推进到交互上下文
+
+1. 先实现 `source × split × kind` 的样本/来源组统计及零动作预测基线、分角色验证误差，明确自身运动先验到底学到了什么。
+2. 以同一 Scenario/录制片段内的共同时间戳对齐邻居，输入只含当前与历史状态；未来状态只能用于监督标签，不能混入输入。
+3. 首先加入可追溯的邻居相对位置/速度，验证效果后再接道路上下文；当前 Waymo 未解码地图，需要遵循官方 schema。
+4. 公共轨迹中的完整可见状态不是传感器可见性真值。若合成遮挡，标注为合成模型；不要将公共全局真值当作实际可观测状态。
+5. 扩大明确行人数据并记录筛选原因；不要从含混 pedestrian/bicycle 标签中臆造分类。
+6. schema/网络输入改变时升级语料、模型版本；加载旧权重应明确适配或拒绝，不能 silent mismatch。
+
+验收：无跨集合来源组泄漏；同一录制片段重复导出不跨集合；输入无未来泄漏；分角色指标与零动作基线齐全；自身运动版与交互版在同一固定验证集合比较。不能只报总 MSE。
+
+### P2：公平预算与有效的场景生成评价
+
+1. 增加实际环境交互步数预算。仅用相同 update 数或相同 episode 数不等价，因为失败轨迹更短。
+2. 分开报告：训练总成本、固定策略生成成本，以及每测试场景再搜索的成本。避免拿 CEM 的 best-of-search 与策略一次采样直接比。
+3. 让参数/固定动作序列搜索覆盖多个初始条件，而非当前单案例；无效尝试计入预算与分母。
+4. 增加独立自然性/角色任务完成指标、可避让性诊断、角色机制消融。避免奖励函数自己证明自然性。
+5. 敏感性对照至少比较有/无稳健性后训练在相同扰动种子上的结果；现有只有主模型的扰动评价，不足以证明该机制。
+6. 现有 seed1000 的 20 条 pilot 条件已经被查看，是诊断集合。后续调参只能用开发集，**正式保留集合必须重新冻结且不得用来挑模型**。
+
+验收：至少 3 个种子；预先冻结数据划分、危险阈值和去重规则；按独立初始场景聚类计算区间；报告负结果。未经这些检查不形成“显著优于基线”的措辞。
+
+### P3：ABD 可追溯校准
+
+1. 根据 manual_review.csv 组织字段和事件证据，优先确认车辆配置、AEB/人工/机器人控制来源、时间同步及事件区间。
+2. 无法从文件确认的含义向用户提出具体问题，附记录相对路径和候选通道；别让用户重新说明整套数据。
+3. 只有有依据的记录用于估计响应时延、制动减速度或跟踪误差；按车辆/配置/采集组分开并保留独立验证记录。
+4. 样本不足的参数继续作为假设敏感性范围，不外推整个车队，也不训练“新车型成绩预测器”。
+
+验收：每个估计参数能追到原始运行、通道、单位、事件窗口、筛选和拟合方法；训练/验证隔离；给出误差与不确定性。若控制来源仍不清楚，先完成其他独立任务，不捏造校准结果。
+
+### P4：通过前述检查后再扩大实验与写作
+
+9 月 30 日目标保持为完整英文初稿与主要实验。先建立清晰实验结论，再组织方法、结果、失败案例和局限；不保证一区录用。方法机制若没有增益，应收缩主张而非更换报告口径。
+
+优先交付 P0/P1 的可审查成果，再逐步扩大 P2/P3；不要同时引入一批新模型而失去可归因性。
+
+## 8. 可直接复用的命令
+
+在 Ubuntu 工作区中：
+
+```bash
+source /home/shuai/.venvs/scenario-gpu/bin/activate
+python -m pytest -q
+
+# 当前检查点回放，不会训练
+bash scripts/run.sh replay runs/20260911_gpu_pilot/eval_mixed_seed7/dual_0000_00.json
+
+# 小规模接续核验：使用新目录，避免覆盖旧模型
+bash scripts/run.sh train --output runs/glm_smoke_v1 --updates 2 --episodes-per-update 4 --mode mixed --algorithm mappo --device cuda --pretrained runs/20260911_gpu_pilot/prior/prior.pt
+
+# 评价到新目录
+bash scripts/run.sh evaluate --policy runs/glm_smoke_v1/policy.pt --output runs/glm_smoke_eval_v1 --count 5 --device cuda
+```
+
+完整 pilot 脚本不是断点恢复系统，输出目录存在会报错；训练检查点目前不是完整优化器/RNG 恢复点。不要用旧目录“续训”后拼接日志冒充同一次训练。新模型或新数据使用新版本目录。
+
+## 9. 交回 Codex 时必须留下的材料
+
+请维护本 HANDOFF 的状态摘要，并创建 `docs/GLM_CHANGELOG.md`，每轮至少记录：
+
+- 日期、目标、修改文件和原因；哪些属于缺陷修复，哪些属于新研究机制。
+- 数据/场景/模型版本及兼容性；哪些旧结果因修正需要重跑。
+- 真实执行命令、Python/平台/GPU、随机种子、交互预算、运行时间、日志与产物路径。
+- 测试结果、失败测试、修复过程；不要只写“全部通过”而无命令和证据。
+- 按相同评价集合组织的旧/新对照表，包含失败率、负结果和不确定性。
+- 未完成事项、依赖用户确认的精确字段、仍属假设的参数。
+
+每个实验保留配置、来源清单、权重、随机种子、结果和至少一条可回放轨迹。不要提交原始 Data、凭据或巨大二进制文件；不要自动 push/发布。是否本地提交按用户后续指示处理，不用为了交接重置现有 Git 状态。
+
+Codex 回审重点：
+
+1. WSL/唯一工作区要求是否遵守，是否触碰无关文件。
+2. 新结果能否按记录重现；旧场景/语料是否被悄悄替换。
+3. actor 是否使用隐藏真值或未来信息；预训练和测试是否泄漏。
+4. 无效样本和搜索预算是否被完整计数，正式测试是否被用于调参。
+5. 角色/交互机制是否真正带来增益，还是数据/预算变化造成的表面提升。
+6. ABD 标定有没有原始依据，是否越界声称真实感知、规程合规或论文水平。
+
+## 10. 一句话给接手模型
+
+**先读本交接和代码，复现当前结果，优先解决双目标无效场景及交互先验不足；在当前 D 盘工作区使用 WSL2 Ubuntu 继续实施，逐步留下能被 Codex 独立复核的证据。不要从零重写项目，也不要将目前的工程 pilot 包装成已完成论文。**

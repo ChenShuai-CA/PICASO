@@ -29,11 +29,13 @@ from scenario_lab.p33_metrics import (  # noqa: E402
     evaluate_agent_mask,
     group_level_table,
     kinematic_diagnostics,
+    kinematic_diagnostics_boundary_excluded,
     rollout_records_for_batch,
     summarize_records,
     token_frequency_report,
 )
-from scenario_lab.p33_model import ARSceneV1, ar_scene_loss, to_torch_batch  # noqa: E402
+from scenario_lab.p33_model import (ARSceneV1, ARSceneV1K, ar_scene_loss,  # noqa: E402
+                                    ar_scene_loss_c, to_torch_batch)
 from scenario_lab.p33_spec import load_p33_config  # noqa: E402
 
 MANIFEST = REPO / "runs/20260913_p331_data_pipeline/smoke/DATASET_MANIFEST.json"
@@ -121,12 +123,18 @@ def load_model(args: argparse.Namespace, config: dict, device: torch.device):
     with np.load(codebook_path, allow_pickle=False) as data:
         codebook = np.asarray(data["centroids"], dtype=np.float32)
     torch.manual_seed(7)
-    model = ARSceneV1(config, codebook).to(device)
-    payload = torch.load(OUTPUT_DIR / "m2_final_checkpoint.pt", map_location=device,
-                         weights_only=False)
+    c_config = None
+    if getattr(args, "variant", "residual") == "kinematic":
+        c_config = json.loads(
+            (REPO / "configs/p33/model_kinematic_c_v1.json").read_text(encoding="utf-8"))
+        model = ARSceneV1K(config, codebook, c_config).to(device)
+    else:
+        model = ARSceneV1(config, codebook).to(device)
+    payload = torch.load(OUTPUT_DIR / getattr(args, "checkpoint_name", "m2_final_checkpoint.pt"),
+                         map_location=device, weights_only=False)
     model.load_state_dict({key: value.to(device) for key, value in payload["model"].items()})
     model.eval()
-    return model, payload["update_index"]
+    return model, payload["update_index"], c_config
 
 
 def _overlay_plot(path: Path, batch: dict, trajectories: np.ndarray, cv: np.ndarray,
@@ -183,12 +191,20 @@ def run_model(args: argparse.Namespace) -> dict:
     m3 = smoke["m3_eval"]
     catalog = ShardCatalog.from_manifest(MANIFEST, config)
     device = torch.device(args.device)
-    model, trained_updates = load_model(args, config, device)
+    model, trained_updates, c_config = load_model(args, config, device)
+
+    def _loss(outputs, batch):
+        if c_config is not None:
+            return ar_scene_loss_c(outputs, batch, model.codebook, config, c_config)
+        return ar_scene_loss(outputs, batch, model.codebook, config)
     records = []
     token_true, token_valid, token_argmax, token_sampled, token_logprob = [], [], [], [], []
     ce_weighted, accuracy_weighted, ce_tokens = 0.0, 0.0, 0
     kinematics = {"speed_violations": 0, "accel_violations": 0, "jerk_violations": 0,
                   "agent_trajectories": 0}
+    kinematics_boundary_excluded = {"speed_violations": 0, "accel_violations": 0,
+                                    "jerk_violations": 0, "agent_trajectories": 0}
+    boundary_jump_speeds = []
     batches = 0
     plots_written = 0
     plot_quota = defaultdict(int)
@@ -204,7 +220,7 @@ def run_model(args: argparse.Namespace) -> dict:
         batch = to_torch_batch(batch_raw, device)
         with torch.no_grad():
             outputs = model(batch, teacher_tokens=batch["motion_token_target"])
-            losses = ar_scene_loss(outputs, batch, model.codebook, config)
+            losses = _loss(outputs, batch)
             valid = (batch["motion_token_valid_mask"]
                      & (batch["motion_token_target"] != 255))
             ce_weighted += float(losses["token_cross_entropy"]) * int(valid.sum())
@@ -230,6 +246,12 @@ def run_model(args: argparse.Namespace) -> dict:
                 for key in ("speed_violations", "accel_violations", "jerk_violations"):
                     kinematics[key] += report[key]
                 kinematics["agent_trajectories"] += report["agent_count"]
+                excluded = kinematic_diagnostics_boundary_excluded(
+                    trajectories[index, :, mask])
+                for key in ("speed_violations", "accel_violations", "jerk_violations"):
+                    kinematics_boundary_excluded[key] += excluded[key]
+                kinematics_boundary_excluded["agent_trajectories"] += excluded["agent_count"]
+                boundary_jump_speeds.append(excluded["boundary_jump_speed_mps"]["max"])
         if full_run and plots_written < m3["overlay_plot_count"]:
             # source-stratified selection: fill each source's quota (P3.3.2a —
             # the first submission drew all plots from the leading waymo batches)
@@ -266,6 +288,21 @@ def run_model(args: argparse.Namespace) -> dict:
         key: (kinematics[key] / kinematics["agent_trajectories"] if
               kinematics["agent_trajectories"] else None)
         for key in ("speed_violations", "accel_violations", "jerk_violations")}
+    kinematic_violation_rates_boundary_excluded = {
+        key: (kinematics_boundary_excluded[key] / kinematics_boundary_excluded["agent_trajectories"]
+              if kinematics_boundary_excluded["agent_trajectories"] else None)
+        for key in ("speed_violations", "accel_violations", "jerk_violations")}
+    boundary_jump_summary = {
+        "per_sample_max_jump_mps": {
+            "max": float(np.max(boundary_jump_speeds)) if boundary_jump_speeds else None,
+            "mean": float(np.mean(boundary_jump_speeds)) if boundary_jump_speeds else None,
+            "p99": (float(np.percentile(boundary_jump_speeds, 99))
+                    if boundary_jump_speeds else None),
+        },
+        "note": "slope discontinuity at chunk boundaries of the piecewise-linear "
+                "token decode; excluded from the boundary-excluded rates above "
+                "and reported separately (P3.3.2a review requirement)",
+    }
     result = {
         "mode": "m3_model_diagnostics",
         "checkpoint": "m2_final_checkpoint.pt",
@@ -289,6 +326,8 @@ def run_model(args: argparse.Namespace) -> dict:
         "token_frequency": token_frequency_report(truth, validity, argmax),
         "sampled_token_frequency": token_frequency_report(truth, validity, sampled),
         "kinematic_violation_rates": kinematic_violation_rates,
+        "kinematic_violation_rates_boundary_excluded": kinematic_violation_rates_boundary_excluded,
+        "boundary_jump_summary": boundary_jump_summary,
         "kinematic_trajectories": kinematics["agent_trajectories"],
         "overlay_plots": plots_written,
         "elapsed_seconds": time.time() - started,
@@ -308,7 +347,20 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None,
                         help="evaluate only the first N samples (smoke subset)")
     parser.add_argument("--plots", action="store_true", help="write overlay plots (model mode)")
+    parser.add_argument("--manifest", default=None,
+                        help="dataset manifest path (defaults to the smoke dataset)")
+    parser.add_argument("--output-dir", default=None,
+                        help="result directory (defaults to the P3.3.2a run dir)")
+    parser.add_argument("--checkpoint-name", default="m2_final_checkpoint.pt",
+                        help="checkpoint file name inside the output dir (model mode)")
+    parser.add_argument("--variant", choices=["residual", "kinematic"], default="residual",
+                        help="decode head variant of the checkpoint (Phase C = kinematic)")
     args = parser.parse_args()
+    global MANIFEST, OUTPUT_DIR
+    if args.manifest:
+        MANIFEST = REPO / args.manifest if not Path(args.manifest).is_absolute() else Path(args.manifest)
+    if args.output_dir:
+        OUTPUT_DIR = REPO / args.output_dir if not Path(args.output_dir).is_absolute() else Path(args.output_dir)
     result = run_cv(args) if args.mode == "cv" else run_model(args)
     summary = {"mode": result.get("mode"), "batches": result.get("batches"),
                "samples_covered": result.get("samples_covered")}

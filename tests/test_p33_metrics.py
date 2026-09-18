@@ -12,6 +12,7 @@ from scenario_lab.p33_metrics import (
     AgentErrorRecord,
     group_level_table,
     kinematic_diagnostics,
+    kinematic_diagnostics_boundary_excluded,
     FUTURE_TIMES,
 )
 
@@ -188,3 +189,31 @@ def test_joint_scene_best_of_k_uses_one_sample_index():
     only_first = joint_scene_min_k_displacement_errors(
         predictions, truth, valid, np.array([True, False, False]))
     assert only_first["min_ade_joint"][0] < 0.05
+
+
+def test_kinematic_boundary_excluded_separates_structural_jumps():
+    """Within-chunk violations stay clean while a boundary slope jump is quantified.
+
+    The decode artifact is a slope discontinuity: position stays continuous but
+    velocity steps at chunk boundaries (2 m/s -> 4 m/s at frame 5), which the
+    plain diagnostic attributes to accel/jerk; the boundary-excluded variant
+    counts none inside chunks and reports the boundary jump instead.
+    """
+    rng = np.random.default_rng(11)
+    frames = 50
+    base = np.zeros((2, frames, 2))
+    base[:, :6, 0] = np.arange(6) * 0.2        # slope 2 m/s through frame 5
+    base[:, 6:, 0] = 1.0 + 0.4 * (np.arange(6, frames) - 5)  # slope 4 m/s after
+    jumped = base
+    plain = kinematic_diagnostics(jumped)
+    excluded = kinematic_diagnostics_boundary_excluded(jumped)
+    assert excluded["speed_violations"] == 0
+    assert excluded["accel_violations"] == 0
+    assert excluded["jerk_violations"] == 0
+    # the structural jump is quantified, not hidden: ~2 m/s boundary speed step
+    assert 1.5 < excluded["boundary_jump_speed_mps"]["max"] < 2.5
+    # the plain variant attributes the boundary step to accel (5*10 m/s^2 > 10)
+    assert plain["accel_violations"] >= 1
+    # smooth trajectory: both variants clean
+    smooth_excluded = kinematic_diagnostics_boundary_excluded(base + rng.normal(0, 1e-4, base.shape))
+    assert smooth_excluded["speed_violations"] == 0

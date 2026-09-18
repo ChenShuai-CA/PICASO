@@ -323,6 +323,125 @@ def kinematic_diagnostics(trajectories: np.ndarray) -> dict:
     }
 
 
+def kinematic_diagnostics_boundary_excluded(trajectories: np.ndarray,
+                                            chunk_steps: int = 5) -> dict:
+    """Kinematic diagnostics with chunk-boundary derivatives excluded.
+
+    The per-chunk token decode reconstructs position piecewise-linearly, so
+    derivatives that span a chunk boundary (every ``chunk_steps`` frames)
+    contain a structural jump that is an artifact of the representation, not
+    of the trajectory.  This variant (P3.3.3 review requirement) separates:
+
+    - within-chunk violations (speed/accel/jerk computed only inside chunks);
+    - the excluded boundary jumps themselves, reported as a magnitude
+      distribution so the structural artifact is quantified rather than
+      silently dropped.
+    """
+    flat = trajectories.reshape(-1, trajectories.shape[-2], 2)
+    frames = flat.shape[1]
+    if frames % chunk_steps:
+        raise ValueError(f"frame count {frames} not divisible by chunk_steps {chunk_steps}")
+    chunks = flat.reshape(flat.shape[0], frames // chunk_steps, chunk_steps, 2)
+    # derivatives inside each chunk: [N, C, chunk_steps-1]
+    velocity = np.diff(chunks, axis=2) * 10.0
+    speed = np.linalg.norm(velocity, axis=-1)
+    accel = np.diff(velocity, axis=2) * 10.0
+    accel_norm = np.linalg.norm(accel, axis=-1)
+    jerk = np.diff(accel, axis=2) * 10.0
+    jerk_norm = np.linalg.norm(jerk, axis=-1)
+    # boundary slope jumps: the velocity step between the last within-chunk
+    # velocity of chunk k and the first within-chunk velocity of chunk k+1 —
+    # the structural artifact of piecewise-linear chunk decoding, excluded
+    # from the violation counts above and quantified here instead
+    within = velocity  # [N, C, chunk_steps-1, 2]
+    boundary_step = within[:, 1:, 0] - within[:, :-1, -1]
+    boundary_speed = np.linalg.norm(boundary_step, axis=-1)
+    return {
+        **KINEMATIC_LIMITS,
+        "chunk_steps": chunk_steps,
+        "agent_count": int(flat.shape[0]),
+        "speed_violations": int((speed > KINEMATIC_LIMITS["speed_limit_mps"]).any(axis=(1, 2)).sum()),
+        "accel_violations": int((accel_norm > KINEMATIC_LIMITS["accel_limit_mps2"]).any(axis=(1, 2)).sum()),
+        "jerk_violations": int((jerk_norm > KINEMATIC_LIMITS["jerk_limit_mps3"]).any(axis=(1, 2)).sum()),
+        "boundary_jump_speed_mps": {
+            "max": float(boundary_speed.max()) if boundary_speed.size else float("nan"),
+            "mean": float(boundary_speed.mean()) if boundary_speed.size else float("nan"),
+            "p99": float(np.percentile(boundary_speed, 99)) if boundary_speed.size else float("nan"),
+            "count": int(boundary_speed.size),
+        },
+    }
+
+
+def kinematic_attribution_metrics(trajectories: np.ndarray, step_valid: np.ndarray,
+                                  history_velocity: np.ndarray | None = None,
+                                  frame_rate: float = 10.0) -> dict:
+    """Per-trajectory AND per-timestep kinematic violation statistics (P3.3.4).
+
+    Unlike :func:`kinematic_diagnostics` (per-trajectory ``any`` counts only),
+    this reports both rates plus the exceedance-magnitude distribution, and the
+    prediction-start continuity check (history-end velocity vs first predicted
+    velocity) — the attribution questions the P3.3.3 review left open.
+
+    ``trajectories`` [N, T, 2] metric positions; ``step_valid`` [N, T] validity
+    per position — a difference-based quantity is counted only when every frame
+    it spans is valid.  ``history_velocity`` [N, 2] is the last history-step
+    velocity; when given, the implied acceleration of the first predicted step
+    (|v_first - v_hist| * frame_rate) is checked against the accel limit.
+    """
+    flat = np.asarray(trajectories, dtype=np.float64)
+    valid = np.asarray(step_valid, dtype=bool)
+    if flat.ndim != 3 or flat.shape[:2] != valid.shape or flat.shape[2] != 2:
+        raise ValueError(f"shape mismatch: trajectories {flat.shape} vs step_valid {valid.shape}")
+
+    def _block(values: np.ndarray, mask: np.ndarray, limit: float) -> dict:
+        violating = (values > limit) & mask
+        agents_with_steps = mask.any(axis=1)
+        agent_count = int(agents_with_steps.sum())
+        traj_rate = (float(violating.any(axis=1)[agents_with_steps].mean())
+                     if agent_count else None)
+        total_steps = int(mask.sum())
+        step_rate = (float(violating.sum() / total_steps) if total_steps else None)
+        exceedance = (values[violating] - limit)
+        quantiles = ({q: float(np.percentile(exceedance, int(q[1:])))
+                      for q in ("p50", "p95", "p99")}
+                     | {"max": float(exceedance.max())}) if exceedance.size else None
+        return {"limit": limit, "agents_with_steps": agent_count,
+                "traj_rate": traj_rate, "step_rate": step_rate,
+                "exceedance_quantiles": quantiles,
+                "violating_steps": int(violating.sum()), "total_steps": total_steps}
+
+    velocity = np.diff(flat, axis=1) * frame_rate            # [N, T-1, 2]
+    v_valid = valid[:, :-1] & valid[:, 1:]
+    speed = np.linalg.norm(velocity, axis=-1)
+    accel = np.diff(velocity, axis=1) * frame_rate           # [N, T-2, 2]
+    a_valid = v_valid[:, :-1] & v_valid[:, 1:]
+    accel_norm = np.linalg.norm(accel, axis=-1)
+    jerk = np.diff(accel, axis=1) * frame_rate               # [N, T-3, 2]
+    j_valid = a_valid[:, :-1] & a_valid[:, 1:]
+    jerk_norm = np.linalg.norm(jerk, axis=-1)
+
+    result: dict = {
+        "speed": _block(speed, v_valid, KINEMATIC_LIMITS["speed_limit_mps"]),
+        "accel": _block(accel_norm, a_valid, KINEMATIC_LIMITS["accel_limit_mps2"]),
+        "jerk": _block(jerk_norm, j_valid, KINEMATIC_LIMITS["jerk_limit_mps3"]),
+    }
+    if history_velocity is not None:
+        first_v = velocity[:, 0]                              # [N, 2]
+        usable = v_valid[:, 0] & np.isfinite(history_velocity).all(axis=1)
+        jump = np.linalg.norm(first_v[usable] - history_velocity[usable], axis=-1)
+        implied_accel = jump * frame_rate
+        result["continuity"] = {
+            "agents_checked": int(usable.sum()),
+            "jump_mps_quantiles": ({q: float(np.percentile(jump, int(q[1:])))
+                                    for q in ("p50", "p95", "p99")}
+                                   | {"max": float(jump.max())}) if jump.size else None,
+            "implied_accel_over_limit_rate": (float(
+                (implied_accel > KINEMATIC_LIMITS["accel_limit_mps2"]).mean())
+                if jump.size else None),
+        }
+    return result
+
+
 def token_frequency_report(true_tokens: np.ndarray, valid_mask: np.ndarray,
                            predicted_tokens: np.ndarray) -> dict:
     """True vs predicted motion-token frequencies and macro recall."""

@@ -1,11 +1,24 @@
 """P3.3.2 nominal-model smoke training: M1 single-batch overfit, M2 GPU smoke + resume.
 
-All budgets come from configs/p33/model_smoke_v1.json; optimizer, loss weights,
-precision policy and gradient clipping come from the frozen ar_scene_v1.json.
+P3.3.3 adds --mode architecture: epoch-scheduled training on the 100-shard
+architecture-stage dataset with per-epoch dev validation, early stopping on
+source_macro_minade_at_6, best/last checkpoints and crash resume.
+
+P3.3.4 adds --variant kinematic: the Phase C conditional kinematic decode head
+(ARSceneV1K, runs/20260915_p334_kinematics/SPEC.md section 6) trained under the
+identical frozen budget; --max-updates is an engineering smoke cap only.
+
+All budgets come from the frozen ar_scene_v1.json (max_epochs, early stopping,
+optimizer, loss weights, precision policy, gradient clipping); smoke-specific
+overrides come from configs/p33/model_smoke_v1.json.
 
 Usage (WSL):
   python research_tasks/train_p33_nominal.py --mode overfit
   python research_tasks/train_p33_nominal.py --mode smoke
+  python research_tasks/train_p33_nominal.py --mode architecture \
+      [--resume runs/20260913_p333_architecture/arch_last_checkpoint.pt]
+  python research_tasks/train_p33_nominal.py --mode architecture \
+      --variant kinematic --output-dir runs/20260915_p334_kinematics/phase_c_train
 """
 from __future__ import annotations
 
@@ -37,11 +50,15 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
 from scenario_lab.p33_dataset import SceneLoader, ShardCatalog  # noqa: E402
-from scenario_lab.p33_model import ARSceneV1, ar_scene_loss, to_torch_batch  # noqa: E402
+from scenario_lab.p33_model import (ARSceneV1, ARSceneV1K, ar_scene_loss,  # noqa: E402
+                                    ar_scene_loss_c, to_torch_batch)
 from scenario_lab.p33_spec import load_p33_config  # noqa: E402
 
 MANIFEST = REPO / "runs/20260913_p331_data_pipeline/smoke/DATASET_MANIFEST.json"
 OUTPUT_DIR = REPO / "runs/20260913_p332a_visibility_fix"
+ARCH_MANIFEST = REPO / "runs/20260913_p333_architecture/data/DATASET_MANIFEST.json"
+ARCH_OUTPUT_DIR = REPO / "runs/20260913_p333_architecture"
+C_CONFIG_PATH = REPO / "configs/p33/model_kinematic_c_v1.json"
 
 
 def load_codebook(manifest_path: Path) -> np.ndarray:
@@ -58,8 +75,10 @@ def seed_everything(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def build(config: dict, codebook: np.ndarray, device: torch.device):
-    model = ARSceneV1(config, codebook).to(device)
+def build(config: dict, codebook: np.ndarray, device: torch.device,
+          variant: str = "residual", c_config: dict | None = None):
+    model = (ARSceneV1K(config, codebook, c_config) if variant == "kinematic"
+             else ARSceneV1(config, codebook)).to(device)
     optimizer = torch.optim.AdamW(model.parameters(),
                                   lr=config["training"]["learning_rate"],
                                   weight_decay=config["training"]["weight_decay"])
@@ -381,16 +400,311 @@ def run_smoke(args: argparse.Namespace) -> dict:
     return result
 
 
+def derive_architecture_budget(config: dict) -> dict:
+    """Derive the architecture-stage training budget from the frozen config.
+
+    Pure function (unit-tested): micro-batches per update, batches per epoch
+    are resolved at runtime against the catalog; everything here depends only
+    on ar_scene_v1.json so the budget is checkable without data.
+    """
+    training = config["training"]
+    micro_batch = int(training["micro_batch_size"])
+    effective = int(training["target_effective_batch_size"])
+    if effective % micro_batch or (micro_batch % 2):
+        raise ValueError("effective batch must be a multiple of the 2-source micro batch")
+    return {
+        "batch_per_source": micro_batch // 2,
+        "micro_batches_per_step": effective // micro_batch,
+        "max_epochs": int(training["max_epochs"]),
+        "early_stopping_metric": training["early_stopping_metric"],
+        "patience": int(training["early_stopping_patience"]),
+        "seed": int(training["formal_seeds"][0]),
+        "t1_sampling": dict(training["t1_sampling"]),
+    }
+
+
+def update_early_stopping(best: float, stagnant: int, metric: float,
+                          patience: int) -> tuple[float, int, bool]:
+    """Early-stopping state transition; returns (best, stagnant, improved)."""
+    improved = metric < best
+    return (metric, 0, True) if improved else (best, stagnant + 1, False)
+
+
+def validate_architecture(model, catalog, config: dict, device: torch.device,
+                          budget: dict, loss_fn=ar_scene_loss) -> dict:
+    """Per-epoch dev validation (fp32, deterministic rollout seed).
+
+    Reports the early-stopping metric (source_macro_minade_at_6, group-level),
+    per-source group metrics including joint-scene best-of-6, teacher-forced
+    NLL/accuracy, and the teacher-argmax vs rollout guardrail (P3.3.2 REPORT
+    §8: ratio monitored as an autoregressive-drift early warning).
+    """
+    from scenario_lab.p33_dataset import iter_split_batches
+    from scenario_lab.p33_metrics import (evaluate_agent_mask, group_level_table,
+                                          rollout_records_for_batch)
+    from scenario_lab.p33_model import decode_tokens_to_trajectory
+
+    sampling = budget["t1_sampling"]
+    rollout_seed = budget["seed"]
+    codebook_numpy = model.codebook.cpu().numpy()
+    records: list = []
+    argmax_records: list = []
+    ce_weighted, acc_weighted, token_count = 0.0, 0.0, 0
+    model.eval()
+    with torch.no_grad():
+        for batch_raw in iter_split_batches(catalog, split="dev", batch_size=16):
+            batch = to_torch_batch(batch_raw, device)
+            outputs = model(batch, teacher_tokens=batch["motion_token_target"])
+            losses = loss_fn(outputs, batch, model.codebook, config)
+            valid = (batch["motion_token_valid_mask"]
+                     & (batch["motion_token_target"] != 255))
+            tokens_in_batch = int(valid.sum())
+            ce_weighted += float(losses["token_cross_entropy"]) * tokens_in_batch
+            acc_weighted += float(losses["token_accuracy"]) * tokens_in_batch
+            token_count += tokens_in_batch
+            rollout = model.rollout(batch, num_samples=sampling["num_samples"],
+                                    temperature=sampling["temperature"],
+                                    top_p=sampling["top_p"], seed=rollout_seed)
+            trajectories = rollout["trajectories"].cpu().numpy().astype(np.float64)
+            records.extend(rollout_records_for_batch(trajectories, batch_raw))
+            # teacher-argmax decode (guardrail): greedy token error only, no
+            # sampling and no autoregressive drift beyond teacher prefixes
+            if hasattr(model, "trajectory_from_tokens"):
+                decoded = model.trajectory_from_tokens(
+                    outputs["motion_token_logits"].argmax(-1), batch).cpu().numpy()
+            else:
+                tokens = outputs["motion_token_logits"].argmax(-1).cpu().numpy()
+                residuals = outputs["delta_xy_residual"].cpu().numpy()
+                current = batch["agent_history"][:, :, -1, :2].cpu().numpy()
+                decoded = np.stack([decode_tokens_to_trajectory(
+                    tokens[i].astype(np.int64), residuals[i], codebook_numpy, current[i])
+                    for i in range(len(batch["sample_id"]))])
+            argmax_records.extend(rollout_records_for_batch(decoded[:, None], batch_raw))
+    table = group_level_table(records)
+    argmax_table = group_level_table(argmax_records)
+    sources = sorted(table)
+    macro = float(np.mean([table[source]["min_ade"] for source in sources])) \
+        if sources else float("nan")
+    guardrail = {source: (float(table[source]["min_ade"]) / argmax_table[source]["ade"]
+                          if argmax_table[source]["ade"] > 0 else float("inf"))
+                 for source in sources}
+    return {
+        "source_macro_minade_at_6": macro,
+        "group_level": table,
+        "teacher_argmax_group_level": argmax_table,
+        "guardrail_rollout_over_teacher_argmax": guardrail,
+        "teacher_forced_token_nll": ce_weighted / max(1, token_count),
+        "token_accuracy": acc_weighted / max(1, token_count),
+        "evaluated_tokens": token_count,
+    }
+
+
+def run_architecture(args: argparse.Namespace) -> dict:
+    """P3.3.3 architecture-stage training.
+
+    Epoch-scheduled (loader epoch = one pass of the smaller source), dev
+    validation at every epoch boundary, early stopping on
+    source_macro_minade_at_6 with the frozen patience, best/last checkpoints,
+    and full crash resume (weights/optimizer/loader/RNG + schedule state).
+    """
+    config = load_p33_config()
+    training = config["training"]
+    budget = derive_architecture_budget(config)
+    manifest = Path(args.manifest) if args.manifest else ARCH_MANIFEST
+    out_dir = Path(args.output_dir) if args.output_dir else ARCH_OUTPUT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    device = torch.device(args.device)
+    codebook = load_codebook(manifest)
+    catalog = ShardCatalog.from_manifest(manifest, config)
+    c_config = (json.loads(Path(args.c_config).read_text(encoding="utf-8"))
+                if args.variant == "kinematic" else None)
+
+    seed_everything(budget["seed"])
+    loader = SceneLoader(catalog, split="train",
+                         batch_per_source=budget["batch_per_source"],
+                         seed=budget["seed"])
+    model, optimizer = build(config, codebook, device, args.variant, c_config)
+
+    def loss_fn(outputs, batch, codebook, config_arg=None):
+        if args.variant == "kinematic":
+            return ar_scene_loss_c(outputs, batch, codebook, config, c_config)
+        return ar_scene_loss(outputs, batch, codebook, config)
+
+    micro_per_step = budget["micro_batches_per_step"]
+    clip = training["gradient_clip_norm"]
+    use_bf16 = device.type == "cuda"  # frozen precision policy: amp bf16
+
+    # LR warmup horizon: the full planned budget (max_epochs), independent of
+    # early stopping so the schedule stays deterministic.
+    batches_per_epoch = -(-loader.streams[loader._epoch_source].pool
+                          // budget["batch_per_source"])  # ceil
+    updates_per_epoch = -(-batches_per_epoch // micro_per_step)
+    planned_total_updates = updates_per_epoch * budget["max_epochs"]
+
+    state = {"update_index": 0, "epoch": 0, "history": [], "val_history": [],
+             "best": float("inf"), "stagnant": 0, "best_epoch": None}
+    if args.resume:
+        payload = torch.load(args.resume, map_location=device, weights_only=False)
+        model.load_state_dict({key: value.to(device) for key, value in payload["model"].items()})
+        restore_optimizer_isolated(optimizer, payload["optimizer"])
+        loader.set_state(payload["loader_state"])
+        set_rng_state(payload["rng"])
+        state = {key: payload["arch"][key] for key in state}
+        print(f"[arch] resumed from {args.resume}: epoch {state['epoch']}, "
+              f"update {state['update_index']}, best {state['best']:.4f}", flush=True)
+
+    stream = BatchStream(loader)
+    started = time.time()
+    log_path = out_dir / "ARCH_TRAIN_LOG.jsonl"
+    curve_path = out_dir / "ARCH_loss_curve.csv"
+    if not args.resume:
+        log_path.write_text("")
+        curve_path.write_text("epoch,update,total,token_cross_entropy,trajectory_huber,"
+                              "endpoint_huber,token_accuracy\n")
+    max_epochs = args.max_epochs if args.max_epochs else budget["max_epochs"]
+    update_cap = args.max_updates if args.max_updates else float("inf")
+    while state["epoch"] < max_epochs and state["update_index"] < update_cap:
+        epoch_start = state["epoch"]
+        epoch_losses = []
+        # run updates until the loader crosses the epoch boundary (the final
+        # micro-batch of an epoch triggers advance_epoch inside BatchStream)
+        while loader.epoch == epoch_start and state["update_index"] < update_cap:
+            update = state["update_index"]
+            scale = learning_rate_scale(update, planned_total_updates,
+                                        training["warmup_fraction"])
+            for group in optimizer.param_groups:
+                group["lr"] = training["learning_rate"] * scale
+            model.train()
+            optimizer.zero_grad(set_to_none=True)
+            step_losses = {}
+            for _ in range(micro_per_step):
+                batch = to_torch_batch(stream.take(), device)
+                with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
+                                    enabled=use_bf16):
+                    outputs = model(batch, teacher_tokens=batch["motion_token_target"])
+                    losses = loss_fn(outputs, batch, model.codebook, config)
+                (losses["total"] / micro_per_step).backward()
+                for key, value in losses.items():
+                    step_losses[key] = (step_losses.get(key, 0.0)
+                                        + float(value.item()) / micro_per_step)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+            optimizer.step()
+            state["history"].append(step_losses)
+            epoch_losses.append(step_losses["total"])
+            state["update_index"] += 1
+            if update % 50 == 0:
+                print(f"[arch] epoch {epoch_start + 1} update {update + 1} "
+                      f"total={step_losses['total']:.4f} "
+                      f"ce={step_losses['token_cross_entropy']:.4f} "
+                      f"acc={step_losses['token_accuracy']:.3f}", flush=True)
+        state["epoch"] = loader.epoch
+        with curve_path.open("a", encoding="utf-8") as curve:
+            for row in state["history"][-len(epoch_losses):]:
+                curve.write(f"{state['epoch']},{len(state['history'])},"
+                            f"{row['total']:.6f},{row['token_cross_entropy']:.6f},"
+                            f"{row['trajectory_huber']:.6f},{row['endpoint_huber']:.6f},"
+                            f"{row['token_accuracy']:.6f}\n")
+
+        if (state["epoch"] % args.validate_every == 0
+                or state["epoch"] == max_epochs
+                or state["update_index"] >= update_cap):
+            validation = validate_architecture(model, catalog, config, device,
+                                               budget, loss_fn)
+            state["best"], state["stagnant"], improved = update_early_stopping(
+                state["best"], state["stagnant"],
+                validation["source_macro_minade_at_6"], budget["patience"])
+            if improved:
+                state["best_epoch"] = state["epoch"]
+            entry = {"epoch": state["epoch"], "update_index": state["update_index"],
+                     "train_loss_epoch_mean": float(np.mean(epoch_losses)),
+                     "improved": improved, "stagnant": state["stagnant"],
+                     "elapsed_seconds": time.time() - started,
+                     **validation}
+            state["val_history"].append(entry)
+            with log_path.open("a", encoding="utf-8") as log_file:
+                log_file.write(json.dumps(entry, default=str) + "\n")
+            print(f"[arch] epoch {state['epoch']} val: macro_minADE@6="
+                  f"{validation['source_macro_minade_at_6']:.4f} "
+                  f"(best {state['best']:.4f} @ep{state['best_epoch']}, "
+                  f"stagnant {state['stagnant']}/{budget['patience']}) "
+                  f"nll={validation['teacher_forced_token_nll']:.4f} "
+                  f"guardrail={validation['guardrail_rollout_over_teacher_argmax']}",
+                  flush=True)
+
+        payload = checkpoint_payload(model, optimizer, loader, state["history"],
+                                     state["update_index"],
+                                     {"arch": {key: state[key] for key in state},
+                                      "variant": args.variant, "c_config": c_config})
+        torch.save(payload, out_dir / "arch_last_checkpoint.pt")
+        if state["best_epoch"] == state["epoch"]:
+            torch.save(payload, out_dir / "arch_best_checkpoint.pt")
+        if state["stagnant"] >= budget["patience"]:
+            print(f"[arch] early stopping: {state['stagnant']} epochs without "
+                  f"improvement (best {state['best']:.4f} @ epoch {state['best_epoch']})",
+                  flush=True)
+            break
+
+    result = {
+        "mode": "p333_architecture_training",
+        "variant": args.variant,
+        "seed": budget["seed"],
+        "device": str(device),
+        "manifest": str(manifest),
+        "budget": budget,
+        "epochs_completed": state["epoch"],
+        "updates_completed": state["update_index"],
+        "planned_total_updates": planned_total_updates,
+        "updates_per_epoch": updates_per_epoch,
+        "best_source_macro_minade_at_6": state["best"],
+        "best_epoch": state["best_epoch"],
+        "early_stopped": state["stagnant"] >= budget["patience"],
+        "deterministic_algorithms": "strict (warn_only=False)",
+        "sdpa_backends": ({"mem_efficient": False, "flash": False, "math": True}
+                          if device.type == "cuda" else "cpu_default"),
+        "elapsed_seconds": time.time() - started,
+        "peak_vram_mb": (torch.cuda.max_memory_allocated() / 1e6
+                         if device.type == "cuda" else None),
+        "exposure": loader.exposure(),
+        "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+    }
+    (out_dir / "ARCH_TRAIN_RESULT.json").write_text(json.dumps(result, indent=2))
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=["overfit", "smoke"], required=True)
+    parser.add_argument("--mode", choices=["overfit", "smoke", "architecture"],
+                        required=True)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--variant", choices=["residual", "kinematic"], default="residual",
+                        help="architecture mode decode head: base residual or "
+                             "Phase C kinematic (P3.3.4 SPEC 6)")
+    parser.add_argument("--c-config", default=str(C_CONFIG_PATH),
+                        help="Phase C head/loss config (kinematic variant only)")
+    parser.add_argument("--max-updates", type=int, default=None,
+                        help="engineering smoke cap on total updates (never set "
+                             "for formal runs)")
     parser.add_argument("--updates", type=int, default=None,
                         help="override m2 update count (probe runs)")
     parser.add_argument("--checkpoint-every", type=int, default=None,
                         help="override m2 checkpoint cadence (probe runs)")
+    parser.add_argument("--manifest", default=None,
+                        help="architecture mode: dataset manifest path")
+    parser.add_argument("--output-dir", default=None,
+                        help="architecture mode: output directory")
+    parser.add_argument("--resume", default=None,
+                        help="architecture mode: checkpoint to resume from")
+    parser.add_argument("--max-epochs", type=int, default=None,
+                        help="engineering sanity override of the frozen epoch cap")
+    parser.add_argument("--validate-every", type=int, default=1,
+                        help="validate every N epochs (early stopping still honors it)")
     args = parser.parse_args()
-    result = run_overfit(args) if args.mode == "overfit" else run_smoke(args)
+    if args.mode == "overfit":
+        result = run_overfit(args)
+    elif args.mode == "architecture":
+        result = run_architecture(args)
+    else:
+        result = run_smoke(args)
     print(json.dumps({key: value for key, value in result.items()
                       if key not in ("sample_ids",)}, indent=2, default=str))
 

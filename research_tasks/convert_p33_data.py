@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 from collections import Counter
 from hashlib import sha256
 from pathlib import Path
@@ -112,6 +113,11 @@ def convert_unit(source: str, paths: list[Path], data_root: Path, output: Path,
             result["resumed"] = True
             return result
         raise ValueError(f"incomplete unit has a stale marker: {identifier}")
+    # a leftover directory without a UNIT.json marker is a partially written
+    # unit from an interrupted run (observed: OOM-killed process left an empty
+    # dir, and mkdir(exist_ok=False) crashed the resume); wipe and reconvert
+    if unit_dir.exists():
+        shutil.rmtree(unit_dir)
     unit_dir.mkdir(parents=True, exist_ok=False)
     writer = UnitWriter(unit_dir, config["data"]["storage"]["examples_per_shard"])
     errors = []
